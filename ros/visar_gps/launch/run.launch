@@ -1,6 +1,7 @@
 <!-- -->
 <launch>
   <arg name="host_id" />
+  <arg name="interface" />
   
   <node pkg="nodelet" type="nodelet" name="imu_driver" args="standalone rift_dk2_imu_driver/rift_dk2_imu_driver_nodelet">
     <param name="frame_id" type="string" value="/imu"/>
@@ -18,7 +19,7 @@ shift: [3.1164167707875855e-05, -2.2565650071980636e-05, -7.185130519779203e-05]
   </node>
 
   <node pkg="skytraq_driver" type="skytraq_driver" name="gps_driver">
-    <param name="port" value="/dev/serial/by-id/usb-Prolific_Technology_Inc._USB-Serial_Controller_D-if00-port0"/>
+    <param name="port" value="/dev/serial/by-id/usb-Silicon_Labs_CP2102_USB_to_UART_Bridge_Controller_0001-if00-port0"/>
   </node>
   <node pkg="skytraq_driver" type="parser" name="gps_parser">
     <param name="frame_id" value="/gps"/>
@@ -40,6 +41,7 @@ shift: [3.1164167707875855e-05, -2.2565650071980636e-05, -7.185130519779203e-05]
   
   <node pkg="visar_gps" type="visar_gps" name="visar_gps">
     <param name="host_id" value="$(arg host_id)"/>
+    <param name="interface" value="$(arg interface)"/>
   </node>
   
   <node pkg="skytraq_driver" type="parser" name="beacon1_gps_parser">

@@ -67,6 +67,7 @@ def main():
 
     host_id = yield nh.get_param('~host_id')
     assert len(host_id) <= 16
+    interface = yield nh.get_param('~interface')
     
     allowed_host_ids = {'visar1', 'visar2', 'beacon1', 'beacon2'}
     assert host_id in allowed_host_ids
@@ -139,7 +140,7 @@ def main():
                 data=msg_data,
             ))
     p2p_gps_protocol = P2PGPSProtocol()
-    reactor.listenUDP(P2P_GPS_PORT, p2p_gps_protocol)
+    reactor.listenUDP(P2P_GPS_PORT, p2p_gps_protocol, interface=interface)
 
 @util.cancellableInlineCallbacks
 def main_runner():
