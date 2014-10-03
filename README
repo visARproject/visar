@@ -1,0 +1,10 @@
+Right now this is just an example of using the SCons build system to compile
+a hello world program.
+
+BUILDING
+
+$ scons
+
+RUNNING
+
+$ build/main
