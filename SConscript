@@ -27,4 +27,13 @@ def build_oglplus(target, source, env):
         shutil.rmtree(builddir)
 oglplus = env.Command(Dir('oglplus'), Dir('#ext/oglplus'), build_oglplus)
 
-env.Program(target='main', source=['src/main.cpp'])
+env.Append(CPPPATH=['build/oglplus/include'])
+
+env.Append(CCFLAGS=['-std=c++11'])
+env.Append(CCFLAGS=['-ggdb'])
+env.Append(CCFLAGS=['-Wall'])
+env.Append(CCFLAGS=['-Wshadow'])
+env.Append(LIBS=['GL', 'X11', 'GLEW'])
+
+main = env.Program(target='main', source=['src/main.cpp'])
+env.Depends('src/main.cpp', oglplus)
