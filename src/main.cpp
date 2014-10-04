@@ -1,3 +1,5 @@
+#include <chrono>
+
 #include <oglplus/gl.hpp>
 #include <oglplus/all.hpp>
 #include <oglplus/glx/context.hpp>
@@ -60,9 +62,11 @@ int main() {
   vs.Source(" \
     #version 330\n \
     in vec3 Position; \
+    varying vec3 verpos; \
     void main(void) \
     { \
       gl_Position = vec4(Position, 1.0); \
+      verpos = Position; \
     } \
   ");
   // compile it
@@ -74,9 +78,11 @@ int main() {
   fs.Source(" \
     #version 330\n \
     out vec4 fragColor; \
+    varying vec3 verpos; \
     void main(void) \
     { \
-      fragColor = vec4(1.0, 0.0, 0.0, 1.0); \
+      float a = sin(101*(verpos.x+verpos.y+verpos.z))/2+.5; \
+      fragColor = vec4(a, a, a, 1.0); \
     } \
   ");
   // compile it
@@ -100,15 +106,8 @@ int main() {
   // bind the VAO for the triangle
   triangle.Bind();
 
-  GLfloat triangle_verts[9] = {
-    0.0f, 0.0f, 0.0f,
-    1.0f, 0.0f, 0.0f,
-    0.0f, 1.0f, 0.0f
-  };
   // bind the VBO for the triangle vertices
   verts.Bind(Buffer::Target::Array);
-  // upload the data
-  Buffer::Data(Buffer::Target::Array, 9, triangle_verts);
 
   // setup the vertex attribs array for the vertices
   VertexArrayAttrib vert_attr(prog, "Position");
@@ -120,6 +119,22 @@ int main() {
 
   while(true) {
     gl.Clear().ColorBuffer();
+
+    auto some_time = std::chrono::high_resolution_clock::now().time_since_epoch();
+    double t = std::chrono::duration_cast<std::chrono::duration<double>>(some_time).count();
+
+    double s = sin(t), c = cos(t);
+    double triangle_verts[9] = {
+      0, .5 , 0,
+      .5*s*sqrt(3)/2, .5*-.5, .5*c*sqrt(3)/2,
+      .5*-s*sqrt(3)/2, .5*-.5, .5*-c*sqrt(3)/2,
+    };
+    GLfloat triangle_verts2[9];
+    for(size_t i = 0; i < 9; i++) {
+      triangle_verts2[i] = triangle_verts[i];
+    }
+    // upload the data
+    Buffer::Data(Buffer::Target::Array, 9, triangle_verts2);
 
     gl.DrawArrays(PrimitiveType::Triangles, 0, 3);
     ctx.SwapBuffers(win);
