@@ -1,3 +1,3 @@
-[submodule "ext/oglplus"]
-	path = ext/oglplus
+[submodule "computer/ext/oglplus"]
+	path = computer/ext/oglplus
 	url = git@github.com:matus-chochlik/oglplus.git
