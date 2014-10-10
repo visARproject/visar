@@ -6,7 +6,8 @@ def toplevel(CLK_I, LED_O):
     @always(CLK_I.posedge)
     def logic():
         counter.next = counter + 1
-        LED_O.next = counter[32:24]
+        for i in downrange(8, 0):
+            LED_O.next[i] = counter[31-i]
     
     return logic
 
