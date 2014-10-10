@@ -1,0 +1,22 @@
+
+NET "CLK_I" LOC = L15;
+
+NET "CLK_I" IOSTANDARD = LVCMOS33;
+
+
+NET "LED_O[0]" LOC = U18 |IOSTANDARD = LVCMOS33;
+NET "LED_O[1]" LOC = M14 |IOSTANDARD = LVCMOS33;
+NET "LED_O[2]" LOC = N14 |IOSTANDARD = LVCMOS33;
+NET "LED_O[3]" LOC = L14 |IOSTANDARD = LVCMOS33;
+NET "LED_O[4]" LOC = M13 |IOSTANDARD = LVCMOS33;
+NET "LED_O[5]" LOC = D4 |IOSTANDARD = LVCMOS33;
+NET "LED_O[6]" LOC = P16 |IOSTANDARD = LVCMOS33;
+NET "LED_O[7]" LOC = N12 |IOSTANDARD = LVCMOS33;
+
+############################################################################
+# VCC AUX VOLTAGE 
+############################################################################
+CONFIG VCCAUX=3.3; # Valid values are 2.5 and 3.3
+############################################################################
+
+

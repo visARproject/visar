@@ -1,0 +1,2 @@
+vhdl work "src/toplevel.vhd"
+vhdl work "src/pck_myhdl_09.vhd"

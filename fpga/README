@@ -1,0 +1,24 @@
+After installing the Xilinx ISE, you should put something like
+
+  . /opt/Xilinx/14.3/ISE_DS/settings64.sh
+
+in your ~/.bash_aliases file to put the toolchain programs on your PATH.
+Otherwise, you have to run that command on every new shell you want to do
+development in.
+
+
+BUILDING
+
+It's simply
+
+  $ make program
+
+which will try to build the bitstream and program the device if it succeeds.
+
+
+DEVELOPING
+
+* If a new source file is added, a reference to it has to be added to
+  main.prj.
+* If the toplevel entity changes or is renamed, the TOPLEVEL variable in
+  Makefile needs to be changed.
