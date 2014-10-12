@@ -19,14 +19,13 @@ clean:
 PART = xc6slx45-csg324-3
 TOP = toplevel
 UCF_FILES = src/atlys.ucf
+SRC_FILES = src/toplevel.vhd
 
 src/toplevel.vhd: src/toplevel.py
 	cd src && python toplevel.py
 
 # synthesize
-build/xst/.built: main.prj $(wildcard src/*) $(wildcard src/*/*) \
-		$(wildcard src/*/*/*) $(wildcard src/*/*/*/*) \
-		$(wildcard src/*/*/*/*/*)
+build/xst/.built: main.prj src/toplevel.vhd
 	@rm -fr build/xst
 	@mkdir -p build/xst
 	@touch build/xst/.ts
