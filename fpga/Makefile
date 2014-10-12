@@ -1,5 +1,5 @@
 .PHONY: all
-all: build/main.bit
+all: build/bitgen/.built
 
 .PHONY: program
 program: build/bitgen/.built
