@@ -1,7 +1,10 @@
-#include <boost/program_options.hpp>
 #include <boost/asio.hpp>
+#include <boost/program_options.hpp>
+#include <boost/make_shared.hpp>
 
 #include "rendering.h"
+#include "simulated_world.h"
+#include "pose_source.h"
 
 using namespace visar;
 
@@ -30,13 +33,18 @@ int main(int argc, char* argv[]) {
   
   rendering::Renderer renderer(io); // also handles window user input
   
-  /*std::unique_ptr<PoseSource> ps =
-    vm.count("pose-source") ? RemotePoseSource(io, vm["pose-source"]) :
-      FPSPoseSource(wi);
+  boost::shared_ptr<pose_source::IPoseSource> ps =
+    vm.count("pose-source") ?
+      boost::static_pointer_cast<pose_source::IPoseSource>(
+        boost::make_shared<pose_source::RemotePoseSource>(io,
+          vm["pose-source"].as<std::string>())) :
+      boost::static_pointer_cast<pose_source::IPoseSource>(
+        boost::make_shared<pose_source::FPSPoseSource>(renderer));
   
-  if(vm.count["simulate-cameras"]) {
-    renderer.add_module(SimulatedWorld(ps));
-  }*/
+  if(vm.count("simulate-cameras")) {
+    renderer.add_module(
+      boost::make_shared<simulated_world::SimulatedWorld>(*ps));
+  }
   
   io.run();
   

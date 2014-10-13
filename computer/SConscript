@@ -32,8 +32,10 @@ env.Append(CPPPATH=['build/oglplus/include'])
 env.Append(CCFLAGS=['-std=c++11'])
 env.Append(CCFLAGS=['-ggdb'])
 env.Append(CCFLAGS=['-Wall'])
-env.Append(CCFLAGS=['-Wshadow'])
+#env.Append(CCFLAGS=['-Wshadow'])
 env.Append(LIBS=['GL', 'X11', 'GLEW', 'boost_program_options', 'boost_system'])
+
+env.ParseConfig('pkg-config --cflags --libs eigen3')
 
 main = env.Program(target='main', source=['src/main.cpp'])
 env.Depends('src/main.cpp', oglplus)

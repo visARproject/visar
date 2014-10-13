@@ -10,4 +10,4 @@ BUILDING
 
 RUNNING
 
-  $ build/main
+  $ build/main --simulate-cameras
