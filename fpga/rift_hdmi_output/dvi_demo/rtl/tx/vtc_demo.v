@@ -193,7 +193,7 @@ module vtc_demo (
 
         SW_SXGA: //108 MHz pixel clock
         begin
-          pclk_M <= 8'd54 - 8'd1;
+          pclk_M <= 8'd66 - 8'd1;
           pclk_D <= 8'd25 - 8'd1;
         end
 
@@ -300,63 +300,63 @@ module vtc_demo (
 // Video Timing Parameters
 ///////////////////////////////////////////////////////////////////////////
   //1280x1024@60HZ
-  parameter HPIXELS_SXGA = 11'd1280; //Horizontal Live Pixels
-  parameter  VLINES_SXGA = 11'd1024;  //Vertical Live ines
-  parameter HSYNCPW_SXGA = 11'd112;  //HSYNC Pulse Width
-  parameter VSYNCPW_SXGA = 11'd3;    //VSYNC Pulse Width
-  parameter HFNPRCH_SXGA = 11'd48;   //Horizontal Front Portch
-  parameter VFNPRCH_SXGA = 11'd1;    //Vertical Front Portch
-  parameter HBKPRCH_SXGA = 11'd248;  //Horizontal Front Portch
-  parameter VBKPRCH_SXGA = 11'd38;   //Vertical Front Portch
+  parameter HPIXELS_SXGA = 12'd1080; //Horizontal Live Pixels
+  parameter  VLINES_SXGA = 12'd1920;
+  parameter HFNPRCH_SXGA = 12'd33;
+  parameter VFNPRCH_SXGA = 12'd1;
+  parameter HSYNCPW_SXGA = 12'd10;
+  parameter VSYNCPW_SXGA = 12'd6;
+  parameter HBKPRCH_SXGA = 12'd15;
+  parameter VBKPRCH_SXGA = 12'd6;
 
   //1280x720@60HZ
-  parameter HPIXELS_HDTV720P = 11'd1280; //Horizontal Live Pixels
-  parameter VLINES_HDTV720P  = 11'd720;  //Vertical Live ines
-  parameter HSYNCPW_HDTV720P = 11'd80;  //HSYNC Pulse Width
-  parameter VSYNCPW_HDTV720P = 11'd5;    //VSYNC Pulse Width
-  parameter HFNPRCH_HDTV720P = 11'd72;   //Horizontal Front Portch
-  parameter VFNPRCH_HDTV720P = 11'd3;    //Vertical Front Portch
-  parameter HBKPRCH_HDTV720P = 11'd216;  //Horizontal Front Portch
-  parameter VBKPRCH_HDTV720P = 11'd22;   //Vertical Front Portch
+  parameter HPIXELS_HDTV720P = 12'd1280; //Horizontal Live Pixels
+  parameter VLINES_HDTV720P  = 12'd720;  //Vertical Live ines
+  parameter HSYNCPW_HDTV720P = 12'd80;  //HSYNC Pulse Width
+  parameter VSYNCPW_HDTV720P = 12'd5;    //VSYNC Pulse Width
+  parameter HFNPRCH_HDTV720P = 12'd72;   //Horizontal Front Portch
+  parameter VFNPRCH_HDTV720P = 12'd3;    //Vertical Front Portch
+  parameter HBKPRCH_HDTV720P = 12'd216;  //Horizontal Front Portch
+  parameter VBKPRCH_HDTV720P = 12'd22;   //Vertical Front Portch
 
   //1024x768@60HZ
-  parameter HPIXELS_XGA = 11'd1024; //Horizontal Live Pixels
-  parameter VLINES_XGA  = 11'd768;  //Vertical Live ines
-  parameter HSYNCPW_XGA = 11'd136;  //HSYNC Pulse Width
-  parameter VSYNCPW_XGA = 11'd6;    //VSYNC Pulse Width
-  parameter HFNPRCH_XGA = 11'd24;   //Horizontal Front Portch
-  parameter VFNPRCH_XGA = 11'd3;    //Vertical Front Portch
-  parameter HBKPRCH_XGA = 11'd160;  //Horizontal Front Portch
-  parameter VBKPRCH_XGA = 11'd29;   //Vertical Front Portch
+  parameter HPIXELS_XGA = 12'd1024; //Horizontal Live Pixels
+  parameter VLINES_XGA  = 12'd768;  //Vertical Live ines
+  parameter HSYNCPW_XGA = 12'd136;  //HSYNC Pulse Width
+  parameter VSYNCPW_XGA = 12'd6;    //VSYNC Pulse Width
+  parameter HFNPRCH_XGA = 12'd24;   //Horizontal Front Portch
+  parameter VFNPRCH_XGA = 12'd3;    //Vertical Front Portch
+  parameter HBKPRCH_XGA = 12'd160;  //Horizontal Front Portch
+  parameter VBKPRCH_XGA = 12'd29;   //Vertical Front Portch
 
   //800x600@60HZ
-  parameter HPIXELS_SVGA = 11'd800; //Horizontal Live Pixels
-  parameter VLINES_SVGA  = 11'd600; //Vertical Live ines
-  parameter HSYNCPW_SVGA = 11'd128; //HSYNC Pulse Width
-  parameter VSYNCPW_SVGA = 11'd4;   //VSYNC Pulse Width
-  parameter HFNPRCH_SVGA = 11'd40;  //Horizontal Front Portch
-  parameter VFNPRCH_SVGA = 11'd1;   //Vertical Front Portch
-  parameter HBKPRCH_SVGA = 11'd88;  //Horizontal Front Portch
-  parameter VBKPRCH_SVGA = 11'd23;  //Vertical Front Portch
+  parameter HPIXELS_SVGA = 12'd800; //Horizontal Live Pixels
+  parameter VLINES_SVGA  = 12'd600; //Vertical Live ines
+  parameter HSYNCPW_SVGA = 12'd128; //HSYNC Pulse Width
+  parameter VSYNCPW_SVGA = 12'd4;   //VSYNC Pulse Width
+  parameter HFNPRCH_SVGA = 12'd40;  //Horizontal Front Portch
+  parameter VFNPRCH_SVGA = 12'd1;   //Vertical Front Portch
+  parameter HBKPRCH_SVGA = 12'd88;  //Horizontal Front Portch
+  parameter VBKPRCH_SVGA = 12'd23;  //Vertical Front Portch
 
   //640x480@60HZ
-  parameter HPIXELS_VGA = 11'd640; //Horizontal Live Pixels
-  parameter VLINES_VGA  = 11'd480; //Vertical Live ines
-  parameter HSYNCPW_VGA = 11'd96;  //HSYNC Pulse Width
-  parameter VSYNCPW_VGA = 11'd2;   //VSYNC Pulse Width
-  parameter HFNPRCH_VGA = 11'd16;  //Horizontal Front Portch
-  parameter VFNPRCH_VGA = 11'd11;  //Vertical Front Portch
-  parameter HBKPRCH_VGA = 11'd48;  //Horizontal Front Portch
-  parameter VBKPRCH_VGA = 11'd31;  //Vertical Front Portch
+  parameter HPIXELS_VGA = 12'd640; //Horizontal Live Pixels
+  parameter VLINES_VGA  = 12'd480; //Vertical Live ines
+  parameter HSYNCPW_VGA = 12'd96;  //HSYNC Pulse Width
+  parameter VSYNCPW_VGA = 12'd2;   //VSYNC Pulse Width
+  parameter HFNPRCH_VGA = 12'd16;  //Horizontal Front Portch
+  parameter VFNPRCH_VGA = 12'd11;  //Vertical Front Portch
+  parameter HBKPRCH_VGA = 12'd48;  //Horizontal Front Portch
+  parameter VBKPRCH_VGA = 12'd31;  //Vertical Front Portch
 
-  reg [10:0] tc_hsblnk;
-  reg [10:0] tc_hssync;
-  reg [10:0] tc_hesync;
-  reg [10:0] tc_heblnk;
-  reg [10:0] tc_vsblnk;
-  reg [10:0] tc_vssync;
-  reg [10:0] tc_vesync;
-  reg [10:0] tc_veblnk;
+  reg [11:0] tc_hsblnk;
+  reg [11:0] tc_hssync;
+  reg [11:0] tc_hesync;
+  reg [11:0] tc_heblnk;
+  reg [11:0] tc_vsblnk;
+  reg [11:0] tc_vssync;
+  reg [11:0] tc_vesync;
+  reg [11:0] tc_veblnk;
 
   wire  [3:0] sws_clk;      //clk synchronous output
 
@@ -378,87 +378,93 @@ module vtc_demo (
     sws_clk_sync <= sws_clk;
   end
 
-  reg hvsync_polarity; //1-Negative, 0-Positive
+  reg hsync_polarity; //1-Negative, 0-Positive
+  reg vsync_polarity; //1-Negative, 0-Positive
   always @ (*)
   begin
     case (sws_clk_sync)
       SW_VGA:
       begin
-        hvsync_polarity = 1'b1;
+        hsync_polarity = 1'b1;
+        vsync_polarity = 1'b1;
 
-        tc_hsblnk = HPIXELS_VGA - 11'd1;
-        tc_hssync = HPIXELS_VGA - 11'd1 + HFNPRCH_VGA;
-        tc_hesync = HPIXELS_VGA - 11'd1 + HFNPRCH_VGA + HSYNCPW_VGA;
-        tc_heblnk = HPIXELS_VGA - 11'd1 + HFNPRCH_VGA + HSYNCPW_VGA + HBKPRCH_VGA;
-        tc_vsblnk =  VLINES_VGA - 11'd1;
-        tc_vssync =  VLINES_VGA - 11'd1 + VFNPRCH_VGA;
-        tc_vesync =  VLINES_VGA - 11'd1 + VFNPRCH_VGA + VSYNCPW_VGA;
-        tc_veblnk =  VLINES_VGA - 11'd1 + VFNPRCH_VGA + VSYNCPW_VGA + VBKPRCH_VGA;
+        tc_hsblnk = HPIXELS_VGA - 12'd1;
+        tc_hssync = HPIXELS_VGA - 12'd1 + HFNPRCH_VGA;
+        tc_hesync = HPIXELS_VGA - 12'd1 + HFNPRCH_VGA + HSYNCPW_VGA;
+        tc_heblnk = HPIXELS_VGA - 12'd1 + HFNPRCH_VGA + HSYNCPW_VGA + HBKPRCH_VGA;
+        tc_vsblnk =  VLINES_VGA - 12'd1;
+        tc_vssync =  VLINES_VGA - 12'd1 + VFNPRCH_VGA;
+        tc_vesync =  VLINES_VGA - 12'd1 + VFNPRCH_VGA + VSYNCPW_VGA;
+        tc_veblnk =  VLINES_VGA - 12'd1 + VFNPRCH_VGA + VSYNCPW_VGA + VBKPRCH_VGA;
       end
 
       SW_SVGA:
       begin
-        hvsync_polarity = 1'b0;
+        hsync_polarity = 1'b0;
+        vsync_polarity = 1'b0;
 
-        tc_hsblnk = HPIXELS_SVGA - 11'd1;
-        tc_hssync = HPIXELS_SVGA - 11'd1 + HFNPRCH_SVGA;
-        tc_hesync = HPIXELS_SVGA - 11'd1 + HFNPRCH_SVGA + HSYNCPW_SVGA;
-        tc_heblnk = HPIXELS_SVGA - 11'd1 + HFNPRCH_SVGA + HSYNCPW_SVGA + HBKPRCH_SVGA;
-        tc_vsblnk =  VLINES_SVGA - 11'd1;
-        tc_vssync =  VLINES_SVGA - 11'd1 + VFNPRCH_SVGA;
-        tc_vesync =  VLINES_SVGA - 11'd1 + VFNPRCH_SVGA + VSYNCPW_SVGA;
-        tc_veblnk =  VLINES_SVGA - 11'd1 + VFNPRCH_SVGA + VSYNCPW_SVGA + VBKPRCH_SVGA;
+        tc_hsblnk = HPIXELS_SVGA - 12'd1;
+        tc_hssync = HPIXELS_SVGA - 12'd1 + HFNPRCH_SVGA;
+        tc_hesync = HPIXELS_SVGA - 12'd1 + HFNPRCH_SVGA + HSYNCPW_SVGA;
+        tc_heblnk = HPIXELS_SVGA - 12'd1 + HFNPRCH_SVGA + HSYNCPW_SVGA + HBKPRCH_SVGA;
+        tc_vsblnk =  VLINES_SVGA - 12'd1;
+        tc_vssync =  VLINES_SVGA - 12'd1 + VFNPRCH_SVGA;
+        tc_vesync =  VLINES_SVGA - 12'd1 + VFNPRCH_SVGA + VSYNCPW_SVGA;
+        tc_veblnk =  VLINES_SVGA - 12'd1 + VFNPRCH_SVGA + VSYNCPW_SVGA + VBKPRCH_SVGA;
       end
 
       SW_XGA:
       begin
-        hvsync_polarity = 1'b1;
+        hsync_polarity = 1'b1;
+        vsync_polarity = 1'b1;
 
-        tc_hsblnk = HPIXELS_XGA - 11'd1;
-        tc_hssync = HPIXELS_XGA - 11'd1 + HFNPRCH_XGA;
-        tc_hesync = HPIXELS_XGA - 11'd1 + HFNPRCH_XGA + HSYNCPW_XGA;
-        tc_heblnk = HPIXELS_XGA - 11'd1 + HFNPRCH_XGA + HSYNCPW_XGA + HBKPRCH_XGA;
-        tc_vsblnk =  VLINES_XGA - 11'd1;
-        tc_vssync =  VLINES_XGA - 11'd1 + VFNPRCH_XGA;
-        tc_vesync =  VLINES_XGA - 11'd1 + VFNPRCH_XGA + VSYNCPW_XGA;
-        tc_veblnk =  VLINES_XGA - 11'd1 + VFNPRCH_XGA + VSYNCPW_XGA + VBKPRCH_XGA;
+        tc_hsblnk = HPIXELS_XGA - 12'd1;
+        tc_hssync = HPIXELS_XGA - 12'd1 + HFNPRCH_XGA;
+        tc_hesync = HPIXELS_XGA - 12'd1 + HFNPRCH_XGA + HSYNCPW_XGA;
+        tc_heblnk = HPIXELS_XGA - 12'd1 + HFNPRCH_XGA + HSYNCPW_XGA + HBKPRCH_XGA;
+        tc_vsblnk =  VLINES_XGA - 12'd1;
+        tc_vssync =  VLINES_XGA - 12'd1 + VFNPRCH_XGA;
+        tc_vesync =  VLINES_XGA - 12'd1 + VFNPRCH_XGA + VSYNCPW_XGA;
+        tc_veblnk =  VLINES_XGA - 12'd1 + VFNPRCH_XGA + VSYNCPW_XGA + VBKPRCH_XGA;
       end
 
       SW_SXGA:
       begin
-        hvsync_polarity = 1'b0; // positive polarity
+        hsync_polarity = 1'b0;
+        vsync_polarity = 1'b1;
 
-        tc_hsblnk = HPIXELS_SXGA - 11'd1;
-        tc_hssync = HPIXELS_SXGA - 11'd1 + HFNPRCH_SXGA;
-        tc_hesync = HPIXELS_SXGA - 11'd1 + HFNPRCH_SXGA + HSYNCPW_SXGA;
-        tc_heblnk = HPIXELS_SXGA - 11'd1 + HFNPRCH_SXGA + HSYNCPW_SXGA + HBKPRCH_SXGA;
-        tc_vsblnk =  VLINES_SXGA - 11'd1;
-        tc_vssync =  VLINES_SXGA - 11'd1 + VFNPRCH_SXGA;
-        tc_vesync =  VLINES_SXGA - 11'd1 + VFNPRCH_SXGA + VSYNCPW_SXGA;
-        tc_veblnk =  VLINES_SXGA - 11'd1 + VFNPRCH_SXGA + VSYNCPW_SXGA + VBKPRCH_SXGA;
+        tc_hsblnk = HPIXELS_SXGA - 12'd1;
+        tc_hssync = HPIXELS_SXGA - 12'd1 + HFNPRCH_SXGA;
+        tc_hesync = HPIXELS_SXGA - 12'd1 + HFNPRCH_SXGA + HSYNCPW_SXGA;
+        tc_heblnk = HPIXELS_SXGA - 12'd1 + HFNPRCH_SXGA + HSYNCPW_SXGA + HBKPRCH_SXGA;
+        tc_vsblnk =  VLINES_SXGA - 12'd1;
+        tc_vssync =  VLINES_SXGA - 12'd1 + VFNPRCH_SXGA;
+        tc_vesync =  VLINES_SXGA - 12'd1 + VFNPRCH_SXGA + VSYNCPW_SXGA;
+        tc_veblnk =  VLINES_SXGA - 12'd1 + VFNPRCH_SXGA + VSYNCPW_SXGA + VBKPRCH_SXGA;
       end
 
       default: //SW_HDTV720P:
       begin
-        hvsync_polarity = 1'b0;
+        hsync_polarity = 1'b0;
+        vsync_polarity = 1'b0;
 
-        tc_hsblnk = HPIXELS_HDTV720P - 11'd1;
-        tc_hssync = HPIXELS_HDTV720P - 11'd1 + HFNPRCH_HDTV720P;
-        tc_hesync = HPIXELS_HDTV720P - 11'd1 + HFNPRCH_HDTV720P + HSYNCPW_HDTV720P;
-        tc_heblnk = HPIXELS_HDTV720P - 11'd1 + HFNPRCH_HDTV720P + HSYNCPW_HDTV720P + HBKPRCH_HDTV720P;
-        tc_vsblnk =  VLINES_HDTV720P - 11'd1;
-        tc_vssync =  VLINES_HDTV720P - 11'd1 + VFNPRCH_HDTV720P;
-        tc_vesync =  VLINES_HDTV720P - 11'd1 + VFNPRCH_HDTV720P + VSYNCPW_HDTV720P;
-        tc_veblnk =  VLINES_HDTV720P - 11'd1 + VFNPRCH_HDTV720P + VSYNCPW_HDTV720P + VBKPRCH_HDTV720P;
+        tc_hsblnk = HPIXELS_HDTV720P - 12'd1;
+        tc_hssync = HPIXELS_HDTV720P - 12'd1 + HFNPRCH_HDTV720P;
+        tc_hesync = HPIXELS_HDTV720P - 12'd1 + HFNPRCH_HDTV720P + HSYNCPW_HDTV720P;
+        tc_heblnk = HPIXELS_HDTV720P - 12'd1 + HFNPRCH_HDTV720P + HSYNCPW_HDTV720P + HBKPRCH_HDTV720P;
+        tc_vsblnk =  VLINES_HDTV720P - 12'd1;
+        tc_vssync =  VLINES_HDTV720P - 12'd1 + VFNPRCH_HDTV720P;
+        tc_vesync =  VLINES_HDTV720P - 12'd1 + VFNPRCH_HDTV720P + VSYNCPW_HDTV720P;
+        tc_veblnk =  VLINES_HDTV720P - 12'd1 + VFNPRCH_HDTV720P + VSYNCPW_HDTV720P + VBKPRCH_HDTV720P;
       end
     endcase
   end
 
   wire VGA_HSYNC_INT, VGA_VSYNC_INT;
-  wire   [10:0] bgnd_hcount;
+  wire   [11:0] bgnd_hcount;
   wire          bgnd_hsync;
   wire          bgnd_hblnk;
-  wire   [10:0] bgnd_vcount;
+  wire   [11:0] bgnd_vcount;
   wire          bgnd_vsync;
   wire          bgnd_vblnk;
 
@@ -492,8 +498,8 @@ module vtc_demo (
 
   always @ (posedge pclk)
   begin
-    hsync <= VGA_HSYNC_INT ^ hvsync_polarity ;
-    vsync <= VGA_VSYNC_INT ^ hvsync_polarity ;
+    hsync <= VGA_HSYNC_INT ^ hsync_polarity ;
+    vsync <= VGA_VSYNC_INT ^ vsync_polarity ;
     VGA_HSYNC <= hsync;
     VGA_VSYNC <= vsync;
 
