@@ -46,7 +46,7 @@ int main() {
     width, height
   );
 
-  glx::Context ctx(display, fbc, 3, 1);
+  glx::Context ctx(display, fbc, 3, 2);
 
   ctx.MakeCurrent(win);
 
