@@ -51,18 +51,22 @@ def dummy_generator(sig, clk150MHz):
     @always(clk150MHz.posedge)
     def i2():
         sig.Vsync.next = 0
+        next_pos = intbv(0, min=0, max=len(rle_count)) # only defining variable here
         if count == 0:
             if pos == len(rle_count) - 1:
                 sig.Vsync.next = 1
+                next_pos[:] = 0
                 pos.next = 0
             else:
-                pos.next = pos + 1
-            count.next = rle_count[pos.next]
+                next_pos[:] = pos + 1
+            count.next = rle_count[next_pos]
         else:
             count.next = count - 1
-        sig.R.next = rle_r[pos]
-        sig.G.next = rle_g[pos]
-        sig.B.next = rle_b[pos]
+            next_pos[:] = pos
+        pos.next = next_pos
+        sig.R.next = rle_r[next_pos]
+        sig.G.next = rle_g[next_pos]
+        sig.B.next = rle_b[next_pos]
     
     return i1, i2
 

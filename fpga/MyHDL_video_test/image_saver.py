@@ -35,7 +35,7 @@ if __name__ == '__main__':
         sig = InternalVideo()
         
         clk150MHz = Signal(bool(0))
-        @always(delay(10))
+        @always(delay(7)) # ns. should be 20/3, but apparently only natural numbers are allowed
         def clkgen():
             clk150MHz.next = not clk150MHz
         
