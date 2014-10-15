@@ -11,9 +11,11 @@ def image_saver(sig):
     
     @always(sig.pixel_clock.posedge)
     def _():
+        if running:
+            res.extend(map(int, [sig.R.val, sig.G.val, sig.B.val]))
+        
         if sig.Vsync == 1:
             running.next = 1
-            running_now = 1
             if res:
                 res2 = [res[sig.WIDTH*3*row:sig.WIDTH*3*(row+1)] for row in xrange(sig.HEIGHT)]
                 png.from_array(res2, mode='RGB', info=dict(
@@ -21,13 +23,6 @@ def image_saver(sig):
                 )).save('out.png')
                 print 'saved out.png'
                 res[:] = []
-        elif running == 1:
-            running_now = 1
-        else:
-            running_now = 0
-        
-        if running_now:
-            res.extend(map(int, [sig.R.val, sig.G.val, sig.B.val]))
     return _
 
 if __name__ == '__main__':

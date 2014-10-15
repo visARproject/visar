@@ -12,7 +12,7 @@ class InternalVideo(object):
         self.R = Signal(intbv(min=0, max=256))
         self.G = Signal(intbv(min=0, max=256))
         self.B = Signal(intbv(min=0, max=256))
-        self.Vsync = Signal(bool()) # 1 for first pixel of new frame
+        self.Vsync = Signal(bool()) # 1 for last pixel of frame
 
 print 'RLE encoding image. Takes a few seconds...'
 width, height, pixels, metadata = png.Reader(filename='standby.png').asRGBA8()
@@ -46,27 +46,24 @@ def dummy_generator(sig, clk150MHz):
     
     @always_comb
     def i1():
-        sig.pixel_clock.next = not clk150MHz
+        sig.pixel_clock.next = clk150MHz
     
     @always(clk150MHz.posedge)
     def i2():
         sig.Vsync.next = 0
-        next_pos = intbv(0, min=0, max=len(rle_count)) # only defining variable here
         if count == 0:
             if pos == len(rle_count) - 1:
                 sig.Vsync.next = 1
-                next_pos[:] = 0
                 pos.next = 0
+                count.next = rle_count[0]
             else:
-                next_pos[:] = pos + 1
-            count.next = rle_count[next_pos]
+                pos.next = pos + 1
+                count.next = rle_count[pos + 1]
         else:
             count.next = count - 1
-            next_pos[:] = pos
-        pos.next = next_pos
-        sig.R.next = rle_r[next_pos]
-        sig.G.next = rle_g[next_pos]
-        sig.B.next = rle_b[next_pos]
+        sig.R.next = rle_r[pos]
+        sig.G.next = rle_g[pos]
+        sig.B.next = rle_b[pos]
     
     return i1, i2
 
