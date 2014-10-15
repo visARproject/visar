@@ -1,3 +1,6 @@
 [submodule "computer/ext/oglplus"]
 	path = computer/ext/oglplus
 	url = git@github.com:matus-chochlik/oglplus.git
+[submodule "fpga/myhdl"]
+	path = fpga/myhdl
+	url = git@github.com:forrestv/myhdl.git
