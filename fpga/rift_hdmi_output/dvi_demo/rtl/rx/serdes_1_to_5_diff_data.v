@@ -233,7 +233,7 @@ else begin
     end
     else begin
     ce_data = all_ce ;
-    inc_data_int = debug_in[1] ;
+    inc_data_int <= debug_in[1] ;
     end
 end
 end
