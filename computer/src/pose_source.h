@@ -7,6 +7,7 @@ namespace pose_source {
 //base position is origin
 #define BASE_POSIT 0, 0, 0
 #define BASE_ANGLE 0, 0, 0
+#define DISTANCE_SCALE 0.1
 
 class IPoseSource {
 public:
@@ -73,22 +74,24 @@ public:
 					//adjust orientation about z axis (x-axial motion)
 					// or y axis (y-axial motion), if outside of neutral center
 					// scroll relative to mouse distance from center
-					if(abs(event.xmotion.x_root) > 50){	//check if in center
-						orientation[2] += (abs(event.xmotion.x_root) > 500)? \
-							event.xmotion.x_root/500.0 : 1.0;	//~6-60 deg/sec
+					if(abs(event.xmotion.x) > 50){	//check if in center
+						orientation[2] += (abs(event.xmotion.x) > 500)? \
+							event.xmotion.x/500.0 : 1.0;	//~6-60 deg/sec
 						//fix angle ranges (might not be needed)
 						if (orientation[2] > 2*M_PI) orientation[2] -= 2*M_PI;
 						if (orientation[2] < 0) orientation[2] += 2*M_PI;
 					}
 					//if moving vertically, bound at upper and lower poles
-					if(event.xmotion.y_root > 50)	//check if moving upwards
+					if(event.xmotion.y > 50)	//check if moving upwards
 						orientation[1] = std::min(M_PI, orientation[1] + \
-							(event.xmotion.y_root > 500)? \
-							event.xmotion.y_root/500.0 : 1.0);	//~6-60 deg/sec
-				  else if(event.xmotion.y_root < -50)	//check if moving upwards
+							(event.xmotion.y > 500)? \
+							event.xmotion.y/500.0 : 1.0);	//~6-60 deg/sec
+				  else if(event.xmotion.y < -50)	//check if moving upwards
 						orientation[1] = std::max(M_PI, orientation[1] + \
-							(event.xmotion.y_root < -500.0)? \
-							event.xmotion.y_root/500.0 : 1.0);	//~6-60 deg/sec
+							(event.xmotion.y < -500.0)? \
+							event.xmotion.y/500.0 : 1.0);	//~6-60 deg/sec
+					printf("Caputred Motion Event: (%d, %d)\n", \
+						event.xmotion.x, event.xmotion.y);	//DEBUG
 					break;
 					
 				case KeyPress: //up/down/left/right button press
@@ -99,19 +102,20 @@ public:
 						done=true; 
 						break;
 					} else if ((keycode == XK_Up && type) || \
-						(keycode == XK_Down && !type))	momentum[0] += 100;	//moving forward
+						(keycode == XK_Down && !type))	momentum[2] += DISTANCE_SCALE;	//moving forward
 					else if ((keycode == XK_Up && !type) || \
-						(keycode == XK_Down && type))	momentum[0] -= 100;	//moving backward
+						(keycode == XK_Down && type))	momentum[2] -= DISTANCE_SCALE;	//moving backward
 					else if ((keycode == XK_Left && type) || \
-						(keycode == XK_Right && !type))	momentum[1] -= 100;	//moving left
+						(keycode == XK_Right && !type))	momentum[0] -= DISTANCE_SCALE;	//moving left
 					else if ((keycode == XK_Left && !type) || \
-						(keycode == XK_Right && type))	momentum[1] += 100;	//moving right
+						(keycode == XK_Right && type))	momentum[0] += DISTANCE_SCALE;	//moving right
+					printf("Caputred Key Event: code=%d\n",keycode);	//DEBUG
 			}
 			//do something with done value?
 			
 			//update the position based on current momentum
 			Eigen::AngleAxisd pitch(orientation[1], Eigen::Vector3d::UnitY());					
-			Eigen::AngleAxisd yaw(orientation[2], Eigen::Vector3d::UnitX());						
+			Eigen::AngleAxisd yaw(orientation[2], Eigen::Vector3d::UnitZ());						
 			Eigen::Quaternion<double> q = pitch * yaw;
 			position = position + q.matrix() * momentum;	//get the momentum
 		}

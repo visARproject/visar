@@ -92,11 +92,11 @@ public:
     GLfloat triangle_verts2[9];
     for(size_t i=0; i<3; ++i){
     	Eigen::Matrix<double, 4, 1> v;
-    	v << triangle_verts[i], triangle_verts[i+1], triangle_verts[i+2], 1;
+    	v << triangle_verts[i*3], triangle_verts[i*3+1], triangle_verts[i*3+2], 1;
     	v = pose * v;	//preform the transformation
-    	triangle_verts2[i] = v[0];	//store results
-    	triangle_verts2[i+1] = v[1];
- 	    triangle_verts2[i+2] = v[2];
+    	triangle_verts2[i*3] = v[0];	//store results
+    	triangle_verts2[i*3+1] = v[1];
+ 	    triangle_verts2[i*3+2] = v[2];
     }
    
     // upload the data
