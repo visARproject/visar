@@ -84,6 +84,19 @@ public:
   void add_module(boost::shared_ptr<IModule> modulep) {
     modules_.push_back(modulep);
   }
+  
+  //access methods for display info
+  x11::Display* getDisplay(){
+  	return &display_;
+ 	}
+  
+  //remove the wrapper (for convience)
+  x11::Window* getWindow(){
+  	if(win_) return &(*win_);	//return pointer to window, lol syntax
+  	return 0;
+	}
+  
+  
 private:
   void render() {
     timer_.expires_from_now(boost::posix_time::seconds(1./120));

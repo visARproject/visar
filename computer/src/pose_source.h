@@ -28,15 +28,14 @@ class FPSPoseSource : public IPoseSource {
 	Eigen::Matrix<double, 3, 1> position;
 	Eigen::Matrix<double, 3, 1> orientation;
 	Eigen::Matrix<double, 3, 1> momentum;
-	boost::optional<x11::Window>* window;	//what's going on here? I don't know
+	x11::Window* window;	
 	x11::Display* display;
 
 public:
-  FPSPoseSource(rendering::Renderer const & r) {
+  FPSPoseSource(rendering::Renderer & r) {
 		momentum << 0, 0, 0;	//not moving
-		//talk to forrest about making these avaliable somehow
-		window = &(r.win_);
-		display = &(r.display_);
+		window = r.getWindow();
+		display = r.getDisplay();
   }
 
 	//function will return the pose of the user, and will also
@@ -53,6 +52,11 @@ public:
 
 	void update_pose(){
 		//start listening for things
+		if(!window){
+			//should probably alert somebody
+			return;	//can't do anything useful, exit
+		}
+		
 		window->SelectInput(
 			PointerMotionMask|
 			KeyPressMask
