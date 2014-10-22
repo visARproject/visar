@@ -1,0 +1,36 @@
+CoreGen has not been configured with any user repositories.
+CoreGen has been configured with the following Xilinx repositories:
+ - 'C:\Xilinx\13.2\ISE_DS\ISE\coregen\' [reloaded]
+INFO:sim - Generating component instance 'dcm_recfg' of
+   'xilinx.com:ip:clk_wiz:3.2' from
+   'C:\Xilinx\13.2\ISE_DS\ISE\coregen\ip\xilinx\primary\com\xilinx\ip\clk_wiz_v3
+   _2\component.xml'.
+Applying current project options...
+Finished applying current project options.
+WARNING:sim - A core named 'dcm_recfg' already exists in the project. Output
+   products for this core may be overwritten.
+Resolving generics for 'dcm_recfg'...
+WARNING:sim - A core named 'dcm_recfg' already exists in the project. Output
+   products for this core may be overwritten.
+Applying external generics to 'dcm_recfg'...
+Delivered 3 files into directory
+C:/Users/Elod/Documents/ISE_Projects/VmodCAM_Ref_HD/ipcore_dir/tmp/_cg/dcm_recfg
+Delivering associated files for 'dcm_recfg'...
+Delivered 4 files into directory
+C:/Users/Elod/Documents/ISE_Projects/VmodCAM_Ref_HD/ipcore_dir/tmp/_cg/dcm_recfg
+Delivered 1 file into directory
+C:/Users/Elod/Documents/ISE_Projects/VmodCAM_Ref_HD/ipcore_dir/tmp/_cg/dcm_recfg
+Generating ASY schematic symbol...
+Loading device for application Rf_Device from file '6slx45.nph' in environment
+C:\Xilinx\13.2\ISE_DS\ISE\.
+Generating SYM schematic symbol for 'dcm_recfg'...
+Generating ISE project...
+WARNING:coreutil -  This core does not have a top level called "/dcm_recfg"
+WARNING:coreutil -  Top level has been set to "/dcm_recfg_exdes"
+Generating README file...
+Generating FLIST file...
+INFO:sim - Finished FLIST file generation.
+Launching README viewer...
+Moving files to output directory...
+Finished moving files to output directory
+Wrote CGP file for project 'dcm_recfg'.
