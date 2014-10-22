@@ -4,3 +4,6 @@
 [submodule "fpga/myhdl"]
 	path = fpga/myhdl
 	url = git@github.com:forrestv/myhdl.git
+[submodule "fpga/ethernet_tri_mode"]
+	path = fpga/ethernet_tri_mode
+	url = forre.st:/srv/git/visar
