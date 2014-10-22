@@ -4,9 +4,9 @@
 namespace visar {
 namespace pose_source {
 
-//deifne mil's position as a constant
-#define BASE_POSIT 0
-#define BASE_ANGLE 0
+//base position is origin
+#define BASE_POSIT 0, 0, 0
+#define BASE_ANGLE 0, 0, 0
 
 class IPoseSource {
 public:
@@ -33,9 +33,12 @@ class FPSPoseSource : public IPoseSource {
 
 public:
   FPSPoseSource(rendering::Renderer & r) {
-		momentum << 0, 0, 0;	//not moving
-		window = r.getWindow();
-		display = r.getDisplay();
+		momentum 		<< 0, 0, 0;			//not moving
+		position 		<< BASE_POSIT;	//init position
+		orientation << BASE_ANGLE;	//init angle
+
+		window  = r.getWindow();	//get the glx window
+		display = r.getDisplay();	//get the display
   }
 
 	//function will return the pose of the user, and will also
@@ -51,12 +54,12 @@ public:
   }
 
 	void update_pose(){
-		//start listening for things
-		if(!window){
+		if(!window){	//make sure window exists
 			//should probably alert somebody
 			return;	//can't do anything useful, exit
 		}
 		
+		//start listening for things
 		window->SelectInput(
 			PointerMotionMask|
 			KeyPressMask
