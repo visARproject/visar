@@ -101,8 +101,8 @@ public:
 						orientation[1] = std::max(M_PI, orientation[1] + \
 							(event.xmotion.y < -500.0)? \
 							event.xmotion.y/500.0 : 1.0);	//~6-60 deg/sec
-					printf("Caputred Motion Event: (%d, %d)\n", \
-						event.xmotion.x, event.xmotion.y);	//DEBUG
+					/*printf("Caputred Motion Event: (%d, %d)\n", \
+						event.xmotion.x, event.xmotion.y);	//DEBUG */
 					break;
 					
 				case KeyPress: //up/down/left/right button press
@@ -115,7 +115,7 @@ public:
 					else if (keycode == XK_Down) m2[2] = -ACCELERATION;	//moving backward
 					else if (keycode == XK_Left) m2[0] = -ACCELERATION;	//moving left
 					else if (keycode == XK_Right) m2[0] = ACCELERATION;	//moving right
-					printf("Caputred Key Event: code=%d\n",keycode);	//DEBUG
+					//printf("Caputred Key Event: code=%d\n",keycode);	//DEBUG
 					
 				case KeyRelease:	//key released, stop motion
 					update = true;	//on either key action force update
@@ -126,11 +126,12 @@ public:
 		if(update) momentum = m2;	//TODO: check memory here
 		
 		//update the position based on current momentum
-		Eigen::AngleAxisd roll(orientation[0], Eigen::Vector3d::UnitX());					
-		Eigen::AngleAxisd pitch(orientation[1], Eigen::Vector3d::UnitY());					
+		//Eigen::AngleAxisd roll(orientation[0], Eigen::Vector3d::UnitX());					
+		//Eigen::AngleAxisd pitch(orientation[1], Eigen::Vector3d::UnitY());					
 		//Eigen::AngleAxisd yaw(orientation[2], Eigen::Vector3d::UnitZ());						
-		Eigen::Quaternion<double> q = roll * pitch;
-		position = position + q.matrix() * momentum;	//get the momentum
+		//Eigen::Quaternion<double> q = roll * pitch;
+		//position = position + q.matrix() * momentum;	//get the momentum
+		position = position + Eigen::Quaternion<double>::Identity() * momentum;
 	}
 
 	void set_pose(Eigen::Affine3d pose){
