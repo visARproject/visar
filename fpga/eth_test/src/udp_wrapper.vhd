@@ -77,7 +77,7 @@ architecture Behavioral of udp_wrapper is
                                        );
 
     type tx_state_t is (IDLE, TX_PREPEND, TX_PAYLOAD);
-    signal state : tx_state_t;
+    signal state : tx_state_t := IDLE;
     
     signal prepend_counter : integer := 0;
 
@@ -93,6 +93,7 @@ begin
             be <= "00";
             data <= (others => '0');
             prepend_counter <= 0;
+            state <= IDLE;
         elsif rising_edge(clk_62_5M) then
             udp_tx_ready <= '0';
             wr <= '0';
@@ -130,6 +131,8 @@ begin
                     if udp_data_end = '1' then
                         eop <= '1';
                         state <= IDLE;
+                    else 
+                        state <= state;
                     end if;
             end case;
         end if;
