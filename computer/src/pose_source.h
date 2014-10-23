@@ -7,7 +7,7 @@ namespace pose_source {
 //base position is origin
 #define BASE_POSIT 0, 0, 0
 #define BASE_ANGLE 0, 0, 0
-#define DISTANCE_SCALE 0.1
+#define ACCELERATION  0.01
 
 class IPoseSource {
 public:
@@ -28,16 +28,16 @@ public:
 class FPSPoseSource : public IPoseSource {
 	Eigen::Matrix<double, 3, 1> position;
 	Eigen::Matrix<double, 3, 1> orientation;
-	Eigen::Matrix<double, 3, 1> momentum;
+	Eigen::Matrix<double, 3, 1> momentum; //cache directional data
 	x11::Window* window;	
 	x11::Display* display;
 
 public:
   FPSPoseSource(rendering::Renderer & r) {
-		momentum 		<< 0, 0, 0;			//not moving
 		position 		<< BASE_POSIT;	//init position
 		orientation << BASE_ANGLE;	//init angle
-
+		momentum << 0, 0, 0; 				//not moving
+		
 		window  = r.getWindow();	//get the glx window
 		display = r.getDisplay();	//get the display
   }
@@ -62,24 +62,35 @@ public:
 		
 		//start listening for things
 		window->SelectInput(
-			PointerMotionMask|
-			KeyPressMask
+			PointerMotionMask |
+			KeyPressMask |
+			KeyReleaseMask
 		);
 
+		//Axis are handled internally as follows:
+		//X-value is horizontal axis (left/right)
+		//Y-value is vertical axis (up/down)
+		//Z-value is depth axis (in/out)
+
 		XEvent event;	//variable to store the event
-		bool done = false;
+		bool done = false;		//catch escape key
+		bool update = false;	//if a key was read, update momentum
+		unsigned int keycode = 0;	//storage for the keycode
+		Eigen::Matrix<double, 3, 1> m2; //temporary storage, for updates
+		m2 << 0, 0, 0;	//new momentum is 0 unless directed otherwise
 		while(display->NextEvent(event) && !done){	//try to get event
 			switch(event.type){	//switch based on type
 				case MotionNotify: //Mouse is moved, adjust 
-					//adjust orientation about z axis (x-axial motion)
+					//adjust orientation about x axis (x-axial motion)
 					// or y axis (y-axial motion), if outside of neutral center
 					// scroll relative to mouse distance from center
+					//TODO: map relative to window direction, scroll if not center
 					if(abs(event.xmotion.x) > 50){	//check if in center
-						orientation[2] += (abs(event.xmotion.x) > 500)? \
+						orientation[0] += (abs(event.xmotion.x) > 500)? \
 							event.xmotion.x/500.0 : 1.0;	//~6-60 deg/sec
 						//fix angle ranges (might not be needed)
-						if (orientation[2] > 2*M_PI) orientation[2] -= 2*M_PI;
-						if (orientation[2] < 0) orientation[2] += 2*M_PI;
+						if (orientation[0] > 2*M_PI) orientation[0] -= 2*M_PI;
+						if (orientation[0] < 0) orientation[0] += 2*M_PI;
 					}
 					//if moving vertically, bound at upper and lower poles
 					if(event.xmotion.y > 50)	//check if moving upwards
@@ -96,34 +107,34 @@ public:
 					
 				case KeyPress: //up/down/left/right button press
 					//move forward/backwards/left/right along current axis (100 m)
-					unsigned int keycode = ::XLookupKeysym(&event.xkey,0);
-					int type = (event.xkey.type);	//0 = pressed?
+					keycode = ::XLookupKeysym(&event.xkey,0);
 					if(keycode == XK_Escape){
 						done=true; 
 						break;
-					} else if ((keycode == XK_Up && type) || \
-						(keycode == XK_Down && !type))	momentum[2] += DISTANCE_SCALE;	//moving forward
-					else if ((keycode == XK_Up && !type) || \
-						(keycode == XK_Down && type))	momentum[2] -= DISTANCE_SCALE;	//moving backward
-					else if ((keycode == XK_Left && type) || \
-						(keycode == XK_Right && !type))	momentum[0] -= DISTANCE_SCALE;	//moving left
-					else if ((keycode == XK_Left && !type) || \
-						(keycode == XK_Right && type))	momentum[0] += DISTANCE_SCALE;	//moving right
+					}else if (keycode == XK_Up)  m2[2] =  ACCELERATION;	//moving forward
+					else if (keycode == XK_Down) m2[2] = -ACCELERATION;	//moving backward
+					else if (keycode == XK_Left) m2[0] = -ACCELERATION;	//moving left
+					else if (keycode == XK_Right) m2[0] = ACCELERATION;	//moving right
 					printf("Caputred Key Event: code=%d\n",keycode);	//DEBUG
+					
+				case KeyRelease:	//key released, stop motion
+					update = true;	//on either key action force update
 			}
-			//do something with done value?
-			
-			//update the position based on current momentum
-			Eigen::AngleAxisd pitch(orientation[1], Eigen::Vector3d::UnitY());					
-			Eigen::AngleAxisd yaw(orientation[2], Eigen::Vector3d::UnitZ());						
-			Eigen::Quaternion<double> q = pitch * yaw;
-			position = position + q.matrix() * momentum;	//get the momentum
+			//do something with escape key (Done)?
 		}
+		
+		if(update) momentum = m2;	//TODO: check memory here
+		
+		//update the position based on current momentum
+		Eigen::AngleAxisd roll(orientation[0], Eigen::Vector3d::UnitX());					
+		Eigen::AngleAxisd pitch(orientation[1], Eigen::Vector3d::UnitY());					
+		//Eigen::AngleAxisd yaw(orientation[2], Eigen::Vector3d::UnitZ());						
+		Eigen::Quaternion<double> q = roll * pitch;
+		position = position + q.matrix() * momentum;	//get the momentum
 	}
 
 	void set_pose(Eigen::Affine3d pose){
-		//set some position thing
-		
+		//TODO: decompose the Affine
 	}
 };
 
