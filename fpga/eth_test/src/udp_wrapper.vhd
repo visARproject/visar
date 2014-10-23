@@ -1,6 +1,7 @@
 library IEEE;
 use IEEE.STD_LOGIC_1164.ALL;
 use IEEE.NUMERIC_STD.all;
+use IEEE.MATH_REAL.all;
 
 library unisim;
 use unisim.vcomponents.all;
@@ -78,8 +79,9 @@ architecture Behavioral of udp_wrapper is
 
     type tx_state_t is (IDLE, TX_PREPEND, TX_PAYLOAD);
     signal state, next_state: tx_state_t := IDLE;
-    
-    signal prepend_counter, next_prepend_counter : integer := 0;
+   
+    constant COUNTER_WIDTH : integer := integer(ceil(log2(real(PREPEND_LENGTH)))); 
+    signal prepend_counter, next_prepend_counter : unsigned(COUNTER_WIDTH-1 downto 0) := (others => '0');
 
 begin
 
@@ -87,7 +89,7 @@ begin
     begin
         if reset = '1' then
             state <= IDLE;
-            prepend_counter <= 0;
+            prepend_counter <= (others => '0');
         else
             state <= next_state;
             prepend_counter <= next_prepend_counter;
@@ -112,14 +114,14 @@ begin
                     next_state <= state;
                 end if;
             when TX_PREPEND =>
-                data <= prepend_word(prepend_counter);
+                data <= prepend_word(to_integer(prepend_counter));
                 if wa = '1' then
                     wr <= '1';
-                    if prepend_counter = 0 then
+                    if prepend_counter = to_unsigned(0, COUNTER_WIDTH) then
                         sop <= '1';
                     end if;
                     if prepend_counter >= PREPEND_LENGTH - 1 then
-                        next_prepend_counter <= 0;
+                        next_prepend_counter <= to_unsigned(0, COUNTER_WIDTH);
                         next_state <= TX_PAYLOAD;
                     else
                         next_prepend_counter <= prepend_counter + 1;
