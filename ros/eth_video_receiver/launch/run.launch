@@ -1,0 +1,13 @@
+<launch>
+  <node pkg="nodelet" type="nodelet" name="manager"
+      args="manager" output="screen"/>
+  
+  <node pkg="nodelet" type="nodelet" name="driver"
+      args="load eth_video_receiver/nodelet manager --no-bond">
+    <param name="frame_id" value="/eth_camera"/>
+  </node>
+  
+  <include file="$(find image_proc)/launch/image_proc.launch">
+    <arg name="manager" value="manager"/>
+  </include>
+</launch>
