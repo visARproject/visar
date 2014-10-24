@@ -81,7 +81,8 @@ architecture Behavioral of udp_wrapper is
     signal state, next_state: tx_state_t := IDLE;
    
     constant COUNTER_WIDTH : integer := integer(ceil(log2(real(PREPEND_LENGTH)))); 
-    signal prepend_counter, next_prepend_counter : unsigned(COUNTER_WIDTH-1 downto 0) := (others => '0');
+    subtype prepend_index_t is integer range 0 to PREPEND_LENGTH - 1;
+    signal prepend_counter, next_prepend_counter : prepend_index_t := 0;
 
 begin
 
@@ -89,7 +90,7 @@ begin
     begin
         if reset = '1' then
             state <= IDLE;
-            prepend_counter <= (others => '0');
+            prepend_counter <= 0;
         else
             state <= next_state;
             prepend_counter <= next_prepend_counter;
@@ -114,14 +115,14 @@ begin
                     next_state <= state;
                 end if;
             when TX_PREPEND =>
-                data <= prepend_word(to_integer(prepend_counter));
+                data <= prepend_word(prepend_counter);
                 if wa = '1' then
                     wr <= '1';
-                    if prepend_counter = to_unsigned(0, COUNTER_WIDTH) then
+                    if prepend_counter = 0 then
                         sop <= '1';
                     end if;
                     if prepend_counter >= PREPEND_LENGTH - 1 then
-                        next_prepend_counter <= to_unsigned(0, COUNTER_WIDTH);
+                        next_prepend_counter <= 0;
                         next_state <= TX_PAYLOAD;
                     else
                         next_prepend_counter <= prepend_counter + 1;
