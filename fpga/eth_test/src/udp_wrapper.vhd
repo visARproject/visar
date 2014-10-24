@@ -78,70 +78,68 @@ architecture Behavioral of udp_wrapper is
                                        );
 
     type tx_state_t is (IDLE, TX_PREPEND, TX_PAYLOAD);
-    signal state, next_state: tx_state_t := IDLE;
-   
+    signal state : tx_state_t := IDLE;
+    
     constant COUNTER_WIDTH : integer := integer(ceil(log2(real(PREPEND_LENGTH)))); 
     subtype prepend_index_t is integer range 0 to PREPEND_LENGTH - 1;
-    signal prepend_counter, next_prepend_counter : prepend_index_t := 0;
+    signal prepend_counter : prepend_index_t := 0;
 
 begin
 
-    seq : process(clk_62_5M, reset)
+    fsm : process(clk_62_5M, reset)
     begin
         if reset = '1' then
-            state <= IDLE;
+            udp_tx_ready <= '0';
+            wr <= '0';
+            sop <= '0';
+            eop <= '0';
+            be <= "00";
+            data <= (others => '0');
             prepend_counter <= 0;
-        else
-            state <= next_state;
-            prepend_counter <= next_prepend_counter;
+            state <= IDLE;
+        elsif rising_edge(clk_62_5M) then
+            udp_tx_ready <= '0';
+            wr <= '0';
+            sop <= '0';
+            eop <= '0';
+            be <= "00";
+            data <= (others => '0');
+            
+            case state is
+                when IDLE =>
+                    if udp_tx_request = '1' and wa = '1' then
+                        state <= TX_PREPEND;
+                    else 
+                        state <= state;
+                    end if;
+                when TX_PREPEND =>
+                    data <= prepend_word(prepend_counter);
+                    if wa = '1' then
+                        wr <= '1';
+                        if prepend_counter = 0 then
+                            sop <= '1';
+                        end if;
+                        if prepend_counter >= PREPEND_LENGTH - 1 then
+                            prepend_counter <= 0;
+                            state <= TX_PAYLOAD;
+                        else 
+                            prepend_counter <= prepend_counter + 1;
+                            state <= state;
+                        end if;
+                    end if;
+                when TX_PAYLOAD =>
+                    udp_tx_ready <= wa;
+                    wr <= udp_tx_wr_en;
+                    data <= udp_data_in;
+                    if udp_data_end = '1' then
+                        eop <= '1';
+                        state <= IDLE;
+                    else 
+                        state <= state;
+                    end if;
+            end case;
         end if;
-    end process seq;
-
-    comb : process(state, udp_tx_request, wa, prepend_counter, prepend_word, udp_data_in, udp_tx_wr_en)
-    begin
-        udp_tx_ready <= '0';
-        wr <= '0';
-        sop <= '0';
-        eop <= '0';
-        be <= "00";
-        data <= (others => '0');
-        next_prepend_counter <= prepend_counter;
-         
-        case state is
-            when IDLE =>
-                if udp_tx_request = '1' and wa = '1' then
-                    next_state <= TX_PREPEND;
-                else
-                    next_state <= state;
-                end if;
-            when TX_PREPEND =>
-                data <= prepend_word(prepend_counter);
-                if wa = '1' then
-                    wr <= '1';
-                    if prepend_counter = 0 then
-                        sop <= '1';
-                    end if;
-                    if prepend_counter >= PREPEND_LENGTH - 1 then
-                        next_prepend_counter <= 0;
-                        next_state <= TX_PAYLOAD;
-                    else
-                        next_prepend_counter <= prepend_counter + 1;
-                        next_state <= state;
-                    end if;
-                end if;
-            when TX_PAYLOAD =>
-                udp_tx_ready <= wa;
-                wr <= udp_tx_wr_en;
-                data <= udp_data_in;
-                if udp_data_end = '1' then
-                    eop <= '1';
-                    next_state <= IDLE;
-                else 
-                    next_state <= state;
-                end if;
-            when others => null;
-        end case;
-    end process comb;
+    end process fsm;
 
     ethmac : entity work.MAC_top
         port map (
