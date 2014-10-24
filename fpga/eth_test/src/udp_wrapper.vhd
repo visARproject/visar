@@ -39,11 +39,12 @@ entity udp_wrapper is
         phycol    : in std_logic;
         
         -- UDP data interface
-        udp_tx_request : in  std_logic; -- when high, move from idle state to transmitting header info, then assert ready
-        udp_tx_ready   : out std_logic; -- when high, we are ready for the client to send us data
-        udp_tx_wr_en   : in  std_logic; -- the client asserts this to write to the MAC FIFO
-        udp_data_in    : in  std_logic_vector(31 downto 0); 
-        udp_data_end   : in  std_logic
+        udp_tx_request      : in  std_logic; -- when high, move from idle state to transmitting header info, then assert ready
+        udp_tx_ready        : out std_logic; -- when high, we are ready for the client to send us data
+        udp_tx_almost_ready : out std_logic; -- asserted when we're transmitting the last word of the prepended header
+        udp_tx_wr_en        : in  std_logic; -- the client asserts this to write to the MAC FIFO
+        udp_data_in         : in  std_logic_vector(31 downto 0);
+        udp_data_end        : in  std_logic
 );
 end udp_wrapper;
 
@@ -91,7 +92,7 @@ begin
         if reset = '1' then
             state <= IDLE;
             prepend_counter <= 0;
-        else
+        elsif rising_edge(clk_62_5M) then
             state <= next_state;
             prepend_counter <= next_prepend_counter;
         end if;
@@ -100,13 +101,14 @@ begin
     comb : process(state, udp_tx_request, wa, prepend_counter, prepend_word, udp_data_in, udp_tx_wr_en)
     begin
         udp_tx_ready <= '0';
+        udp_tx_almost_ready <= '0';
         wr <= '0';
         sop <= '0';
         eop <= '0';
         be <= "00";
         data <= (others => '0');
         next_prepend_counter <= prepend_counter;
-         
+
         case state is
             when IDLE =>
                 if udp_tx_request = '1' and wa = '1' then
@@ -127,6 +129,9 @@ begin
                     else
                         next_prepend_counter <= prepend_counter + 1;
                         next_state <= state;
+                    end if;
+                    if prepend_counter = PREPEND_LENGTH - 1 then
+                        udp_tx_almost_ready <= '1';
                     end if;
                 end if;
             when TX_PAYLOAD =>

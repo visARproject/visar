@@ -32,15 +32,15 @@ architecture Behavioral of toplevel is
 
     signal reset : std_logic;
     signal clk_62_5M, clk_125M : std_logic;
-    signal udp_tx_request, udp_tx_ready, udp_tx_wr_en, udp_data_end : std_logic;
+    signal udp_tx_request, udp_tx_ready, udp_tx_almost_ready, udp_tx_wr_en, udp_data_end : std_logic;
     signal udp_data : std_logic_vector(31 downto 0);
-    signal counter : std_logic_vector(31 downto 0);
+    signal counter, next_counter : std_logic_vector(31 downto 0) := (others => '0');
 
     signal button_detect_reg : std_logic_vector(2 downto 0) := (others => '0');
     signal button_detect : std_logic;
 
     type state_t is (IDLE, REQ, SEND);
-    signal state : state_t := IDLE;
+    signal state, next_state : state_t := IDLE;
     
     signal power_on_delay : unsigned(31 downto 0);
     signal go : std_logic := '0';
@@ -69,53 +69,51 @@ begin
 
     reset <= not btn(0);
 
-    traffic_gen : process(clk_62_5M, reset)
+
+    seq : process(clk_62_5M, reset)
     begin
         if reset = '1' then
-            led(5 downto 0) <= (others => '0');
-            counter <= (others => '0');
-            udp_data <= (others => '0');
-            udp_tx_request <= '0';
-            udp_tx_wr_en <= '0';
-            udp_data_end <= '0';
             state <= IDLE;
+            counter <= (others => '0');
         elsif rising_edge(clk_62_5M) then
-            led(5 downto 0) <= (others => '0');
-            udp_tx_request <= '0';
-            udp_tx_wr_en <= '0';
-            udp_data_end <= '0';
-            case state is
-                when IDLE =>
-                         led(0) <= '1';
-                    if button_detect = '1' then
-                        state <= REQ;
-                        udp_tx_request <= '1';
-                    else
-                        state <= state;
-                    end if;
-                when REQ =>
-                         led(1) <= '1';
-                    udp_tx_request <= '1';
-                    if udp_tx_ready = '1' then
-                        state <= SEND;
-                    else
-                        state <= state;
-                    end if;
-                when SEND =>
-                    led(2) <= '1';
-                    udp_data <= counter;
-                    udp_tx_wr_en <= '1' and udp_tx_ready; -- Do NOT assert wr_en unless tx_ready is also true!
-                    udp_data_end <= '1';
-                    if udp_tx_ready = '1' then
-                        state <= IDLE;
-                        counter <= std_logic_vector(unsigned(counter) + 1);
-                    else
-                        state <= state;
-                    end if;
-            end case;
-
+            state <= next_state;
+            counter <= next_counter;
         end if;
-    end process traffic_gen;
+    end process seq;
+
+    comb : process(state, button_detect, udp_tx_ready, udp_tx_almost_ready)
+    begin
+        led(5 downto 0) <= (others => '0');
+        next_counter <= counter;
+        udp_data <= (others => '0');
+        udp_tx_request <= '0';
+        udp_tx_wr_en <= '0';
+        udp_data_end <= '0';
+        next_state <= state;
+        case state is
+            when IDLE =>
+                led(0) <= '1';
+                if button_detect = '1' then
+                    next_state <= REQ;
+                    udp_tx_request <= '1';
+                end if;
+            when REQ =>
+                led(1) <= '1';
+                udp_tx_request <= '1';
+                if udp_tx_ready = '1' or udp_tx_almost_ready = '1' then
+                    next_state <= SEND;
+                end if;
+            when SEND =>
+                led(2) <= '1';
+                udp_data <= counter;
+                udp_tx_wr_en <= '1' and udp_tx_ready; -- Do NOT assert wr_en unless tx_ready is also true!
+                udp_data_end <= '1';
+                if udp_tx_ready = '1' then
+                    next_state <= IDLE;
+                    next_counter <= std_logic_vector(unsigned(counter) + 1);
+                end if;
+        end case;
+    end process comb;
 
 
     clockgeninst : entity work.clk_wiz_v3_6
@@ -155,11 +153,12 @@ begin
             phycrs    => phycrs,
             phycol    => phycol,
         
-            udp_tx_request  => udp_tx_request,
-            udp_tx_ready    => udp_tx_ready,
-            udp_tx_wr_en    => udp_tx_wr_en,
-            udp_data_in     => udp_data,
-            udp_data_end    => udp_data_end);
+            udp_tx_request      => udp_tx_request,
+            udp_tx_ready        => udp_tx_ready,
+            udp_tx_almost_ready => udp_tx_almost_ready,
+            udp_tx_wr_en        => udp_tx_wr_en,
+            udp_data_in         => udp_data,
+            udp_data_end        => udp_data_end);
         
 
 end Behavioral;
