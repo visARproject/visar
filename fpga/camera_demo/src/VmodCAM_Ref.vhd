@@ -25,6 +25,7 @@
 ----------------------------------------------------------------------------------
 library IEEE;
 use IEEE.STD_LOGIC_1164.ALL;
+use IEEE.NUMERIC_STD.ALL;
 
 library digilent;
 use digilent.Video.ALL;
@@ -102,7 +103,23 @@ Generic (
 		mcb3_dram_dqs              : inout  std_logic;
 		mcb3_dram_dqs_n            : inout  std_logic;
 		mcb3_dram_ck               : out std_logic;
-		mcb3_dram_ck_n             : out std_logic	
+		mcb3_dram_ck_n             : out std_logic;
+		
+        phyrst: out std_logic;
+        phytxclk: in std_logic;
+        phyTXD: out std_logic_vector(7 downto 0);
+        phytxen: out std_logic;
+        phytxer: out std_logic;
+        phygtxclk: out std_logic;
+        phyRXD: in std_logic_vector(7 downto 0);
+        phyrxdv: in std_logic;
+        phyrxer: in std_logic;
+        phyrxclk: in std_logic;
+        phymdc: out std_logic;
+        phymdi: inout std_logic;
+        phyint: in std_logic; -- currently unused
+        phycrs: in std_logic;
+        phycol: in std_logic
 	);
 end VmodCAM_Ref;
 
@@ -135,6 +152,20 @@ signal FbRdy, FbRdEn, FbRdRst, FbRdClk : std_logic;
 signal FbRdData : std_logic_vector(8-1 downto 0);
 signal FbWrARst, FbWrBRst, int_FVA, int_FVB : std_logic;
 
+    signal reset : std_logic;
+    signal clk_62_5M, clk_125M : std_logic;
+    signal udp_tx_request, udp_tx_ready, udp_tx_wr_en, udp_data_end : std_logic;
+    signal udp_data : std_logic_vector(31 downto 0);
+    signal counter : std_logic_vector(31 downto 0);
+
+    signal button_detect_reg : std_logic_vector(2 downto 0) := (others => '0');
+    signal button_detect : std_logic;
+
+    type state_t is (IDLE, REQ, SEND);
+    signal state : state_t := IDLE;
+    
+    signal power_on_delay : unsigned(31 downto 0);
+    signal go : std_logic := '0';
 begin
 
 LED_O <= VtcHs & VtcHs & VtcVde & async_rst & MSel(0) & "000";
@@ -167,7 +198,10 @@ LED_O <= VtcHs & VtcHs & VtcVde & async_rst & MSel(0) & "000";
 		PLL_CE_0_O => pll_ce_0,
 		PLL_CE_90_O => pll_ce_90,
 		PLL_LOCK => pll_lock,
-		ASYNC_RST => async_rst
+		ASYNC_RST => async_rst,
+		
+		CLK_125M => clk_125M,
+		CLK_62_5M => clk_62_5M
 	);
 	
 ----------------------------------------------------------------------------------
@@ -423,5 +457,115 @@ Gen_IOBUF_CAMB_D: for i in 7 downto 0 generate
    );
 end generate;	
 dummy_t <= '1';
+
+
+
+
+
+    process(clk_62_5M, reset)
+    begin
+        if reset = '1' then
+            go <= '0';
+            power_on_delay <= to_unsigned(625_000_000, 32); -- 10 second at 62.5 MHz
+        elsif rising_edge(clk_62_5M) then
+            if power_on_delay = to_unsigned(0, 32) then
+                go <= '1';
+            else
+                go <= '0';
+                power_on_delay <= power_on_delay - 1;
+            end if;
+        end if;
+    end process;
+
+    button_detect <= '1';
+    
+
+
+    reset <= not RESET_I;
+
+    traffic_gen : process(clk_62_5M, reset)
+    begin
+        if reset = '1' then
+            counter <= (others => '0');
+            udp_data <= (others => '0');
+            udp_tx_request <= '0';
+            udp_tx_wr_en <= '0';
+            udp_data_end <= '0';
+            state <= IDLE;
+        elsif rising_edge(clk_62_5M) then
+            udp_tx_request <= '0';
+            udp_tx_wr_en <= '0';
+            udp_data_end <= '0';
+            case state is
+                when IDLE =>
+                    if button_detect = '1' then
+                        state <= REQ;
+                        udp_tx_request <= '1';
+                    else
+                        state <= state;
+                    end if;
+                when REQ =>
+                    udp_tx_request <= '1';
+                    if udp_tx_ready = '1' then
+                        state <= SEND;
+                    else
+                        state <= state;
+                    end if;
+                when SEND =>
+                    udp_data <= counter;
+                    udp_tx_wr_en <= '1' and udp_tx_ready; -- Do NOT assert wr_en unless tx_ready is also true!
+                    udp_data_end <= '1';
+                    if udp_tx_ready = '1' then
+                        state <= IDLE;
+                        counter <= std_logic_vector(unsigned(counter) + 1);
+                    else
+                        state <= state;
+                    end if;
+            end case;
+
+        end if;
+    end process traffic_gen;
+
+
+
+    udp : entity work.udp_wrapper
+        generic map (
+            SRC_MAC          => x"FFFFFFFFFFFF",
+            DST_MAC          => x"FFFFFFFFFFFF",
+            ETH_PAYLOAD_SIZE => x"05DC",         -- 1500 byte payload for all frames
+            SRC_IP           => x"00000000",     -- 0.0.0.0
+            DST_IP           => x"FFFFFFFF",     -- 255.255.255.255 
+            SRC_PORT         => x"7A69",         -- 31337
+            DST_PORT         => x"9001",         -- 36865
+            UDP_PAYLOAD_SIZE => x"05C8")          -- 1480 (1500 - 20 bytes for IP header) 
+        port map (
+            clk_125M  => clk_125M,
+            clk_62_5M => clk_62_5M,
+            reset     => reset,
+        
+            phyrst    => phyrst,
+            phytxclk  => phytxclk,
+            phyTXD    => phyTXD,
+            phytxen   => phytxen,
+            phytxer   => phytxer,
+            phygtxclk => phygtxclk,
+            phyRXD    => phyRXD,
+            phyrxdv   => phyrxdv,
+            phyrxer   => phyrxer,
+            phyrxclk  => phyrxclk,
+            phymdc    => phymdc,
+            phymdi    => phymdi,
+            phyint    => phyint,
+            phycrs    => phycrs,
+            phycol    => phycol,
+        
+            udp_tx_request  => udp_tx_request,
+            udp_tx_ready    => udp_tx_ready,
+            udp_tx_wr_en    => udp_tx_wr_en,
+            udp_data_in     => udp_data,
+            udp_data_end    => udp_data_end);
+
+
+
 end Behavioral;
 
