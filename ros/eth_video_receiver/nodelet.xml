@@ -1,0 +1,7 @@
+<library path="lib/libeth_video_receiver_nodelet">
+  <class name="eth_video_receiver/nodelet" type="eth_video_receiver::Nodelet" base_class_type="nodelet::Nodelet">
+    <description> 
+      Ethernet video receiver
+    </description>
+  </class>
+</library>

@@ -132,7 +132,7 @@ attribute S of dummy_t: signal is "TRUE";
 
 signal ddr2clk_2x, ddr2clk_2x_180, mcb_drp_clk, pll_ce_0, pll_ce_90, pll_lock, async_rst : std_logic;
 signal FbRdy, FbRdEn, FbRdRst, FbRdClk : std_logic;
-signal FbRdData : std_logic_vector(16-1 downto 0);
+signal FbRdData : std_logic_vector(8-1 downto 0);
 signal FbWrARst, FbWrBRst, int_FVA, int_FVB : std_logic;
 
 begin
@@ -260,9 +260,9 @@ FbWrBRst <= async_rst or not int_FVB;
 -- DVI Transmitter
 ----------------------------------------------------------------------------------
 	Inst_DVITransmitter: entity digilent.DVITransmitter PORT MAP(
-		RED_I => FbRdData(15 downto 11) & "000",
-		GREEN_I => FbRdData(10 downto 5) & "00",
-		BLUE_I => FbRdData(4 downto 0) & "000",
+		RED_I => FbRdData,
+		GREEN_I => FbRdData,
+		BLUE_I => FbRdData,
 		HS_I => VtcHs,
 		VS_I => VtcVs,
 		VDE_I => VtcVde,

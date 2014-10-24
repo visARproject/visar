@@ -69,7 +69,7 @@ entity FBCtl is
 ------------------------------------------------------------------------------------
 		ENC : in  STD_LOGIC; --port enable
 		RSTC_I : in  STD_LOGIC; --asynchronous port reset
-		DOC : out  STD_LOGIC_VECTOR (COLORDEPTH - 1 downto 0); --data output
+		DOC : out  STD_LOGIC_VECTOR (8 - 1 downto 0); --data output
 		CLKC : in  STD_LOGIC; --port clock
 		RD_MODE: in STD_LOGIC_VECTOR(0 downto 0);
 ------------------------------------------------------------------------------------
@@ -547,7 +547,7 @@ end component memc3_wrapper;
 
 	signal pc_rd_addr1, pc_rd_addr2, pc_rd_addr3	: natural := 0;
 	signal fVMemSource : std_logic := '0';
-	signal rd_data_sel : std_logic;
+	signal rd_data_sel : std_logic_vector(1 downto 0);
 	signal int_rdy, FbRdFIFOEmpty, FbRdFIFOFull, FbRdFIFOEn : std_logic;
 	signal FbRdFIFOData : std_logic_vector(31 downto 0);
 	signal FbRdFIFOCnt : std_logic_vector(10 downto 0);
@@ -803,15 +803,17 @@ end process;
    begin
       if Rising_Edge(CLKC) then
          if (SRstC = '1') then
-            rd_data_sel <= '0';
+            rd_data_sel <= "00";
          elsif (ENC = '1') then
-				rd_data_sel <= not rd_data_sel;
+				rd_data_sel <= rd_data_sel + 1;
          end if;        
       end if;
    end process;
-	DOC <= 	FbRdFIFOData(31 downto 16) when rd_data_sel = '1' else
-				FbRdFIFOData(15 downto 0);
-	FbRdFIFOEn <= rd_data_sel and ENC;
+	DOC <= 	FbRdFIFOData(31 downto 24) when rd_data_sel = "11" else
+		FbRdFIFOData(23 downto 16) when rd_data_sel = "10" else
+		FbRdFIFOData(15 downto 8) when rd_data_sel = "01" else
+				FbRdFIFOData(7 downto 0);
+	FbRdFIFOEn <= ENC and rd_data_sel(1) and rd_data_sel(0);
 	p3_rd_clk <= CLKC;
 	
 -----------------------------------------------------------------------------
@@ -839,7 +841,7 @@ end process;
 				pc_rd_addr2 <= VMEM_SIZE/(RD_BATCH*4);
 				int_rd_mode(0) <= '0';
          elsif (stateRd = stRdCmd) then
-				if (pc_rd_addr1 = 1600*2*900/(RD_BATCH*4)-1) then
+				if (pc_rd_addr1 = 1600*900/(RD_BATCH*4)-1) then
 					pc_rd_addr1 <= 0;
 					pc_rd_addr2 <= VMEM_SIZE/(RD_BATCH*4);
 					int_rd_mode(0) <= RD_MODE(0);
@@ -989,7 +991,7 @@ end process;
 			if (pa_int_rst = '1' and p1_wr_empty = '1') then
 				pa_wr_addr <= 0;
          elsif (stateWrA = stWrCmd) then
-				if (pa_wr_addr = 1600*1200*2/(WR_BATCH*4)-1) then
+				if (pa_wr_addr = 1600*1200/(WR_BATCH*4)-1) then
 					pa_wr_addr <= 0;
 				else
 					pa_wr_addr <= pa_wr_addr + 1;
@@ -1136,7 +1138,7 @@ end process;
 			if (pb_int_rst = '1' and p2_wr_empty = '1') then
 				pb_wr_addr <= 0;
          elsif (stateWrB = stWrCmd) then
-				if (pb_wr_addr = 1600*1200*2/(WR_BATCH*4)-1) then
+				if (pb_wr_addr = 1600*1200/(WR_BATCH*4)-1) then
 					pb_wr_addr <= 0;
 				else
 					pb_wr_addr <= pb_wr_addr + 1;

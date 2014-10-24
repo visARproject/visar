@@ -1,0 +1,56 @@
+#!/usr/bin/python
+
+from __future__ import division
+
+import itertools
+import socket
+import struct
+import sys
+import time
+
+import numpy
+import scipy.misc
+
+
+WIDTH = 1600
+HEIGHT = 1200
+
+orig_img = scipy.misc.imread(sys.argv[1])
+assert orig_img.shape == (HEIGHT, WIDTH, 4), orig_img.shape
+
+PORT = 5185
+
+def srgb_to_float(x):
+    y = x/255
+    if y <= 0.04045:
+        return y/12.92
+    else:
+        a = 0.055
+        return ((y + a)/(1 + a))**2.4
+
+def float_to_srgb(x):
+    if x <= 0.0031308:
+        y = 12.92 * x
+    else:
+        a = 0.055
+        y = (1 + a) * x**(1/2.4) - a
+    return int(255*y + 0.5)
+
+inv_table = numpy.array([float_to_srgb(1-srgb_to_float(x)) for x in xrange(256)])
+inv_img = inv_table[orig_img]
+
+s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+#s.bind(('', 0))
+s.setsockopt(socket.SOL_SOCKET, socket.SO_BROADCAST, 1)
+
+even_lookup = [0, 1]*(WIDTH//4)
+odd_lookup  = [1, 2]*(WIDTH//4)
+
+for frame in itertools.count():
+    img = inv_img if frame % 2 else orig_img
+    
+    for row in xrange(1200):
+        lookup = odd_lookup if row % 2 else even_lookup
+        for i in xrange(2):
+            data = struct.pack('>HIII', 0, frame % 2**32, row, i) + (img[row, xrange(WIDTH//2, WIDTH), lookup] if i else img[row, xrange(WIDTH//2), lookup]).astype(numpy.uint8).tostring()
+            s.sendto(data, ('<broadcast>', PORT))
