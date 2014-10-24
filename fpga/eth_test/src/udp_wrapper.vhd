@@ -100,7 +100,7 @@ begin
         end if;
     end process seq;
 
-    comb : process(state, udp_tx_request, wa, prepend_counter, prepend_word, udp_data_in, udp_tx_wr_en)
+    comb : process(state, udp_tx_request, wa, prepend_counter, prepend_word, udp_data_in, udp_tx_wr_en, udp_data_end)
     begin
         udp_tx_ready <= '0';
         udp_tx_almost_ready <= '0';
@@ -109,14 +109,13 @@ begin
         eop <= '0';
         be <= "00";
         data <= (others => '0');
+        next_state <= state;
         next_prepend_counter <= prepend_counter;
 
         case state is
             when IDLE =>
                 if udp_tx_request = '1' and wa = '1' then
                     next_state <= TX_PREPEND;
-                else
-                    next_state <= state;
                 end if;
             when TX_PREPEND =>
                 data <= prepend_word(prepend_counter);
@@ -130,7 +129,6 @@ begin
                         next_state <= TX_PAYLOAD;
                     else
                         next_prepend_counter <= prepend_counter + 1;
-                        next_state <= state;
                     end if;
                     if prepend_counter = PREPEND_LENGTH - 1 then
                         udp_tx_almost_ready <= '1';
@@ -143,8 +141,6 @@ begin
                 if udp_data_end = '1' then
                     eop <= '1';
                     next_state <= IDLE;
-                else 
-                    next_state <= state;
                 end if;
             when others => null;
         end case;
