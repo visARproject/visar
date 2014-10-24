@@ -154,18 +154,19 @@ signal FbWrARst, FbWrBRst, int_FVA, int_FVB : std_logic;
 
     signal reset : std_logic;
     signal clk_62_5M, clk_125M : std_logic;
-    signal udp_tx_request, udp_tx_ready, udp_tx_wr_en, udp_data_end : std_logic;
-    signal udp_data : std_logic_vector(31 downto 0);
-    signal counter : std_logic_vector(31 downto 0);
 
-    signal button_detect_reg : std_logic_vector(2 downto 0) := (others => '0');
-    signal button_detect : std_logic;
+	signal myfifo_rd_en, myfifo_empty : std_logic;
+	signal myfifo_dout : std_logic_vector(31 downto 0);
 
-    type state_t is (IDLE, REQ, SEND);
-    signal state : state_t := IDLE;
+    subtype pos_t is integer range 0 to 202;
+    signal pos, next_pos : pos_t;
     
-    signal power_on_delay : unsigned(31 downto 0);
-    signal go : std_logic := '0';
+    signal frame, next_frame : unsigned(31 downto 0);
+    signal row, next_row : unsigned(31 downto 0);
+    signal side, next_side : unsigned(31 downto 0);
+    
+    signal udp_data_in : std_logic_vector(31 downto 0);
+    signal udp_tx_ready, udp_tx_wr_en, udp_data_end : std_logic;
 begin
 
 LED_O <= VtcHs & VtcHs & VtcVde & async_rst & MSel(0) & "000";
@@ -460,84 +461,93 @@ dummy_t <= '1';
 
 
 
-
-
-    process(clk_62_5M, reset)
-    begin
-        if reset = '1' then
-            go <= '0';
-            power_on_delay <= to_unsigned(625_000_000, 32); -- 10 second at 62.5 MHz
-        elsif rising_edge(clk_62_5M) then
-            if power_on_delay = to_unsigned(0, 32) then
-                go <= '1';
-            else
-                go <= '0';
-                power_on_delay <= power_on_delay - 1;
-            end if;
-        end if;
-    end process;
-
-    button_detect <= '1';
-    
-
-
     reset <= not RESET_I;
 
-    traffic_gen : process(clk_62_5M, reset)
+	myfifo : entity work.fifo_generator_v9_3
+		port map (
+			rst => reset,
+			
+			wr_clk => CamAPClk,
+			wr_en => CamADV,
+			din => CamAD,
+			
+			full => open,
+			 
+			rd_clk => clk_62_5M,
+			rd_en => myfifo_rd_en,
+			
+			dout => myfifo_dout,
+			empty => myfifo_empty);
+
+    process(reset, clk_62_5M)
     begin
         if reset = '1' then
-            counter <= (others => '0');
-            udp_data <= (others => '0');
-            udp_tx_request <= '0';
-            udp_tx_wr_en <= '0';
-            udp_data_end <= '0';
-            state <= IDLE;
+        	pos <= 0;
+        	frame <= to_unsigned(0, frame'length);
+        	row <= to_unsigned(0, frame'length);
+        	side <= to_unsigned(0, frame'length);
         elsif rising_edge(clk_62_5M) then
-            udp_tx_request <= '0';
-            udp_tx_wr_en <= '0';
-            udp_data_end <= '0';
-            case state is
-                when IDLE =>
-                    if button_detect = '1' then
-                        state <= REQ;
-                        udp_tx_request <= '1';
-                    else
-                        state <= state;
-                    end if;
-                when REQ =>
-                    udp_tx_request <= '1';
-                    if udp_tx_ready = '1' then
-                        state <= SEND;
-                    else
-                        state <= state;
-                    end if;
-                when SEND =>
-                    udp_data <= counter;
-                    udp_tx_wr_en <= '1' and udp_tx_ready; -- Do NOT assert wr_en unless tx_ready is also true!
-                    udp_data_end <= '1';
-                    if udp_tx_ready = '1' then
-                        state <= IDLE;
-                        counter <= std_logic_vector(unsigned(counter) + 1);
-                    else
-                        state <= state;
-                    end if;
-            end case;
-
+        	pos <= next_pos;
+        	frame <= next_frame;
+        	row <= next_row;
+        	side <= next_side;
         end if;
-    end process traffic_gen;
-
-
+    end process;
+    
+    process(pos, udp_tx_ready, myfifo_empty, myfifo_dout, frame, row, side)
+    begin
+    	next_pos <= pos;
+    	myfifo_rd_en <= '0';
+		udp_data_in <= (others => '-'); -- just preventing latches from being inferred
+		udp_tx_wr_en <= '0';
+		udp_data_end <= '0';
+		next_frame <= frame;
+		next_row <= row;
+		next_side <= side;
+		if udp_tx_ready = '1' then
+			next_pos <= pos + 1;
+	    	if pos = 0 then
+	    		udp_data_in <= std_logic_vector(frame);
+	    		udp_tx_wr_en <= '1';
+			elsif pos = 1 then
+	    		udp_data_in <= std_logic_vector(row);
+	    		udp_tx_wr_en <= '1';
+			elsif pos = 2 then
+				udp_data_in <= std_logic_vector(side);
+	    		udp_tx_wr_en <= '1';
+			else
+				if myfifo_empty = '0' then
+					udp_data_in <= myfifo_dout;
+					myfifo_rd_en <= '1';
+					udp_tx_wr_en <= '1';
+					if pos = 202 then
+			    		udp_data_end <= '0';
+			    		next_pos <= 0;
+	    				next_side <= side + 1;
+			    		if side = 1 then
+			    			next_side <= to_unsigned(0, next_side'length);
+    						next_row <= row + 1;
+		    				if row = 1199 then
+		    					next_row <= to_unsigned(0, next_row'length);
+		    					next_frame <= frame + 1;
+	    					end if;
+	    				end if;
+		    		end if;
+				end if;
+			end if;
+		end if;
+	end process;
 
     udp : entity work.udp_wrapper
         generic map (
             SRC_MAC          => x"FFFFFFFFFFFF",
             DST_MAC          => x"FFFFFFFFFFFF",
-            ETH_PAYLOAD_SIZE => x"05DC",         -- 1500 byte payload for all frames
+            ETH_PAYLOAD_SIZE => x"0348",
             SRC_IP           => x"00000000",     -- 0.0.0.0
             DST_IP           => x"FFFFFFFF",     -- 255.255.255.255 
-            SRC_PORT         => x"7A69",         -- 31337
-            DST_PORT         => x"9001",         -- 36865
-            UDP_PAYLOAD_SIZE => x"05C8")          -- 1480 (1500 - 20 bytes for IP header) 
+            SRC_PORT         => x"0000",
+            DST_PORT         => x"1441",
+            UDP_PAYLOAD_SIZE => x"0334")
         port map (
             clk_125M  => clk_125M,
             clk_62_5M => clk_62_5M,
@@ -559,10 +569,10 @@ dummy_t <= '1';
             phycrs    => phycrs,
             phycol    => phycol,
         
-            udp_tx_request  => udp_tx_request,
+            udp_tx_request  => '1',
             udp_tx_ready    => udp_tx_ready,
             udp_tx_wr_en    => udp_tx_wr_en,
-            udp_data_in     => udp_data,
+            udp_data_in     => udp_data_in,
             udp_data_end    => udp_data_end);
 
 
