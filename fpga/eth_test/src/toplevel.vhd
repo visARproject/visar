@@ -29,110 +29,138 @@ entity toplevel is
 end toplevel;
 
 architecture Behavioral of toplevel is
+
     signal reset : std_logic;
     signal clk_62_5M, clk_125M : std_logic;
-    signal mdo, mdoen : std_logic;
-    signal wr, sop, eop : std_logic;
-    signal be : std_logic_vector(1 downto 0);
-    signal data : std_logic_vector(31 downto 0);
-    signal wa : std_logic;
-    signal phygtxclk_int : std_logic;
-    signal state : integer;
-    signal state2 : std_logic_vector(31 downto 0);
+    signal udp_tx_request, udp_tx_ready, udp_tx_wr_en, udp_data_end : std_logic;
+    signal udp_data : std_logic_vector(31 downto 0);
     signal counter : std_logic_vector(31 downto 0);
-begin
-    reset <= not btn(0);
 
-    clockgeninst : entity work.clk_wiz_v3_6
-        port map (
-            CLK_IN1 => clk,
-            CLK_OUT1 => clk_125M,
-            CLK_OUT2 => clk_62_5M);
+    signal button_detect_reg : std_logic_vector(2 downto 0) := (others => '0');
+    signal button_detect : std_logic;
 
-    state2 <= std_logic_vector(to_unsigned(state, 32));
-    led <= state2(25 downto 19);
+    type state_t is (IDLE, REQ, SEND);
+    signal state : state_t := IDLE;
     
-    sender : process(clk_62_5M, reset)
+    signal power_on_delay : unsigned(31 downto 0);
+    signal go : std_logic := '0';
+
+begin
+
+    process(clk_62_5M, reset)
     begin
-        if rising_edge(clk_62_5M) and wa = '1' then
-            wr <= '0';
-            sop <= '0';
-            eop <= '0';
-            be <= "00";
-            state <= state + 1;
-            if reset = '1' or state < 0 then
-                state <= 0;
-            elsif state >= 100 and state <= 199 then
-                wr <= '1';
-                data <= not "00000000000000000000000000000000";
-                if state = 100 then
-                    sop <= '1';
-                end if;
-                if state = 199 then
-                    eop <= '1';
-                    data <= counter;
-                    counter <= std_logic_vector(unsigned(counter) + 1);
-                end if;
-            elsif state >= 300-1 then
-                state <= 0;
+        if reset = '1' then
+            go <= '0';
+            power_on_delay <= to_unsigned(625_000_000, 32); -- 10 second at 62.5 MHz
+        elsif rising_edge(clk_62_5M) then
+            if power_on_delay = to_unsigned(0, 32) then
+                go <= '1';
+            else
+                go <= '0';
+                power_on_delay <= power_on_delay - 1;
             end if;
         end if;
     end process;
 
-    ethmac : entity work.MAC_top
-        port map (
-            Reset => reset,
-            Clk_125M => clk_125M,
-            Clk_user => clk_62_5M,
-            Clk_reg => clk_62_5M,
-            
-            Rx_mac_rd => '0',
-            Tx_mac_wa => wa,
-            Tx_mac_wr => wr,
-            Tx_mac_data => data,
-            Tx_mac_BE => be,
-            Tx_mac_sop => sop,
-            Tx_mac_eop => eop,
-            Pkg_lgth_fifo_rd => '0',
-            CSB => '1',
-            WRB => '1',
-            CD_in => "0000000000000000",
-            CA => "00000000",
-            
-            Gtx_clk => phygtxclk_int,
-            Rx_clk => phyrxclk,
-            Tx_clk => phytxclk,
-            Tx_er => phytxer,
-            Tx_en => phytxen,
-            Txd => phyTXD,
-            Rx_er => phyrxer,
-            Rx_dv => phyrxdv,
-            Rxd => phyRXD,
-            Crs => phycrs,
-            Col => phycol,
-            
-            Mdo => mdo,
-            MdoEn => mdoen,
-            Mdi => phymdi,
-            Mdc => phymdc);
-
-
-    phymdi <= mdo when mdoen = '1' else 'Z';
-    phyrst <= not reset;
+    button_detect <= '1';
     
-    i_oddr : oddr2
+
+    led(6) <= 'Z';
+
+    reset <= not btn(0);
+
+    traffic_gen : process(clk_62_5M, reset)
+    begin
+        if reset = '1' then
+            led(5 downto 0) <= (others => '0');
+            counter <= (others => '0');
+            udp_data <= (others => '0');
+            udp_tx_request <= '0';
+            udp_tx_wr_en <= '0';
+            udp_data_end <= '0';
+            state <= IDLE;
+        elsif rising_edge(clk_62_5M) then
+            led(5 downto 0) <= (others => '0');
+            udp_tx_request <= '0';
+            udp_tx_wr_en <= '0';
+            udp_data_end <= '0';
+            case state is
+                when IDLE =>
+                         led(0) <= '1';
+                    if button_detect = '1' then
+                        state <= REQ;
+                        udp_tx_request <= '1';
+                    else
+                        state <= state;
+                    end if;
+                when REQ =>
+                         led(1) <= '1';
+                    udp_tx_request <= '1';
+                    if udp_tx_ready = '1' then
+                        state <= SEND;
+                    else
+                        state <= state;
+                    end if;
+                when SEND =>
+                    led(2) <= '1';
+                    udp_data <= counter;
+                    udp_tx_wr_en <= '1' and udp_tx_ready; -- Do NOT assert wr_en unless tx_ready is also true!
+                    udp_data_end <= '1';
+                    if udp_tx_ready = '1' then
+                        state <= IDLE;
+                        counter <= std_logic_vector(unsigned(counter) + 1);
+                    else
+                        state <= state;
+                    end if;
+            end case;
+
+        end if;
+    end process traffic_gen;
+
+
+    clockgeninst : entity work.clk_wiz_v3_6
+        port map (
+            CLK_IN1 => clk, -- 100 MHz input
+            CLK_OUT1 => clk_125M,
+            CLK_OUT2 => clk_62_5M);
+
+    udp : entity work.udp_wrapper
         generic map (
-            ddr_alignment => "c1",    -- sets output alignment to "none", "c0", "c1"
-            init          => '0',     -- sets initial state of the q output to '0' or '1'
-            srtype        => "async"  -- specifies "sync" or "async" set/reset
-        ) port map (
-            q  => phygtxclk,
-            c0 => phygtxclk_int,
-            c1 => not phygtxclk_int,
-            ce => '1',
-            d0 => '0',
-            d1 => '1',
-            r  => '0',
-            s  => '0');
+            SRC_MAC          => x"FFFFFFFFFFFF",
+            DST_MAC          => x"FFFFFFFFFFFF",
+            ETH_PAYLOAD_SIZE => x"05DC",         -- 1500 byte payload for all frames
+            SRC_IP           => x"00000000",     -- 0.0.0.0
+            DST_IP           => x"FFFFFFFF",     -- 255.255.255.255 
+            SRC_PORT         => x"7A69",         -- 31337
+            DST_PORT         => x"9001",         -- 36865
+            UDP_PAYLOAD_SIZE => x"05C8")          -- 1480 (1500 - 20 bytes for IP header) 
+        port map (
+            clk_125M  => clk_125M,
+            clk_62_5M => clk_62_5M,
+            reset     => reset,
+        
+            phyrst    => phyrst,
+            phytxclk  => phytxclk,
+            phyTXD    => phyTXD,
+            phytxen   => phytxen,
+            phytxer   => phytxer,
+            phygtxclk => phygtxclk,
+            phyRXD    => phyRXD,
+            phyrxdv   => phyrxdv,
+            phyrxer   => phyrxer,
+            phyrxclk  => phyrxclk,
+            phymdc    => phymdc,
+            phymdi    => phymdi,
+            phyint    => phyint,
+            phycrs    => phycrs,
+            phycol    => phycol,
+        
+            udp_tx_request  => udp_tx_request,
+            udp_tx_ready    => udp_tx_ready,
+            udp_tx_wr_en    => udp_tx_wr_en,
+            udp_data_in     => udp_data,
+            udp_data_end    => udp_data_end);
+        
+
 end Behavioral;
 
