@@ -42,35 +42,13 @@ architecture Behavioral of toplevel is
     type state_t is (IDLE, REQ, SEND);
     signal state, next_state : state_t := IDLE;
     
-    signal power_on_delay : unsigned(31 downto 0);
-    signal go : std_logic := '0';
-
 begin
-
-    process(clk_62_5M, reset)
-    begin
-        if rising_edge(clk_62_5M) then
-            if reset = '1' then
-                go <= '0';
-                power_on_delay <= to_unsigned(625_000_000, 32); -- 10 second at 62.5 MHz
-            else
-                if power_on_delay = to_unsigned(0, 32) then
-                    go <= '1';
-                else
-                    go <= '0';
-                    power_on_delay <= power_on_delay - 1;
-                end if;
-            end if;
-        end if;
-    end process;
 
     button_detect <= '1';
     
-
     led(6) <= 'Z';
 
     reset <= not btn(0);
-
 
     seq : process(clk_62_5M, reset)
     begin
