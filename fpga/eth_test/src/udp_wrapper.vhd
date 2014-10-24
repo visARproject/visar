@@ -80,7 +80,7 @@ architecture Behavioral of udp_wrapper is
 
     type tx_state_t is (IDLE, TX_PREPEND, TX_PAYLOAD);
     signal state, next_state: tx_state_t := IDLE;
-   
+
     constant COUNTER_WIDTH : integer := integer(ceil(log2(real(PREPEND_LENGTH)))); 
     subtype prepend_index_t is integer range 0 to PREPEND_LENGTH - 1;
     signal prepend_counter, next_prepend_counter : prepend_index_t := 0;
@@ -89,12 +89,14 @@ begin
 
     seq : process(clk_62_5M, reset)
     begin
-        if reset = '1' then
-            state <= IDLE;
-            prepend_counter <= 0;
-        elsif rising_edge(clk_62_5M) then
-            state <= next_state;
-            prepend_counter <= next_prepend_counter;
+        if rising_edge(clk_62_5M) then
+            if reset = '1' then
+                state <= IDLE;
+                prepend_counter <= 0;
+            else
+                state <= next_state;
+                prepend_counter <= next_prepend_counter;
+            end if;
         end if;
     end process seq;
 

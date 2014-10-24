@@ -49,15 +49,17 @@ begin
 
     process(clk_62_5M, reset)
     begin
-        if reset = '1' then
-            go <= '0';
-            power_on_delay <= to_unsigned(625_000_000, 32); -- 10 second at 62.5 MHz
-        elsif rising_edge(clk_62_5M) then
-            if power_on_delay = to_unsigned(0, 32) then
-                go <= '1';
-            else
+        if rising_edge(clk_62_5M) then
+            if reset = '1' then
                 go <= '0';
-                power_on_delay <= power_on_delay - 1;
+                power_on_delay <= to_unsigned(625_000_000, 32); -- 10 second at 62.5 MHz
+            else
+                if power_on_delay = to_unsigned(0, 32) then
+                    go <= '1';
+                else
+                    go <= '0';
+                    power_on_delay <= power_on_delay - 1;
+                end if;
             end if;
         end if;
     end process;
@@ -72,12 +74,14 @@ begin
 
     seq : process(clk_62_5M, reset)
     begin
-        if reset = '1' then
-            state <= IDLE;
-            counter <= (others => '0');
-        elsif rising_edge(clk_62_5M) then
-            state <= next_state;
-            counter <= next_counter;
+        if rising_edge(clk_62_5M) then
+            if reset = '1' then
+                state <= IDLE;
+                counter <= (others => '0');
+            elsif rising_edge(clk_62_5M) then
+                state <= next_state;
+                counter <= next_counter;
+            end if;
         end if;
     end process seq;
 
