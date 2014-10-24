@@ -1,5 +1,13 @@
-*
-!*/
+# ignore all files in subdirectories
+/*/**/*
+!/*/**/
+
+# whitelist some files
 !/*/src/**/*
 !/*/*/*.xco
+!/*/ipcore*/**/user_design/mig.prj
+!.gitignore
+!MyHDL*/**/*
+
+# since this overrides global settings, need to reignore some files
 *~
