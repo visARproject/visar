@@ -136,7 +136,7 @@ begin
                     mac_in.tx_flag <= not mac_in.tx_flag;
                     pos2 <= 0;
                 else
-                    din <= "011111111011111111011111111011111111";
+                    din <= "000000000001000010011111111011111111";
                     pos2 <= pos2 + 1;
                 end if;
             else

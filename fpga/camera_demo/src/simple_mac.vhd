@@ -70,6 +70,7 @@ begin
         next_frames_waiting <= frames_waiting;
         next_state <= state;
         next_counter <= 0; -- just to prevent inferring latches
+        next_C <= (others => '-'); -- just to prevent inferring latches
         next_last_tx_flag <= last_tx_flag;
         next_phy_in.txd <= (others => '-');
         next_phy_in.txen <= '0';
@@ -148,16 +149,19 @@ begin
                 next_phy_in.txd <= not reverse_any_vector(C(31 downto 24));
                 next_phy_in.txen <= '1';
                 next_state <= CRC2;
+                next_C <= C(23 downto 0) & "--------";
             elsif state = CRC2 then
-                next_phy_in.txd <= not reverse_any_vector(C(23 downto 16));
+                next_phy_in.txd <= not reverse_any_vector(C(31 downto 24));
                 next_phy_in.txen <= '1';
                 next_state <= CRC3;
+                next_C <= C(23 downto 0) & "--------";
             elsif state = CRC3 then
-                next_phy_in.txd <= not reverse_any_vector(C(15 downto 8));
+                next_phy_in.txd <= not reverse_any_vector(C(31 downto 24));
                 next_phy_in.txen <= '1';
                 next_state <= CRC4;
+                next_C <= C(23 downto 0) & "--------";
             elsif state = CRC4 then
-                next_phy_in.txd <= not reverse_any_vector(C(7 downto 0));
+                next_phy_in.txd <= not reverse_any_vector(C(31 downto 24));
                 next_phy_in.txen <= '1';
                 next_state <= IFG;
                 next_counter <= 0;
