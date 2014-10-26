@@ -11,7 +11,7 @@ architecture Behavioral of toplevel_mac_test_tb is
 begin
     uut : entity work.toplevel_mac_test
         port map(
-			CLK_I => clk,
+            CLK_I => clk,
             RESET_I => reset_l,
             phytxclk => '0',
             phyRXD => "00000000",
