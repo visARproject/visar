@@ -35,6 +35,7 @@ architecture Behavioral of simple_mac is
         mymax(IFG_LENGTH, PREAMBLE_LENGTH) - 1;
     signal counter, next_counter: CounterType;
     signal C, next_C : std_logic_vector(31 downto 0);
+    signal next_phy_in : PHYInInterface;
 begin
     process(clk_125M)
     begin
@@ -55,6 +56,9 @@ begin
             last_tx_flag <= next_last_tx_flag;
             counter <= next_counter;
             C <= next_C;
+            phy_in.txd <= next_phy_in.txd;
+            phy_in.txen <= next_phy_in.txen;
+            phy_in.txer <= next_phy_in.txer;
         end if;
     end process;
 
@@ -67,9 +71,9 @@ begin
         next_state <= state;
         next_counter <= 0; -- just to prevent inferring latches
         next_last_tx_flag <= last_tx_flag;
-        phy_in.txd <= (others => '-');
-        phy_in.txen <= '0';
-        phy_in.txer <= '0';
+        next_phy_in.txd <= (others => '-');
+        next_phy_in.txen <= '0';
+        next_phy_in.txer <= '0';
         mac_out.tx_rd <= '0';
         if reset = '1' then
             next_frames_waiting <= 0;
@@ -88,21 +92,21 @@ begin
                     next_counter <= 0;
                 end if;
             elsif state = PREAMBLE then
-                phy_in.txd <= x"55";
-                phy_in.txen <= '1';
+                next_phy_in.txd <= x"55";
+                next_phy_in.txen <= '1';
                 next_counter <= counter + 1;
                 if counter = PREAMBLE_LENGTH - 1 then
                     next_state <= SFD;
                 end if;
             elsif state = SFD then
-                phy_in.txd <= x"D5";
-                phy_in.txen <= '1';
+                next_phy_in.txd <= x"D5";
+                next_phy_in.txen <= '1';
                 next_state <= DATA;
                 mac_out.tx_rd <= '1';
                 next_C <= x"FFFFFFFF";
             elsif state = DATA then
-                phy_in.txd <= mac_in.tx_data;
-                phy_in.txen <= '1';
+                next_phy_in.txd <= mac_in.tx_data;
+                next_phy_in.txen <= '1';
                 next_C(31) <= C(23) xor C(29) xor D(2);
                 next_C(30) <= C(22) xor C(31) xor D(0) xor C(28) xor D(3);
                 next_C(29) <= C(21) xor C(31) xor D(0) xor C(30) xor D(1) xor C(27) xor D(4);
@@ -141,20 +145,20 @@ begin
                     mac_out.tx_rd <= '1';
                 end if;
             elsif state = CRC1 then
-                phy_in.txd <= not reverse_any_vector(C(31 downto 24));
-                phy_in.txen <= '1';
+                next_phy_in.txd <= not reverse_any_vector(C(31 downto 24));
+                next_phy_in.txen <= '1';
                 next_state <= CRC2;
             elsif state = CRC2 then
-                phy_in.txd <= not reverse_any_vector(C(23 downto 16));
-                phy_in.txen <= '1';
+                next_phy_in.txd <= not reverse_any_vector(C(23 downto 16));
+                next_phy_in.txen <= '1';
                 next_state <= CRC3;
             elsif state = CRC3 then
-                phy_in.txd <= not reverse_any_vector(C(15 downto 8));
-                phy_in.txen <= '1';
+                next_phy_in.txd <= not reverse_any_vector(C(15 downto 8));
+                next_phy_in.txen <= '1';
                 next_state <= CRC4;
             elsif state = CRC4 then
-                phy_in.txd <= not reverse_any_vector(C(7 downto 0));
-                phy_in.txen <= '1';
+                next_phy_in.txd <= not reverse_any_vector(C(7 downto 0));
+                next_phy_in.txen <= '1';
                 next_state <= IFG;
                 next_counter <= 0;
             elsif state = IFG then
