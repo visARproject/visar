@@ -37,7 +37,6 @@ architecture Behavioral of toplevel_mac_test is
     signal phy_out : PHYOutInterface;
     signal mac_in : MACInInterface;
     signal mac_out : MACOutInterface;
-    signal phygtxclk_int : std_logic;
 
     signal reset, reset_buf : std_logic;
     subtype PosType is integer range 0 to 1000;
