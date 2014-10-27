@@ -169,7 +169,7 @@ signal FbWrARst, FbWrBRst, int_FVA, int_FVB : std_logic;
     
     signal phy_in : PHYInInterface;
     signal phy_out : PHYOutInterface;
-    signal data_in : MACInInterface;
+    signal data_in, next_data_in : MACInInterface;
     signal data_out : MACOutInterface;
 begin
 
@@ -469,10 +469,10 @@ dummy_t <= '1';
 
     flag_gen : process(reset, CamAPClk)
     begin
-        if reset then
+        if reset = '1' then
             flag_count <= 0;
             data_in.tx_flag <= '0';
-        elsif rising_edge(CamAPClk) then
+        elsif rising_edge(CamAPClk) and CamADV = '1' then
             flag_count <= flag_count + 1;
             if flag_count = 799 then
                 flag_count <= 0;
@@ -509,37 +509,40 @@ dummy_t <= '1';
             frame <= next_frame;
             row <= next_row;
             side <= next_side;
+            data_in.tx_data <= next_data_in.tx_data;
+            data_in.tx_eop <= next_data_in.tx_eop;
         end if;
     end process;
     
-    process(pos, data_out, myfifo_dout, frame, row, side)
+    process(pos, data_out, myfifo_dout, frame, row, side, data_in)
     begin
         next_pos <= pos;
         myfifo_rd_en <= '0';
-        data_in.tx_data <= (others => '-'); -- just preventing latches from being inferred
-        data_in.tx_eop <= '0';
+        next_data_in.tx_data <= data_in.tx_data;
+        next_data_in.tx_eop <= data_in.tx_eop;
         next_frame <= frame;
         next_row <= row;
         next_side <= side;
         if data_out.tx_rd = '1' then
             next_pos <= pos + 1;
-            if    pos =  0 then data_in.tx_data <= std_logic_vector(frame(31 downto 24));
-            elsif pos =  1 then data_in.tx_data <= std_logic_vector(frame(23 downto 16));
-            elsif pos =  2 then data_in.tx_data <= std_logic_vector(frame(15 downto  8));
-            elsif pos =  3 then data_in.tx_data <= std_logic_vector(frame( 7 downto  0));
-            elsif pos =  4 then data_in.tx_data <= std_logic_vector(  row(31 downto 24));
-            elsif pos =  5 then data_in.tx_data <= std_logic_vector(  row(23 downto 16));
-            elsif pos =  6 then data_in.tx_data <= std_logic_vector(  row(15 downto  8));
-            elsif pos =  7 then data_in.tx_data <= std_logic_vector(  row( 7 downto  0));
-            elsif pos =  8 then data_in.tx_data <= std_logic_vector( side(31 downto 24));
-            elsif pos =  9 then data_in.tx_data <= std_logic_vector( side(23 downto 16));
-            elsif pos = 10 then data_in.tx_data <= std_logic_vector( side(15 downto  8));
-            elsif pos = 11 then data_in.tx_data <= std_logic_vector( side( 7 downto  0));
+            next_data_in.tx_eop <= '0';
+            if    pos =  0 then next_data_in.tx_data <= std_logic_vector(frame(31 downto 24));
+            elsif pos =  1 then next_data_in.tx_data <= std_logic_vector(frame(23 downto 16));
+            elsif pos =  2 then next_data_in.tx_data <= std_logic_vector(frame(15 downto  8));
+            elsif pos =  3 then next_data_in.tx_data <= std_logic_vector(frame( 7 downto  0));
+            elsif pos =  4 then next_data_in.tx_data <= std_logic_vector(  row(31 downto 24));
+            elsif pos =  5 then next_data_in.tx_data <= std_logic_vector(  row(23 downto 16));
+            elsif pos =  6 then next_data_in.tx_data <= std_logic_vector(  row(15 downto  8));
+            elsif pos =  7 then next_data_in.tx_data <= std_logic_vector(  row( 7 downto  0));
+            elsif pos =  8 then next_data_in.tx_data <= std_logic_vector( side(31 downto 24));
+            elsif pos =  9 then next_data_in.tx_data <= std_logic_vector( side(23 downto 16));
+            elsif pos = 10 then next_data_in.tx_data <= std_logic_vector( side(15 downto  8));
+            elsif pos = 11 then next_data_in.tx_data <= std_logic_vector( side( 7 downto  0));
             else
-                data_in.tx_data <= myfifo_dout;
+                next_data_in.tx_data <= myfifo_dout;
                 myfifo_rd_en <= '1';
                 if pos = 811 then
-                    data_in.tx_eop <= '1';
+                    next_data_in.tx_eop <= '1';
                     next_pos <= 0;
                     next_side <= side + 1;
                     if side = 1 then
@@ -557,13 +560,13 @@ dummy_t <= '1';
 
     udp : entity work.udp_wrapper
         generic map (
-            SRC_MAC          => x"FFFFFFFFFFFF",
+            SRC_MAC          => x"000000900000",
             DST_MAC          => x"FFFFFFFFFFFF",
             SRC_IP           => x"00000000",     -- 0.0.0.0
             DST_IP           => x"FFFFFFFF",     -- 255.255.255.255 
             SRC_PORT         => x"0000",
             DST_PORT         => x"1441",
-            DATA_SIZE        => 201111111)
+            DATA_SIZE        => 812)
         port map (
             clk_125M  => clk_125M,
             reset     => reset,

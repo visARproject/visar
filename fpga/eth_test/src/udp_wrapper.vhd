@@ -30,7 +30,7 @@ architecture Behavioral of udp_wrapper is
     signal mac_in, next_mac_in : MACInInterface;
     signal mac_out : MACOutInterface;
 
-    constant IP_SIZE : std_logic_vector(15 downto 0) := std_logic_vector(to_unsigned(20 + DATA_SIZE, 16));
+    constant IP_SIZE : std_logic_vector(15 downto 0) := std_logic_vector(to_unsigned(20 + 8 + DATA_SIZE, 16));
     constant UDP_SIZE : std_logic_vector(15 downto 0) := std_logic_vector(to_unsigned(8 + DATA_SIZE, 16));
     constant PREPEND_LENGTH : natural := 42;
     
@@ -61,6 +61,7 @@ architecture Behavioral of udp_wrapper is
     subtype prepend_index_t is integer range 0 to PREPEND_LENGTH - 1;
     signal prepend_counter, next_prepend_counter : prepend_index_t := 0;
 begin
+    mac_in.tx_flag <= data_in.tx_flag;
 
     seq : process(clk_125M)
     begin
@@ -68,11 +69,13 @@ begin
             if reset = '1' then
                 state <= TX_PREPEND;
                 prepend_counter <= 0;
-                next_mac_in <= mac_in;
+                mac_in.tx_data <= (others => '-');
+                mac_in.tx_eop <= '-';
             else
                 state <= next_state;
                 prepend_counter <= next_prepend_counter;
-                next_mac_in <= mac_in;
+                mac_in.tx_data <= next_mac_in.tx_data;
+                mac_in.tx_eop <= next_mac_in.tx_eop;
             end if;
         end if;
     end process seq;
@@ -81,8 +84,8 @@ begin
     begin
         next_state <= state;
         next_prepend_counter <= 0; -- prevent latches from being inferred
-        next_mac_in.tx_eop <= '-';
-        next_mac_in.tx_data <= (others => '-');
+        next_mac_in.tx_eop <= mac_in.tx_eop;
+        next_mac_in.tx_data <= mac_in.tx_data;
         data_out.tx_rd <= '0';
 
         if mac_out.tx_rd = '1' then
