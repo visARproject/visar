@@ -37,8 +37,8 @@ architecture Behavioral of udp_wrapper is
     type prepend_t is array (0 to PREPEND_LENGTH - 1) of std_logic_vector(7 downto 0);
     signal prepend_data : prepend_t := (
         --- Ethernet header ---
-        SRC_MAC(47 downto 40), SRC_MAC(39 downto 32), SRC_MAC(31 downto 24), SRC_MAC(23 downto 16), SRC_MAC(15 downto 8), SRC_MAC(7 downto 0),
         DST_MAC(47 downto 40), DST_MAC(39 downto 32), DST_MAC(31 downto 24), DST_MAC(23 downto 16), DST_MAC(15 downto 8), DST_MAC(7 downto 0),
+        SRC_MAC(47 downto 40), SRC_MAC(39 downto 32), SRC_MAC(31 downto 24), SRC_MAC(23 downto 16), SRC_MAC(15 downto 8), SRC_MAC(7 downto 0),
         x"08", x"00", -- Type (IP)
         --- IP header ---
         x"45", x"00", --  IPv4, IHL = 5, DSCP + ECN = 0
@@ -46,7 +46,7 @@ architecture Behavioral of udp_wrapper is
         x"00", x"00", -- identification = 0
         x"40", x"00", -- Flags + Fragment offset = 0x4000 (Don't Fragment, no fragment offset),
         x"40", x"11", -- TTL = 64 (0x40), IP Protocol: UDP (17, or 0x11)
-        x"00", x"00", -- IP Checksum = 0
+        x"37", x"a6", -- IP Checksum = 0
         SRC_IP(31 downto 24), SRC_IP(23 downto 16), SRC_IP(15 downto 8), SRC_IP(7 downto 0),
         DST_IP(31 downto 24), DST_IP(23 downto 16), DST_IP(15 downto 8), DST_IP(7 downto 0),
         --- UDP header ---

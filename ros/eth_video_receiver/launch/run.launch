@@ -3,7 +3,7 @@
       args="manager" output="screen"/>
   
   <node pkg="nodelet" type="nodelet" name="driver"
-      args="load eth_video_receiver/nodelet manager --no-bond">
+      args="standalone eth_video_receiver/nodelet">
     <param name="frame_id" value="/eth_camera"/>
   </node>
   

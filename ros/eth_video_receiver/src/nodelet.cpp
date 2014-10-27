@@ -43,7 +43,12 @@ public:
     getName_(getName),
     nh_(*nhp),
     private_nh_(*private_nhp),
-    socket_(io_service_, udp::endpoint(udp::v4(), 5185)) {
+    socket_(io_service_, udp::v4()) {
+    
+    boost::asio::socket_base::broadcast option(true);
+    socket_.set_option(option);
+    // XXX try replacing any with broadcast
+    socket_.bind(udp::endpoint(boost::asio::ip::address_v4::any(), 5185));
     
     image_pub_ = nh_.advertise<sensor_msgs::Image>("image_raw", 10);
     info_pub_ = nh_.advertise<sensor_msgs::CameraInfo>("camera_info", 10);
@@ -52,15 +57,15 @@ public:
   }
   
   void handle_packet(std::size_t bytes_transferred) {
-    if(bytes_transferred != 814) {
+    if(bytes_transferred != 812) {
       std::cout << "wrong size" << std::endl;
       return;
     }
     
-    uint32_t frame_count = read_be_uint32(&recv_buffer_[2]);
-    uint32_t row = read_be_uint32(&recv_buffer_[6]);
-    uint8_t side = read_be_uint32(&recv_buffer_[10]);
-    uint8_t const * data = &recv_buffer_[14];
+    uint32_t frame_count = read_be_uint32(&recv_buffer_[0]);
+    uint32_t row = read_be_uint32(&recv_buffer_[4]);
+    uint8_t side = read_be_uint32(&recv_buffer_[8]);
+    uint8_t const * data = &recv_buffer_[12];
     
     if(row >= HEIGHT) {
       std::cout << "wrong row" << std::endl;
