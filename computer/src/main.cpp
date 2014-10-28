@@ -5,6 +5,8 @@
 #include "rendering.h"
 #include "simulated_world.h"
 #include "pose_source.h"
+#include "menu.h"
+#include "menu1.h"
 
 using namespace visar;
 
@@ -42,8 +44,10 @@ int main(int argc, char* argv[]) {
         boost::make_shared<pose_source::FPSPoseSource>(renderer));
   
   if(vm.count("simulate-cameras")) {
+    //renderer.add_module(
+      //boost::make_shared<simulated_world::SimulatedWorld>(*ps));
     renderer.add_module(
-      boost::make_shared<simulated_world::SimulatedWorld>(*ps));
+      boost::make_shared<menu::Menu>());
   }
   
   io.run();
