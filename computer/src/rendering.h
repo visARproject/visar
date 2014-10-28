@@ -38,7 +38,7 @@ class Renderer {
 public:
   Renderer(boost::asio::io_service & io) :
     timer_(io) {
-    
+
     GLuint width = 800, height = 600;
 
     oglplus::glx::Version version(display_);
@@ -78,43 +78,43 @@ public:
     ctx_->MakeCurrent(*win_);
 
     oglplus::GLAPIInitializer api_init;
-    
+
     render();
   }
 
   void add_module(boost::shared_ptr<IModule> modulep) {
     modules_.push_back(modulep);
   }
-  
+
   //access methods for display info
   oglplus::x11::Display* getDisplay(){
-  	return &display_;
- 	}
-  
+    return &display_;
+    }
+
   //remove the wrapper (for convience)
   oglplus::x11::Window* getWindow(){
-  	if(win_) return &(*win_);	//return pointer to window, lol syntax
-  	return 0;
-	}
-  
-  
+    if(win_) return &(*win_);       //return pointer to window, lol syntax
+    return 0;
+    }
+
+
 private:
   void render() {
     timer_.expires_from_now(boost::posix_time::seconds(1./120));
     timer_.async_wait([this](boost::system::error_code const &) {
       render();
     });
-    
+
 
     gl_.ClearColor(0.0f, 0.0f, 0.0f, 0.0f);
     gl_.Disable(oglplus::Capability::DepthTest);
-    
+
     gl_.Clear().ColorBuffer();
-    
+
     BOOST_FOREACH(boost::shared_ptr<IModule> & modp, modules_) {
       modp->draw();
     }
-    
+
     ctx_->SwapBuffers(*win_);
   }
 };
