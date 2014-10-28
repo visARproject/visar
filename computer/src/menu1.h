@@ -21,6 +21,19 @@ namespace visar {
         oglplus::Buffer verts;
         oglplus::Buffer texcoords;
         oglplus::Texture tex;
+        GLfloat rectangle_verts[8] = {
+            -1.0f, -1.0f,
+            -1.0f, 0.0f,
+            0.0f, -1.0f,
+            0.0f, 0.0f,
+          };
+        GLfloat tex_verts[8] = {
+            0.0f, 0.0f,
+            0.0f, 1.0f,
+            1.0f, 0.0f,
+            1.0f, 1.0f,
+          };
+        
       public:
         Menu1(void) {
           namespace sv = oglplus::smart_values;
@@ -57,27 +70,13 @@ namespace visar {
           prog.Use();
           
           rectangle.Bind();
-          
-          GLfloat rectangle_verts[8] = {
-            -1.0f, -1.0f,
-            -1.0f, 1.0f,
-            1.0f, -1.0f,
-            1.0f, 1.0f,
-          };
-          
+                    
           verts.Bind(oglplus::Buffer::Target::Array);
           {
             oglplus::Buffer::Data(oglplus::Buffer::Target::Array, 8, rectangle_verts);
             oglplus::VertexArrayAttrib vert_attr(prog, "Position");
             vert_attr.Setup<oglplus::Vec2f>().Enable();
           }
-          
-          GLfloat tex_verts[8] = {
-            0.0f, 0.0f,
-            0.0f, 1.0f,
-            1.0f, 0.0f,
-            1.0f, 1.0f,
-          };
           
           texcoords.Bind(oglplus::Buffer::Target::Array);
           {
@@ -98,8 +97,13 @@ namespace visar {
           
           (prog/"TexUnit") = 0;
         }
+        
         void draw() {
+          prog.Use();
+          rectangle.Bind();
           gl.Disable(oglplus::Capability::DepthTest);
+          oglplus::Buffer::Data(oglplus::Buffer::Target::Array, 8, rectangle_verts);
+          oglplus::Buffer::Data(oglplus::Buffer::Target::Array, 8, tex_verts);
           gl.DrawArrays(oglplus::PrimitiveType::TriangleStrip, 0, 4);
         }
     };
