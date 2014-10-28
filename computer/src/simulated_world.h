@@ -9,8 +9,13 @@ namespace visar {
 namespace simulated_world {
 
 class SimulatedWorld : public rendering::IModule {
+	pose_source::IPoseSource* ps;
+	
 public:
-  SimulatedWorld(pose_source::IPoseSource const & ps) { }
+  SimulatedWorld(pose_source::IPoseSource & ps) { 
+  	this->ps = &ps;	//store the pose
+  }
+  
   void draw() {
     // Vertex shader
     VertexShader vs;
@@ -79,10 +84,21 @@ public:
       .5*s*sqrt(3)/2, .5*-.5, .5*c*sqrt(3)/2,
       .5*-s*sqrt(3)/2, .5*-.5, .5*-c*sqrt(3)/2,
     };
+    
+    //get the transformation
+    Eigen::Affine3d pose = ps->get_pose();
+    
+    //transform each of the vertices and store in GLfloat triange
     GLfloat triangle_verts2[9];
-    for(size_t i = 0; i < 9; i++) {
-      triangle_verts2[i] = triangle_verts[i];
+    for(size_t i=0; i<3; ++i){
+    	Eigen::Matrix<double, 4, 1> v;
+    	v << triangle_verts[i*3], triangle_verts[i*3+1], triangle_verts[i*3+2], 1;
+    	v = pose * v;	//preform the transformation
+    	triangle_verts2[i*3] = v[0];	//store results
+    	triangle_verts2[i*3+1] = v[1];
+ 	    triangle_verts2[i*3+2] = v[2];
     }
+   
     // upload the data
     Buffer::Data(Buffer::Target::Array, 9, triangle_verts2);
 
