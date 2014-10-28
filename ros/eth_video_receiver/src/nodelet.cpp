@@ -36,6 +36,7 @@ class NodeImpl {
   size_t const WIDTH = 1600;
   bool seq_set = false;
   boost::shared_ptr<sensor_msgs::Image> msgp_;
+  volatile bool run_;
 public:
   NodeImpl(boost::function<const std::string&()> getName,
   ros::NodeHandle * nhp,
@@ -52,8 +53,19 @@ public:
     
     image_pub_ = nh_.advertise<sensor_msgs::Image>("image_raw", 10);
     info_pub_ = nh_.advertise<sensor_msgs::CameraInfo>("camera_info", 10);
-    add_waiter();
-    thinker_thread_ = boost::thread([this]() { io_service_.run(); });
+    run_ = true;
+    thinker_thread_ = boost::thread([this]() {
+      while(run_) {
+        boost::system::error_code error;
+        std::size_t bytes_transferred = socket_.receive_from(
+          boost::asio::buffer(recv_buffer_), remote_endpoint_,
+          0, error);
+        
+        if(!error) {
+          handle_packet(bytes_transferred);
+        }
+      }
+    });
   }
   
   void handle_packet(std::size_t bytes_transferred) {
@@ -105,20 +117,8 @@ public:
     }
   }
   
-  void add_waiter() {
-    socket_.async_receive_from(
-      boost::asio::buffer(recv_buffer_), remote_endpoint_,
-      [this](boost::system::error_code const & error, std::size_t bytes_transferred) {
-        if(!error) {
-          handle_packet(bytes_transferred);
-        }
-        
-        add_waiter();
-    });
-  }
-  
   ~NodeImpl() {
-    io_service_.post([this]() { io_service_.stop(); });
+    run_ = false;
     thinker_thread_.join();
   }
 };

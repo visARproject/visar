@@ -111,7 +111,7 @@ add_library(eth_video_receiver_nodelet src/nodelet.cpp)
 target_link_libraries(eth_video_receiver_nodelet ${catkin_LIBRARIES})
 add_dependencies(eth_video_receiver_nodelet ${catkin_EXPORTED_TARGETS})
 add_dependencies(eth_video_receiver_nodelet ${PROJECT_NAME}_generate_messages_cpp)
-set_target_properties(eth_video_receiver_nodelet PROPERTIES COMPILE_FLAGS "-std=c++0x -Wall")
+set_target_properties(eth_video_receiver_nodelet PROPERTIES COMPILE_FLAGS "-std=c++0x -Wall -O3")
 
 #############
 ## Install ##
