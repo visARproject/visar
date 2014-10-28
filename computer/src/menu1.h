@@ -19,6 +19,7 @@ namespace visar {
         oglplus::Program prog;
         oglplus::VertexArray rectangle;
         oglplus::Buffer verts;
+        oglplus::Buffer texcoords;
         oglplus::Texture tex;
       public:
         Menu1(void) {
@@ -26,10 +27,11 @@ namespace visar {
           vs.Source(" \
             #version 130\n \
             in vec2 Position; \
+            in vec2 TexCoord; \
             out vec2 vertTexCoord; \
             void main(void) { \
               gl_Position = vec4(Position, 0.0, 1.0); \
-              vertTexCoord = Position; \
+              vertTexCoord = TexCoord; \
             } \
           ");
           
@@ -42,7 +44,7 @@ namespace visar {
           out vec4 fragColor; \
           void main(void) { \
             vec4 t = texture(TexUnit, vertTexCoord); \
-            fragColor = vec4(t.x, 1.0, 1.0, 1.0); \
+            fragColor = vec4(t.x, t.y, t.z, 1f); \
           } \
           ");
           
@@ -60,7 +62,7 @@ namespace visar {
             -1.0f, -1.0f,
             -1.0f, 1.0f,
             1.0f, -1.0f,
-            1.0f, 1.0f
+            1.0f, 1.0f,
           };
           
           verts.Bind(oglplus::Buffer::Target::Array);
@@ -68,6 +70,20 @@ namespace visar {
             oglplus::Buffer::Data(oglplus::Buffer::Target::Array, 8, rectangle_verts);
             oglplus::VertexArrayAttrib vert_attr(prog, "Position");
             vert_attr.Setup<oglplus::Vec2f>().Enable();
+          }
+          
+          GLfloat tex_verts[8] = {
+            0.0f, 0.0f,
+            0.0f, 1.0f,
+            1.0f, 0.0f,
+            1.0f, 1.0f,
+          };
+          
+          texcoords.Bind(oglplus::Buffer::Target::Array);
+          {
+            oglplus::Buffer::Data(oglplus::Buffer::Target::Array, 8, tex_verts);
+            oglplus::VertexArrayAttrib tex_attr(prog, "TexCoord");
+            tex_attr.Setup<oglplus::Vec2f>().Enable();
           }
           
           gl.Bound(sv::_2D, tex)
