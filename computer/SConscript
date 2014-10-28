@@ -36,6 +36,7 @@ env.Append(CCFLAGS=['-Wall'])
 env.Append(LIBS=['GL', 'X11', 'GLEW', 'boost_program_options', 'boost_system'])
 
 env.ParseConfig('pkg-config --cflags --libs eigen3')
+env.ParseConfig('pkg-config --cflags --libs libpng')
 
 main = env.Program(target='main', source=['src/main.cpp'])
 env.Depends('src/main.cpp', oglplus)

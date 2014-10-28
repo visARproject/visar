@@ -6,6 +6,7 @@
 #include <oglplus/bound/texture.hpp>
 #include <oglplus/gl.hpp>
 #include <oglplus/images/load.hpp>
+#include <oglplus/images/png.hpp>
 #include <oglplus/opt/smart_enums.hpp>
 
 namespace visar {
@@ -20,13 +21,15 @@ namespace visar {
         oglplus::Buffer verts;
         oglplus::Texture tex;
       public:
-        Menu1(void) { }
-        void draw() {
+        Menu1(void) {
+          namespace sv = oglplus::smart_values;
           vs.Source(" \
             #version 130\n \
-            in vec2 Position \
+            in vec2 Position; \
+            out vec2 vertTexCoord; \
             void main(void) { \
               gl_Position = vec4(Position, 0.0, 1.0); \
+              vertTexCoord = Position; \
             } \
           ");
           
@@ -34,11 +37,12 @@ namespace visar {
           
           fs.Source(" \
           #version 130\n \
-          in vec3 vertNormal \
-          out vec4 fragColor \
+          uniform sampler2D TexUnit; \
+          in vec2 vertTexCoord; \
+          out vec4 fragColor; \
           void main(void) { \
-            vec4 t = texture(TexUnit, vertTexCoord) \
-            fragColor = vec4(1.0, 1.0, 1.0, 1.0); \
+            vec4 t = texture(TexUnit, vertTexCoord); \
+            fragColor = vec4(t.x, 1.0, 1.0, 1.0); \
           } \
           ");
           
@@ -60,16 +64,26 @@ namespace visar {
           };
           
           verts.Bind(oglplus::Buffer::Target::Array);
+          {
+            oglplus::Buffer::Data(oglplus::Buffer::Target::Array, 8, rectangle_verts);
+            oglplus::VertexArrayAttrib vert_attr(prog, "Position");
+            vert_attr.Setup<oglplus::Vec2f>().Enable();
+          }
           
-          oglplus::Buffer::Data(oglplus::Buffer::Target::Array, 8, rectangle_verts);
+          gl.Bound(sv::_2D, tex)
+            .Image2D(oglplus::images::PNGImage("concrete_block.png"))
+            .MinFilter(sv::Linear)
+            .MagFilter(sv::Linear)
+            .Anisotropy(2.0f)
+            .WrapS(sv::ClampToEdge)
+            .WrapT(sv::ClampToEdge)
+            .WrapR(sv::ClampToEdge)
+            .GenerateMipmap();
           
-          oglplus::VertexArrayAttrib vert_attr(prog, "Position");
-          vert_attr.Setup<oglplus::Vec2f>().Enable();
-          
+          (prog/"TexUnit") = 0;
+        }
+        void draw() {
           gl.Disable(oglplus::Capability::DepthTest);
-          
-          gl.Bound().Image2D(oglplus::images::LoadTexture("concrete_block"));
-          
           gl.DrawArrays(oglplus::PrimitiveType::TriangleStrip, 0, 4);
         }
     };
