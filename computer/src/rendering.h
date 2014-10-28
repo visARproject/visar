@@ -6,15 +6,10 @@
 #include <boost/foreach.hpp>
 #include <boost/optional.hpp>
 
+#include <SDL2/SDL.h>
+
 #include <oglplus/gl.hpp>
 #include <oglplus/all.hpp>
-#include <oglplus/glx/context.hpp>
-#include <oglplus/glx/version.hpp>
-#include <oglplus/glx/fb_configs.hpp>
-#undef Success
-#undef Always
-#undef Bool
-#undef None
 
 #include <Eigen/Geometry>
 
@@ -28,54 +23,28 @@ public:
 };
 
 class Renderer {
-  oglplus::x11::Display display_;
   boost::asio::deadline_timer timer_;
-  boost::optional<oglplus::glx::FBConfig> fbc_;
-  boost::optional<oglplus::x11::Window> win_;
-  boost::optional<oglplus::glx::Context> ctx_;
+  SDL_Window * window_;
+  SDL_GLContext sdlglcontext_;
   oglplus::Context gl_;
   std::vector<boost::shared_ptr<IModule> > modules_;
 public:
   Renderer(boost::asio::io_service & io) :
     timer_(io) {
 
-    GLuint width = 800, height = 600;
+    if(SDL_Init(SDL_INIT_EVENTS|SDL_INIT_VIDEO) != 0)
+      throw std::runtime_error(SDL_GetError());
 
-    oglplus::glx::Version version(display_);
-    version.AssertAtLeast(1, 3);
-
-    static int visual_attribs[] = {
-      GLX_X_RENDERABLE    , True,
-      GLX_DRAWABLE_TYPE   , GLX_WINDOW_BIT,
-      GLX_RENDER_TYPE     , GLX_RGBA_BIT,
-      GLX_X_VISUAL_TYPE   , GLX_TRUE_COLOR,
-      GLX_RED_SIZE        , 8,
-      GLX_GREEN_SIZE      , 8,
-      GLX_BLUE_SIZE       , 8,
-      GLX_ALPHA_SIZE      , 8,
-      GLX_DEPTH_SIZE      , 24,
-      GLX_STENCIL_SIZE    , 8,
-      GLX_DOUBLEBUFFER    , True,
-      0
-    };
-    fbc_ = oglplus::glx::FBConfigs(
-      display_,
-      visual_attribs
-    ).FindBest(display_);
-
-    oglplus::x11::VisualInfo vi(display_, *fbc_);
-
-    win_ = boost::in_place(
-      display_,
-      vi,
-      oglplus::x11::Colormap(display_, vi),
-      "visAR",
-      width, height
-    );
-
-    ctx_ = boost::in_place(display_, *fbc_, 3, 0);
-
-    ctx_->MakeCurrent(*win_);
+    window_ = SDL_CreateWindow("visAR",
+      SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED,
+      800, 600, SDL_WINDOW_OPENGL);
+    if(!window_) {
+      std::runtime_error e(SDL_GetError());
+      SDL_Quit();
+      throw e;
+    }
+    
+    sdlglcontext_ = SDL_GL_CreateContext(window_);
 
     oglplus::GLAPIInitializer api_init;
 
@@ -85,18 +54,6 @@ public:
   void add_module(boost::shared_ptr<IModule> modulep) {
     modules_.push_back(modulep);
   }
-
-  //access methods for display info
-  oglplus::x11::Display* getDisplay(){
-    return &display_;
-    }
-
-  //remove the wrapper (for convience)
-  oglplus::x11::Window* getWindow(){
-    if(win_) return &(*win_);       //return pointer to window, lol syntax
-    return 0;
-    }
-
 
 private:
   void render() {
@@ -115,7 +72,7 @@ private:
       modp->draw();
     }
 
-    ctx_->SwapBuffers(*win_);
+    SDL_GL_SwapWindow(window_);
   }
 };
 

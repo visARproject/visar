@@ -31,18 +31,13 @@ class FPSPoseSource : public IPoseSource {
 	Eigen::Matrix<double, 3, 1> orientation;
 	Eigen::Matrix<double, 3, 1> momentum; //cache directional data
 	Eigen::Matrix<double, 3, 1> rotation; //cache angular data
-	oglplus::x11::Window* window;	
 	int window_size[2];
-	oglplus::x11::Display* display;
 
 public:
   FPSPoseSource(rendering::Renderer & r) {
 		position 		<< BASE_POSIT;	//init position
 		orientation << BASE_ANGLE;	//init angle
 		momentum << 0, 0, 0; 				//not moving
-		
-		window  = r.getWindow();	//get the glx window
-		display = r.getDisplay();	//get the display
 		
 		//get the display size (from rendering.h)
 		window_size[0] = 800;
@@ -63,63 +58,51 @@ public:
   }
 
 	void vel_update_pose(){
-		if(!window){	//make sure window exists
-			//should probably alert somebody
-			return;	//can't do anything useful, exit
-		}
-		
-		//start listening for things
-		window->SelectInput(
-			PointerMotionMask |
-			KeyPressMask |
-			KeyReleaseMask
-		);
-
 		//Axis are handled internally as follows:
 		//X-value is horizontal axis (left/right)
 		//Y-value is vertical axis (up/down)
 		//Z-value is depth axis (in/out)
 
-		XEvent event;	//variable to store the event
+		SDL_Event event;	//variable to store the event
 		bool done = false;		//catch escape key
 		bool vel_update = false;	//if a key was read, update momentum
 		bool rot_update = false;	//if a key was read, update rotation
-		unsigned int keycode = 0;	//storage for the keycode
+		SDL_Keycode keycode = 0;	//storage for the keycode
 		Eigen::Matrix<double, 3, 1> m2,r2; //temporary storage, for vel_updates
 		m2 << 0, 0, 0;	//new momentum is 0 unless directed otherwise
 		r2 << 0, 0, 0;	//new velocity is 0 unless directed otherwise
-		while(display->NextEvent(event) && !done){	//try to get event
+		while(SDL_PollEvent(&event) && !done){	//try to get event
 			switch(event.type){	//switch based on type
-				case MotionNotify: //Mouse is moved, adjust 
+				case SDL_MOUSEMOTION: //Mouse is moved, adjust 
 					//if moving horizontally, rotate around y axis
-					if(event.xmotion.x - window_size[0]/2 > window_size[0]*.1)	//check threshold
+					if(event.motion.x - window_size[0]/2 > window_size[0]*.1)	//check threshold
 						r2[1] = -ANG_VELOCITY;
-					else if(event.xmotion.x - window_size[0]/2 < window_size[0]*-.1)	//check threshold
+					else if(event.motion.x - window_size[0]/2 < window_size[0]*-.1)	//check threshold
 						r2[1] = ANG_VELOCITY;
 					
 					//if moving vertically, bound at upper and lower poles, rotate around x axis
-					if(event.xmotion.y - window_size[1]/2 > window_size[1]*.1)	//check threshold
+					if(event.motion.y - window_size[1]/2 > window_size[1]*.1)	//check threshold
 						r2[0] = -ANG_VELOCITY;
-				  else if(event.xmotion.y - window_size[1]/2 < window_size[1]*-.1)	//check threshold
+				  else if(event.motion.y - window_size[1]/2 < window_size[1]*-.1)	//check threshold
 						r2[0] = ANG_VELOCITY;
 					rot_update = true;	//there was an update
 					/*printf("Caputred Motion Event: (%d, %d)\n", \
 						event.xmotion.x, event.xmotion.y);	//DEBUG*/
 					break;
 					
-				case KeyPress: //up/down/left/right button press
+				case SDL_KEYDOWN: //up/down/left/right button press
 					//move forward/backwards/left/right along current axis (100 m)
-					keycode = ::XLookupKeysym(&event.xkey,0);
-					if(keycode == XK_Escape){
+					keycode = event.key.keysym.sym;
+					if(keycode == SDLK_ESCAPE){
 						done=true; 
 						break;
-					}else if (keycode == XK_Up)  m2[2] =  LIN_VELOCITY;	//moving forward
-					else if (keycode == XK_Down) m2[2] = -LIN_VELOCITY;	//moving backward
-					else if (keycode == XK_Left) m2[0] = -LIN_VELOCITY;	//moving left
-					else if (keycode == XK_Right) m2[0] = LIN_VELOCITY;	//moving right
+					}else if (keycode == SDLK_UP)  m2[2] =  LIN_VELOCITY;	//moving forward
+					else if (keycode == SDLK_DOWN) m2[2] = -LIN_VELOCITY;	//moving backward
+					else if (keycode == SDLK_LEFT) m2[0] = -LIN_VELOCITY;	//moving left
+					else if (keycode == SDLK_RIGHT) m2[0] = LIN_VELOCITY;	//moving right
 					//printf("Caputred Key Event: code=%d\n",keycode);	//DEBUG
 					
-				case KeyRelease:	//key released, stop motion
+				case SDL_KEYUP:	//key released, stop motion
 					vel_update = true;	//on either key action force vel_update
 			}
 			//do something with escape key (Done)?
