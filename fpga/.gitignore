@@ -3,11 +3,12 @@
 !/*/**/
 
 # whitelist some files
-!/*/src/**/*
+!/*/src/**
 !/*/*/*.xco
 !/*/ipcore*/**/user_design/mig.prj
 !.gitignore
-!MyHDL*/**/*
+!/MyHDL*/**
+!/doc/**
 
 # since this overrides global settings, need to reignore some files
 *~
