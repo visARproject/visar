@@ -474,7 +474,7 @@ dummy_t <= '1';
             data_in.tx_flag <= '0';
         elsif rising_edge(CamAPClk) and CamADV = '1' then
             flag_count <= flag_count + 1;
-            if flag_count = 799 then
+            if flag_count = 399 then
                 flag_count <= 0;
                 data_in.tx_flag <= not data_in.tx_flag;
             end if;

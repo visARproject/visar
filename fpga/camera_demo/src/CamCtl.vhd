@@ -113,7 +113,7 @@ architecture Behavioral of CamCtl is
 		IWR & x"32020008", -- Standby control; Wake up
 
 		IWR & x"338C2797", -- Output format; Context B shadow
-		IWR & x"33900130", -- RGB with BT656 codes
+		IWR & x"33900100", -- RGB with BT656 codes
 		IWR & x"338C272F", -- Sensor Row Start Context B
 		IWR & x"33900004", -- 4
 		IWR & x"338C2733", -- Sensor Row End Context B

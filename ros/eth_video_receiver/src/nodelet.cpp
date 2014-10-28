@@ -71,6 +71,10 @@ public:
       std::cout << "wrong row" << std::endl;
       return;
     }
+    if(side >= 2) {
+      std::cout << "wrong side" << std::endl;
+      return;
+    }
     
     if(msgp_ && seq_set && frame_count != msgp_->header.seq && msgp_->header.seq - frame_count > 10) {
       boost::shared_ptr<sensor_msgs::CameraInfo> msg2p = boost::make_shared<sensor_msgs::CameraInfo>();
@@ -97,7 +101,7 @@ public:
     seq_set = true;
     msgp_->header.stamp = ros::Time::now();
     for(size_t i = 0; i < WIDTH/2; i++) {
-      msgp_->data[row*msgp_->step + (side ? WIDTH/2 : 0) + i] = data[i];
+      msgp_->data[row*msgp_->step + side * (WIDTH/2) + i] = data[i];
     }
   }
   
