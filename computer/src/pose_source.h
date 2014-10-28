@@ -100,16 +100,22 @@ public:
 					else if (keycode == SDLK_DOWN) m2[2] = -LIN_VELOCITY;	//moving backward
 					else if (keycode == SDLK_LEFT) m2[0] = -LIN_VELOCITY;	//moving left
 					else if (keycode == SDLK_RIGHT) m2[0] = LIN_VELOCITY;	//moving right
+					//else if (keycode == SDLK_ESCAPE) throw;	//TODO: make this work
 					//printf("Caputred Key Event: code=%d\n",keycode);	//DEBUG
 					
 				case SDL_KEYUP:	//key released, stop motion
 					vel_update = true;	//on either key action force vel_update
+					break;
+					
+				case SDL_QUIT:
+					throw;	//throw exception to force exit
+			 
 			}
 			//do something with escape key (Done)?
 		}
 		
 		if(vel_update) momentum = m2;	//TODO: check memory here
-		if(rot_update) rotation = r2;	//TODO: check memory here
+		if(rot_update) rotation = r2;	
 		orientation = orientation + rotation;
 		
 		//bound the x-orientatino to the poles
