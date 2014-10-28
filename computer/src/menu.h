@@ -10,7 +10,7 @@ namespace visar {
         Menu(void) { }
         void draw() {
           // Vertex shader
-          VertexShader vs;
+          oglplus::VertexShader vs;
         
           // Set the vertex shader source
           vs.Source(" \
@@ -27,7 +27,7 @@ namespace visar {
           vs.Compile();
           
           // Fragment shader
-          FragmentShader fs;
+          oglplus::FragmentShader fs;
           
           // Set the fragment shader source
           fs.Source(" \
@@ -44,7 +44,7 @@ namespace visar {
           fs.Compile();
           
           // Program
-          Program prog;
+          oglplus::Program prog;
           
           // Attach the shaders to the program
           prog.AttachShader(vs);
@@ -55,10 +55,10 @@ namespace visar {
           prog.Use();
           
           // A vertex array object for the menu rectangle
-          VertexArray menu;
+          oglplus::VertexArray menu;
           
           // VBO for the menu's vertices
-          Buffer verts;
+          oglplus::Buffer verts;
           
           // Bind the VBO for the menu
           menu.Bind();
@@ -82,17 +82,17 @@ namespace visar {
           };
           
           // Bind the VBO for the menu verticies
-          verts.Bind(Buffer::Target::Array);
+          verts.Bind(oglplus::Buffer::Target::Array);
           
           // Upload the data
-          Buffer::Data(Buffer::Target::Array, 24, menu_verts);
+          oglplus::Buffer::Data(oglplus::Buffer::Target::Array, 24, menu_verts);
           
           // Setup the vertex attribs array for the vertices
-          VertexArrayAttrib vert_attr(prog, "Position");
-          vert_attr.Setup<Vec3f>();
+          oglplus::VertexArrayAttrib vert_attr(prog, "Position");
+          vert_attr.Setup<oglplus::Vec3f>();
           vert_attr.Enable();
           
-          Context::DrawArrays(PrimitiveType::Triangles, 0, 6);
+          oglplus::Context::DrawArrays(oglplus::PrimitiveType::Triangles, 0, 6);
         }
     };
   }

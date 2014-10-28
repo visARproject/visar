@@ -15,8 +15,6 @@
 
 #include <Eigen/Geometry>
 
-using namespace oglplus;
-
 namespace visar {
 namespace rendering {
 
@@ -27,12 +25,12 @@ public:
 };
 
 class Renderer {
-  x11::Display display_;
+  oglplus::x11::Display display_;
   boost::asio::deadline_timer timer_;
-  boost::optional<glx::FBConfig> fbc_;
-  boost::optional<x11::Window> win_;
-  boost::optional<glx::Context> ctx_;
-  Context gl_;
+  boost::optional<oglplus::glx::FBConfig> fbc_;
+  boost::optional<oglplus::x11::Window> win_;
+  boost::optional<oglplus::glx::Context> ctx_;
+  oglplus::Context gl_;
   std::vector<boost::shared_ptr<IModule> > modules_;
 public:
   Renderer(boost::asio::io_service & io) :
@@ -40,7 +38,7 @@ public:
     
     GLuint width = 800, height = 600;
 
-    glx::Version version(display_);
+    oglplus::glx::Version version(display_);
     version.AssertAtLeast(1, 3);
 
     static int visual_attribs[] = {
@@ -57,17 +55,17 @@ public:
       GLX_DOUBLEBUFFER    , True,
       None
     };
-    fbc_ = glx::FBConfigs(
+    fbc_ = oglplus::glx::FBConfigs(
       display_,
       visual_attribs
     ).FindBest(display_);
 
-    x11::VisualInfo vi(display_, *fbc_);
+    oglplus::x11::VisualInfo vi(display_, *fbc_);
 
     win_ = boost::in_place(
       display_,
       vi,
-      x11::Colormap(display_, vi),
+      oglplus::x11::Colormap(display_, vi),
       "visAR",
       width, height
     );
@@ -86,12 +84,12 @@ public:
   }
   
   //access methods for display info
-  x11::Display* getDisplay(){
+  oglplus::x11::Display* getDisplay(){
   	return &display_;
  	}
   
   //remove the wrapper (for convience)
-  x11::Window* getWindow(){
+  oglplus::x11::Window* getWindow(){
   	if(win_) return &(*win_);	//return pointer to window, lol syntax
   	return 0;
 	}
@@ -106,7 +104,7 @@ private:
     
 
     gl_.ClearColor(0.0f, 0.0f, 0.0f, 0.0f);
-    gl_.Disable(Capability::DepthTest);
+    gl_.Disable(oglplus::Capability::DepthTest);
     
     gl_.Clear().ColorBuffer();
     

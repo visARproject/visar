@@ -18,7 +18,7 @@ public:
   
   void draw() {
     // Vertex shader
-    VertexShader vs;
+    oglplus::VertexShader vs;
     // Set the vertex shader source
     vs.Source(" \
       #version 130\n \
@@ -34,7 +34,7 @@ public:
     vs.Compile();
 
     // Fragment shader
-    FragmentShader fs;
+    oglplus::FragmentShader fs;
     // set the fragment shader source
     fs.Source(" \
       #version 130\n \
@@ -50,7 +50,7 @@ public:
     fs.Compile();
 
     // Program
-    Program prog;
+    oglplus::Program prog;
     // attach the shaders to the program
     prog.AttachShader(vs);
     prog.AttachShader(fs);
@@ -60,18 +60,18 @@ public:
 
 
     // A vertex array object for the rendered triangle
-    VertexArray triangle;
+    oglplus::VertexArray triangle;
     // VBO for the triangle's vertices
-    Buffer verts;
+    oglplus::Buffer verts;
 
     // bind the VAO for the triangle
     triangle.Bind();
 
     // bind the VBO for the triangle vertices
-    verts.Bind(Buffer::Target::Array);
+    verts.Bind(oglplus::Buffer::Target::Array);
 
     // setup the vertex attribs array for the vertices
-    VertexArrayAttrib vert_attr(prog, "Position");
+    oglplus::VertexArrayAttrib vert_attr(prog, "Position");
     vert_attr.Setup<GLfloat>(3);
     vert_attr.Enable();
 
@@ -100,9 +100,9 @@ public:
     }
    
     // upload the data
-    Buffer::Data(Buffer::Target::Array, 9, triangle_verts2);
+    oglplus::Buffer::Data(oglplus::Buffer::Target::Array, 9, triangle_verts2);
 
-    Context::DrawArrays(PrimitiveType::Triangles, 0, 3);
+    oglplus::Context::DrawArrays(oglplus::PrimitiveType::Triangles, 0, 3);
   }
 };
 

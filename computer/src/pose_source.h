@@ -31,9 +31,9 @@ class FPSPoseSource : public IPoseSource {
 	Eigen::Matrix<double, 3, 1> orientation;
 	Eigen::Matrix<double, 3, 1> momentum; //cache directional data
 	Eigen::Matrix<double, 3, 1> rotation; //cache angular data
-	x11::Window* window;	
+	oglplus::x11::Window* window;	
 	int window_size[2];
-	x11::Display* display;
+	oglplus::x11::Display* display;
 
 public:
   FPSPoseSource(rendering::Renderer & r) {
