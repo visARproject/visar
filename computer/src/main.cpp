@@ -45,9 +45,9 @@ int main(int argc, char* argv[]) {
   
   if(vm.count("simulate-cameras")) {
     renderer.add_module(
-      boost::make_shared<menu1::Menu1>());
-    renderer.add_module(
       boost::make_shared<simulated_world::SimulatedWorld>(*ps));
+    renderer.add_module(
+      boost::make_shared<menu1::Menu1>());
   }
   
   io.run();

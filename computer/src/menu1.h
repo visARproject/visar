@@ -102,8 +102,6 @@ namespace visar {
           prog.Use();
           rectangle.Bind();
           gl.Disable(oglplus::Capability::DepthTest);
-          oglplus::Buffer::Data(oglplus::Buffer::Target::Array, 8, rectangle_verts);
-          oglplus::Buffer::Data(oglplus::Buffer::Target::Array, 8, tex_verts);
           gl.DrawArrays(oglplus::PrimitiveType::TriangleStrip, 0, 4);
         }
     };

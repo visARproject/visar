@@ -66,7 +66,7 @@ private:
     gl_.ClearColor(0.0f, 0.0f, 0.0f, 0.0f);
     gl_.Disable(oglplus::Capability::DepthTest);
 
-    gl_.Clear().ColorBuffer();
+    gl_.Clear().ColorBuffer().DepthBuffer();
 
     BOOST_FOREACH(boost::shared_ptr<IModule> & modp, modules_) {
       modp->draw();

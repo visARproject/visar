@@ -10,7 +10,7 @@ namespace simulated_world {
 
 class SimulatedWorld : public rendering::IModule {
   private:
-	  pose_source::IPoseSource* ps_;
+	  pose_source::IPoseSource & ps_;
 	  oglplus::Context gl;
 	  oglplus::VertexShader vs;
 	  oglplus::FragmentShader fs;
@@ -19,8 +19,8 @@ class SimulatedWorld : public rendering::IModule {
     oglplus::Buffer verts;
 	  
 public:
-  SimulatedWorld(pose_source::IPoseSource & ps) { 
-  	this->ps_ = &ps;	//store the pose
+  SimulatedWorld(pose_source::IPoseSource & ps) :
+    ps_(ps) {
     
     // Set the vertex shader source
     vs.Source(" \
@@ -62,11 +62,10 @@ public:
 
     // bind the VBO for the triangle vertices
     verts.Bind(oglplus::Buffer::Target::Array);
-
-    // setup the vertex attribs array for the vertices
-    oglplus::VertexArrayAttrib vert_attr(prog, "Position");
-    vert_attr.Setup<GLfloat>(3);
-    vert_attr.Enable();
+    {
+        // setup the vertex attribs array for the vertices
+        (prog|"Position").Setup<GLfloat>(3).Enable();
+    }
   }
   
   void draw() {
@@ -81,14 +80,14 @@ public:
     };
     
     //get the transformation
-    Eigen::Affine3d pose = ps_->get_pose();
+    Eigen::Affine3d pose = ps_.get_pose();
     
     //transform each of the vertices and store in GLfloat triange
     GLfloat triangle_verts2[9];
     for(size_t i=0; i<3; ++i){
     	Eigen::Matrix<double, 4, 1> v;
     	v << triangle_verts[i*3], triangle_verts[i*3+1], triangle_verts[i*3+2], 1;
-    	v = pose * v;	//preform the transformation
+    	v = pose * v;	//perform the transformation
     	triangle_verts2[i*3] = v[0];	//store results
     	triangle_verts2[i*3+1] = v[1];
  	    triangle_verts2[i*3+2] = v[2];
@@ -97,7 +96,11 @@ public:
     // upload the data    
     prog.Use();
     triangle.Bind();
-    oglplus::Buffer::Data(oglplus::Buffer::Target::Array, 9, triangle_verts2);
+    verts.Bind(oglplus::Buffer::Target::Array);
+    {
+      oglplus::Buffer::Data(oglplus::Buffer::Target::Array, 9, triangle_verts2);
+    }
+    gl.Enable(oglplus::Capability::DepthTest);
     gl.DrawArrays(oglplus::PrimitiveType::Triangles, 0, 3);
   }
 };
