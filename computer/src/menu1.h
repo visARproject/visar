@@ -58,6 +58,7 @@ namespace visar {
           void main(void) { \
             vec4 t = texture(TexUnit, vertTexCoord); \
             fragColor = vec4(t.x, t.y, t.z, 1f); \
+            if(t.w < .1) discard; \
           } \
           ");
           
@@ -86,7 +87,7 @@ namespace visar {
           }
           
           gl.Bound(sv::_2D, tex)
-            .Image2D(oglplus::images::PNGImage("concrete_block.png"))
+            .Image2D(oglplus::images::PNGImage("alpha_dice.png"))
             .MinFilter(sv::Linear)
             .MagFilter(sv::Linear)
             .Anisotropy(2.0f)
