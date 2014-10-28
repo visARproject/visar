@@ -12,6 +12,9 @@
 #include <oglplus/glx/version.hpp>
 #include <oglplus/glx/fb_configs.hpp>
 #undef Success
+#undef Always
+#undef Bool
+#undef None
 
 #include <Eigen/Geometry>
 
@@ -53,7 +56,7 @@ public:
       GLX_DEPTH_SIZE      , 24,
       GLX_STENCIL_SIZE    , 8,
       GLX_DOUBLEBUFFER    , True,
-      None
+      0
     };
     fbc_ = oglplus::glx::FBConfigs(
       display_,

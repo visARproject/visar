@@ -5,7 +5,7 @@
 #include "rendering.h"
 #include "simulated_world.h"
 #include "pose_source.h"
-#include "menu.h"
+//#include "menu.h"
 #include "menu1.h"
 
 using namespace visar;
@@ -47,7 +47,7 @@ int main(int argc, char* argv[]) {
     //renderer.add_module(
       //boost::make_shared<simulated_world::SimulatedWorld>(*ps));
     renderer.add_module(
-      boost::make_shared<menu::Menu>());
+      boost::make_shared<menu1::Menu1>());
   }
   
   io.run();

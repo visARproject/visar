@@ -12,13 +12,13 @@ namespace visar {
   namespace menu1 {
     class Menu1 : public rendering::IModule {
       private:
-        Context gl;
-        VertexShader vs;
-        FragmentShader fs;
-        Program prog;
-        VertexArray rectangle;
-        Buffer verts;
-        Texture tex;
+        oglplus::Context gl;
+        oglplus::VertexShader vs;
+        oglplus::FragmentShader fs;
+        oglplus::Program prog;
+        oglplus::VertexArray rectangle;
+        oglplus::Buffer verts;
+        oglplus::Texture tex;
       public:
         Menu1(void) { }
         void draw() {
@@ -59,18 +59,18 @@ namespace visar {
             1.0f, 1.0f
           };
           
-          verts.Bind(Buffer::Target::Array);
+          verts.Bind(oglplus::Buffer::Target::Array);
           
-          Buffer::Data(Buffer::Target::Array, 8, rectangle_verts);
+          oglplus::Buffer::Data(oglplus::Buffer::Target::Array, 8, rectangle_verts);
           
-          VertexArrayAttrib vert_attr(prog, "Position");
-          vert_attr.Setup<Vec2f>().Enable();
+          oglplus::VertexArrayAttrib vert_attr(prog, "Position");
+          vert_attr.Setup<oglplus::Vec2f>().Enable();
           
-          gl.Disable(Capability::DepthTest);
+          gl.Disable(oglplus::Capability::DepthTest);
           
-          gl.Bound().Image2D(images::LoadTexture("concrete_block"));
+          gl.Bound().Image2D(oglplus::images::LoadTexture("concrete_block"));
           
-          gl.DrawArrays(PrimitiveType::TriangleStrip, 0, 4);
+          gl.DrawArrays(oglplus::PrimitiveType::TriangleStrip, 0, 4);
         }
     };
   }
