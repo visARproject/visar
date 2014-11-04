@@ -50,15 +50,21 @@ namespace visar {
           
           vs.Compile();
           
+          //shader converts float to int to preform bitwise operations,
+          // stores alpha in last bit of colors (currently 1-bit)
+          // then reutrns the float, or discards if fully transparent.
           fs.Source(" \
           #version 130\n \
           uniform sampler2D TexUnit; \
           in vec2 vertTexCoord; \
           out vec4 fragColor; \
           void main(void) { \
-            vec4 t = texture(TexUnit, vertTexCoord); \
-            fragColor = vec4(t.x, t.y, t.z, 1f); \
-            if(t.w < .1) discard; \
+          	vec4 t = texture(TexUnit, vertTexCoord); \
+						ivec4 int_tex = ivec4(t * 255); \
+						int_tex = int_tex - (int_tex % 2); \
+						if(t.a > .5) int_tex += 1; \
+						if(int_tex.x % 2 == 0) discard; \
+						else fragColor = vec4(int_tex) / 255f; \
           } \
           ");
           
