@@ -561,7 +561,7 @@ dummy_t <= '1';
     udp : entity work.udp_wrapper
         generic map (
             SRC_MAC          => x"000000000000",
-            DST_MAC          => x"FFFFFFFFFFFF",
+            DST_MAC          => x"00249b09740d",
             SRC_IP           => x"00000000",     -- 0.0.0.0
             DST_IP           => x"FFFFFFFF",     -- 255.255.255.255 
             SRC_PORT         => x"0000",
