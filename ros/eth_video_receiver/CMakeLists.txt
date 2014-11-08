@@ -4,7 +4,7 @@ project(eth_video_receiver)
 ## Find catkin macros and libraries
 ## if COMPONENTS list like find_package(catkin REQUIRED COMPONENTS xyz)
 ## is used, also find other catkin packages
-find_package(catkin REQUIRED)
+find_package(catkin REQUIRED COMPONENTS camera_info_manager)
 
 ## System dependencies are found with CMake's conventions
 # find_package(Boost REQUIRED COMPONENTS system)
@@ -78,7 +78,7 @@ find_package(catkin REQUIRED)
 catkin_package(
 #  INCLUDE_DIRS include
 #  LIBRARIES eth_video_receiver
-  CATKIN_DEPENDS roscpp pluginlib sensor_msgs nodelet message_runtime
+  CATKIN_DEPENDS roscpp pluginlib sensor_msgs nodelet message_runtime camera_info_manager
 #  DEPENDS system_lib
 )
 

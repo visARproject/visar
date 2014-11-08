@@ -5,8 +5,7 @@
 #include "rendering.h"
 #include "simulated_world.h"
 #include "pose_source.h"
-//#include "menu.h"
-#include "menu1.h"
+#include "menu_button.h"
 
 using namespace visar;
 
@@ -46,8 +45,22 @@ int main(int argc, char* argv[]) {
   if(vm.count("simulate-cameras")) {
     renderer.add_module(
       boost::make_shared<simulated_world::SimulatedWorld>(*ps));
-    renderer.add_module(
-      boost::make_shared<menu1::Menu1>());
+      
+    /* Adds menu buttons */
+    /* First param: file name */
+    /* Second param: # of buttons */
+    /* Third param: location of button, 0 in middle */
+
+    std::vector<std::string> buttons = {
+      "Call_Button.png",
+      "Options_Button.png",
+      "Hide_All_Button.png",
+    };
+    
+    for(int unsigned i = 0; i < buttons.size(); i++) {
+      renderer.add_module(
+        boost::make_shared<menu_button::Menu_Button>(buttons[i], buttons.size(), i + 1));
+    }
   }
   
   io.run();
