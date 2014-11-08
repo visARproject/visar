@@ -6,6 +6,7 @@
 #include <sensor_msgs/Image.h>
 #include <sensor_msgs/CameraInfo.h>
 #include <sensor_msgs/image_encodings.h>
+#include <camera_info_manager/camera_info_manager.h>
 
 #include <iostream>
 #include <boost/array.hpp>
@@ -16,6 +17,60 @@
 using boost::asio::ip::udp;
 
 namespace eth_video_receiver {
+
+
+void fail(std::string const &error_string) {
+  throw std::runtime_error(error_string);
+}
+template<typename FirstType, typename SecondType, typename... MoreTypes>
+void fail(FirstType first, SecondType second, MoreTypes... more) {
+  std::ostringstream ss;
+  ss << first << second;
+  return fail(ss.str(), more...);
+}
+
+template<typename... ErrorDescTypes>
+void require(bool cond, ErrorDescTypes... error_desc) {
+  if(!cond) {
+    fail(error_desc...);
+  }
+}
+
+
+template<typename T>
+bool _getParam(ros::NodeHandle &nh, const std::string &name, T &res) {
+  return nh.getParam(name, res);
+}
+template<>
+bool _getParam(ros::NodeHandle &nh, const std::string &name, ros::Duration &res) {
+  double x; if(!nh.getParam(name, x)) return false;
+  res = ros::Duration(x); return true;
+}
+template<>
+bool _getParam(ros::NodeHandle &nh, const std::string &name, unsigned int &res) {
+  int x; if(!nh.getParam(name, x)) return false;
+  if(x < 0) {
+    fail("param ", name, " must be >= 0");
+  }
+  res = static_cast<unsigned int>(x); return true;
+}
+
+template<typename T>
+T getParam(ros::NodeHandle &nh, std::string name) {
+  T res;
+  require(_getParam(nh, name, res), "param ", name, " required");
+  return res;
+}
+template<typename T>
+T getParam(ros::NodeHandle &nh, std::string name, T default_value) {
+  T res;
+  if(!_getParam(nh, name, res)) {
+    return default_value;
+  }
+  return res;
+}
+
+
 
 uint32_t read_be_uint32(uint8_t const * d) {
   return (d[0] << 24) | (d[1] << 16) | (d[2] << 8) | d[3];
@@ -37,6 +92,8 @@ class NodeImpl {
   bool seq_set = false;
   boost::shared_ptr<sensor_msgs::Image> msgp_;
   volatile bool run_;
+  camera_info_manager::CameraInfoManager cinfo_;
+  std::string frame_id_;
 public:
   NodeImpl(boost::function<const std::string&()> getName,
   ros::NodeHandle * nhp,
@@ -44,7 +101,11 @@ public:
     getName_(getName),
     nh_(*nhp),
     private_nh_(*private_nhp),
-    socket_(io_service_, udp::v4()) {
+    socket_(io_service_, udp::v4()),
+    cinfo_(nh_,
+      getParam<std::string>(private_nh_, "camera_name", "eth_video_camera"),
+      getParam<std::string>(private_nh_, "camera_info_url", "")),
+    frame_id_(getParam<std::string>(private_nh_, "frame_id")) {
     
     boost::asio::socket_base::broadcast option(true);
     socket_.set_option(option);
@@ -89,10 +150,8 @@ public:
     }
     
     if(msgp_ && seq_set && frame_count != msgp_->header.seq && msgp_->header.seq - frame_count > 10) {
-      boost::shared_ptr<sensor_msgs::CameraInfo> msg2p = boost::make_shared<sensor_msgs::CameraInfo>();
+      boost::shared_ptr<sensor_msgs::CameraInfo> msg2p = boost::make_shared<sensor_msgs::CameraInfo>(cinfo_.getCameraInfo());
       msg2p->header = msgp_->header;
-      msg2p->height = msgp_->height;
-      msg2p->width = msgp_->width;
       info_pub_.publish(msg2p);
       image_pub_.publish(msgp_);
       msgp_.reset();
@@ -100,7 +159,7 @@ public:
     
     if(!msgp_) {
       msgp_ = boost::make_shared<sensor_msgs::Image>();
-      msgp_->header.frame_id = "/camera";
+      msgp_->header.frame_id = frame_id_;
       msgp_->height = HEIGHT;
       msgp_->width = WIDTH;
       msgp_->encoding = sensor_msgs::image_encodings::BAYER_RGGB8;
