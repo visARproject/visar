@@ -51,7 +51,7 @@ int main(int argc, char* argv[]) {
     /* Second param: # of buttons */
     /* Third param: location of button, 0 in middle */
     
-    /*renderer.add_module(
+    renderer.add_module(
       boost::make_shared<menu::Menu>("Call_Button.png", 7, 1));
     renderer.add_module(
       boost::make_shared<menu::Menu>("Options_Button.png", 7, 2));
@@ -64,9 +64,9 @@ int main(int argc, char* argv[]) {
     renderer.add_module(
       boost::make_shared<menu::Menu>("Call_Button.png", 7, 6));
     renderer.add_module(
-      boost::make_shared<menu::Menu>("Options_Button.png", 7, 7));*/
+      boost::make_shared<menu::Menu>("concrete_block.png", 7, 7));
     
-    renderer.add_module(
+    /*renderer.add_module(
       boost::make_shared<menu::Menu>("Call_Button.png", 8, 1));
     renderer.add_module(
       boost::make_shared<menu::Menu>("Options_Button.png", 8, 2));
@@ -81,7 +81,7 @@ int main(int argc, char* argv[]) {
     renderer.add_module(
       boost::make_shared<menu::Menu>("Hide_All_Button.png", 8, 7));
     renderer.add_module(
-      boost::make_shared<menu::Menu>("Hide_All_Button.png", 8, 8));
+      boost::make_shared<menu::Menu>("Hide_All_Button.png", 8, 8));*/
   }
   
   io.run();

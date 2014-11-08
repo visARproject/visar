@@ -24,28 +24,30 @@ namespace visar {
         oglplus::Buffer texcoords;
         oglplus::Texture tex;
         GLfloat rectangle_verts[8];
+        boost::shared_ptr<oglplus::images::Image> texturep;
         GLfloat tex_verts[8] = {
             0.0f, 0.0f, /* Bottom Left */
-            0.0f, 1.0f, /* Top Left */
-            1.0f, 0.0f, /* Bottom Right */
-            1.0f, 1.0f, /* Top Right */
+            0.0f, 0.5f, /* Top Left */
+            0.5f, 0.0f, /* Bottom Right */
+            0.5f, 0.5f, /* Top Right */
         };
+
+      protected:
+
         
       public:
+        
+
         Menu(void) { }
       
         Menu(const char *t, int num_buttons, int button_loc) {
-          namespace sv = oglplus::smart_values;
-          oglplus::images::Image texture = oglplus::images::PNGImage(t);
-          
-          float tex_width = texture.Width();
-          float tex_height = texture.Height();
+          texturep = boost::make_shared<oglplus::images::PNGImage>(t);
           
           float left_x = -0.95f;
           float right_x = left_x + 0.3f;
           
           float pro_width = std::abs(right_x - left_x);
-          float pro_height = pro_width * (tex_height / tex_width);
+          float pro_height = pro_width * (1.0f / 3.5f);
           
           float top_y = 0.0f;
           float bottom_y = 0.0f;
@@ -102,7 +104,7 @@ namespace visar {
             in vec2 TexCoord; \
             out vec2 vertTexCoord; \
             void main(void) { \
-              gl_Position = vec4(Position, 0.0, 1.0); \
+              gl_Position = vec4(Position, 0, 1.0); \
               vertTexCoord = TexCoord; \
             } \
           ");
@@ -118,12 +120,7 @@ namespace visar {
           in vec2 vertTexCoord; \
           out vec4 fragColor; \
           void main(void) { \
-          	vec4 t = texture(TexUnit, vertTexCoord); \
-						ivec4 int_tex = ivec4(t * 255); \
-						int_tex = int_tex - (int_tex % 2); \
-						if(t.a > .5) int_tex += 1; \
-						if(int_tex.x % 2 == 0) discard; \
-						else fragColor = vec4(int_tex) / 255f; \
+          	fragColor = texture(TexUnit, vertTexCoord); \
           } \
           ");
           
@@ -150,11 +147,11 @@ namespace visar {
             oglplus::VertexArrayAttrib tex_attr(prog, "TexCoord");
             tex_attr.Setup<oglplus::Vec2f>().Enable();
           }
-                    
-          gl.Bound(sv::_2D, tex)
-            .Image2D(texture)
-            .MinFilter(sv::Linear)
-            .MagFilter(sv::Linear)
+
+          gl.Bound(oglplus::smart_values::_2D, tex)
+            .Image2D(*texturep)
+            .MinFilter(oglplus::smart_values::Linear)
+            .MagFilter(oglplus::smart_values::Linear)
             .Anisotropy(2.0f)
             .GenerateMipmap();
           
@@ -164,6 +161,9 @@ namespace visar {
         void draw() {
           prog.Use();
           rectangle.Bind();
+
+          gl.Bound(oglplus::smart_values::_2D, tex);
+
           gl.Disable(oglplus::Capability::DepthTest);
           gl.DrawArrays(oglplus::PrimitiveType::TriangleStrip, 0, 4);
         }
