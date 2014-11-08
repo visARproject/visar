@@ -25,11 +25,11 @@ begin
 	     
 	process
 	begin
-		rst_n <= '1';
-		
-		wait for 20 ns;
-		
 		rst_n <= '0';
+		
+		wait for 1 us;
+		
+		rst_n <= '1';
 		
 		wait;
 	

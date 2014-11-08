@@ -19,22 +19,14 @@ TIMESPEC "TS_ramra" = FROM "bramra" TO "fddbgrp" TS_PCLK;
 
 
 
-#NET "rst" LOC = T15NET "rst" LOC = T15;
-#NET "clk_100MHz" LOC = L15
-NET "clk_100MHz" LOC = K3 | IOSTANDARD = "LVCMOS33" | PERIOD = 100 MHz HIGH 50%;
-#NET "tmds<0>" LOC = D8
-NET "tmds<0>" LOC = B3 | IOSTANDARD = "TMDS_33"; # Blue
-#NET "tmds<1>" LOC = C7
-NET "tmds<1>" LOC = C5 | IOSTANDARD = "TMDS_33"; # Green
-#NET "tmds<2>" LOC = B8
-NET "tmds<2>" LOC = B4 | IOSTANDARD = "TMDS_33"; # Red 	
-#NET "tmds<3>" LOC = B6
-NET "tmds<3>" LOC = B2 | IOSTANDARD = "TMDS_33"; # Clock	
-#NET "tmdsb<0>" LOC = C8
-NET "tmdsb<0>" LOC = A3 | IOSTANDARD = "TMDS_33";
-#NET "tmdsb<1>" LOC = A7
-NET "tmdsb<1>" LOC = A5 | IOSTANDARD = "TMDS_33";
-#NET "tmdsb<2>" LOC = A8
-NET "tmdsb<2>" LOC = A4 | IOSTANDARD = "TMDS_33";
-#NET "tmdsb<3>" LOC = A6
-NET "tmdsb<3>" LOC = A2 | IOSTANDARD = "TMDS_33";
+NET "rst_n" LOC = T15;
+NET "clk_100MHz" LOC = L15 | IOSTANDARD = "LVCMOS33" | PERIOD = 100 MHz HIGH 50%;
+
+NET "TMDS(0)"  	LOC = "D8" | IOSTANDARD = TMDS_33 ; # Blue
+NET "TMDSB(0)"  LOC = "C8" | IOSTANDARD = TMDS_33 ;
+NET "TMDS(1)"  	LOC = "C7" | IOSTANDARD = TMDS_33 ; # Red
+NET "TMDSB(1)"  LOC = "A7" | IOSTANDARD = TMDS_33 ;
+NET "TMDS(2)"  	LOC = "B8" | IOSTANDARD = TMDS_33 ; # Green
+NET "TMDSB(2)"  LOC = "A8" | IOSTANDARD = TMDS_33 ;
+NET "TMDS(3)"  	LOC = "B6" | IOSTANDARD = TMDS_33 ; # Clock
+NET "TMDSB(3)"  LOC = "A6" | IOSTANDARD = TMDS_33 ;

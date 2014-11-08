@@ -30,6 +30,7 @@ use work.DVI_LIB.all;
 
 entity dvi_video_test_pattern_generator is
 	port(
+		reset	: in std_logic;
 		clk_in 	: in std_logic;
 		video 	: out video_bus
 		);
@@ -37,33 +38,38 @@ end dvi_video_test_pattern_generator;
 
 architecture Behavioral of dvi_video_test_pattern_generator is
 
-	signal h_cnt 	: std_logic_vector(11 downto 0) := (others => '0');
-	signal v_cnt 	: std_logic_vector(11 downto 0) := (others => '0');	
+	signal h_cnt 	: std_logic_vector(11 downto 0);
+	signal v_cnt 	: std_logic_vector(11 downto 0);
 begin
 
 	process(clk_in)
 	begin
 		if(rising_edge(clk_in)) then
-			video.frame_rst <= '0';
-			if unsigned(h_cnt) /= H_MAX and unsigned(v_cnt) /= V_MAX  then
-				h_cnt <= std_logic_vector(unsigned(h_cnt) + 1);
-			elsif unsigned(h_cnt) = H_MAX and unsigned(v_cnt) /= V_MAX then
-				h_cnt <= (others => '0');
-				v_cnt <= std_logic_vector(unsigned(v_cnt) + 1);
-			elsif unsigned(h_cnt) = H_MAX and unsigned(v_cnt) = V_MAX then
-				video.frame_rst <= '1';
-				h_cnt <= (others => '0');
-				v_cnt <= (others => '0');
-			end if;
-			
-			if ((unsigned(h_cnt) / 16) mod 2 ) = 0 xor ((unsigned(v_cnt) / 16) mod 2 ) = 0 then
-				video.red <= x"FF";
-				video.green <= x"FF";
-				video.blue <= x"FF";
+			if reset = '1' then
+				h_cnt <= std_logic_vector(to_unsigned(H_MAX, h_cnt'length));
+				v_cnt <= std_logic_vector(to_unsigned(V_MAX, v_cnt'length));
 			else
-				video.red <= x"00";
-				video.green <= x"00";
-				video.blue <= x"00";
+				video.frame_rst <= '0';
+				if unsigned(h_cnt) /= H_MAX then
+					h_cnt <= std_logic_vector(unsigned(h_cnt) + 1);
+				elsif unsigned(h_cnt) = H_MAX and unsigned(v_cnt) /= V_MAX then
+					h_cnt <= (others => '0');
+					v_cnt <= std_logic_vector(unsigned(v_cnt) + 1);
+				elsif unsigned(h_cnt) = H_MAX and unsigned(v_cnt) = V_MAX then
+					video.frame_rst <= '1';
+					h_cnt <= (others => '0');
+					v_cnt <= (others => '0');
+				end if;
+			
+				if ((unsigned(h_cnt) / 16) mod 2 ) = 0 xor ((unsigned(v_cnt) / 16) mod 2 ) = 0 then
+					video.red <= x"FF";
+					video.green <= x"FF";
+					video.blue <= x"FF";
+				else
+					video.red <= x"00";
+					video.green <= x"00";
+					video.blue <= x"00";
+				end if;
 			end if;
 		end if;
 		
