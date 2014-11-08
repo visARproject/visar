@@ -5,7 +5,7 @@
 #include "rendering.h"
 #include "simulated_world.h"
 #include "pose_source.h"
-#include "menu.h"
+#include "menu_button.h"
 
 using namespace visar;
 
@@ -50,38 +50,17 @@ int main(int argc, char* argv[]) {
     /* First param: file name */
     /* Second param: # of buttons */
     /* Third param: location of button, 0 in middle */
+
+    std::vector<std::string> buttons = {
+      "Call_Button.png",
+      "Options_Button.png",
+      "Hide_All_Button.png",
+    };
     
-    renderer.add_module(
-      boost::make_shared<menu::Menu>("Call_Button.png", 7, 1));
-    renderer.add_module(
-      boost::make_shared<menu::Menu>("Options_Button.png", 7, 2));
-    renderer.add_module(
-      boost::make_shared<menu::Menu>("Hide_All_Button.png", 7, 3));
-    renderer.add_module(
-      boost::make_shared<menu::Menu>("Call_Button.png", 7, 4));
-    renderer.add_module(
-      boost::make_shared<menu::Menu>("Options_Button.png", 7, 5));
-    renderer.add_module(
-      boost::make_shared<menu::Menu>("Call_Button.png", 7, 6));
-    renderer.add_module(
-      boost::make_shared<menu::Menu>("concrete_block.png", 7, 7));
-    
-    /*renderer.add_module(
-      boost::make_shared<menu::Menu>("Call_Button.png", 8, 1));
-    renderer.add_module(
-      boost::make_shared<menu::Menu>("Options_Button.png", 8, 2));
-    renderer.add_module(
-      boost::make_shared<menu::Menu>("Hide_All_Button.png", 8, 3));
-    renderer.add_module(
-      boost::make_shared<menu::Menu>("Hide_All_Button.png", 8, 4));
-    renderer.add_module(
-      boost::make_shared<menu::Menu>("Call_Button.png", 8, 5));
-    renderer.add_module(
-      boost::make_shared<menu::Menu>("Options_Button.png", 8, 6));
-    renderer.add_module(
-      boost::make_shared<menu::Menu>("Hide_All_Button.png", 8, 7));
-    renderer.add_module(
-      boost::make_shared<menu::Menu>("Hide_All_Button.png", 8, 8));*/
+    for(int unsigned i = 0; i < buttons.size(); i++) {
+      renderer.add_module(
+        boost::make_shared<menu_button::Menu_Button>(buttons[i], buttons.size(), i + 1));
+    }
   }
   
   io.run();

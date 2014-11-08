@@ -12,8 +12,8 @@
 #include <iostream>
 
 namespace visar {
-  namespace menu {
-    class Menu : public rendering::IModule {
+  namespace menu_button {
+    class Menu_Button : public rendering::IModule {
       private:
         oglplus::Context gl;
         oglplus::VertexShader vs;
@@ -27,9 +27,9 @@ namespace visar {
         boost::shared_ptr<oglplus::images::Image> texturep;
         GLfloat tex_verts[8] = {
             0.0f, 0.0f, /* Bottom Left */
-            0.0f, 0.5f, /* Top Left */
-            0.5f, 0.0f, /* Bottom Right */
-            0.5f, 0.5f, /* Top Right */
+            0.0f, 1.0f, /* Top Left */
+            1.0f, 0.0f, /* Bottom Right */
+            1.0f, 1.0f, /* Top Right */
         };
 
       protected:
@@ -38,17 +38,17 @@ namespace visar {
       public:
         
 
-        Menu(void) { }
+        Menu_Button(void) { }
       
-        Menu(const char *t, int num_buttons, int button_loc) {
-          texturep = boost::make_shared<oglplus::images::PNGImage>(t);
+        Menu_Button(std::string t, int num_buttons, int button_loc) {
+          texturep = boost::make_shared<oglplus::images::PNGImage>(t.c_str());
           
           float left_x = -0.95f;
           float right_x = left_x + 0.3f;
           
           float pro_width = std::abs(right_x - left_x);
           float pro_height = pro_width * (1.0f / 3.5f);
-          
+
           float top_y = 0.0f;
           float bottom_y = 0.0f;
           
