@@ -5,8 +5,7 @@
 #include "rendering.h"
 #include "simulated_world.h"
 #include "pose_source.h"
-//#include "menu.h"
-#include "menu1.h"
+#include "menu.h"
 
 using namespace visar;
 
@@ -46,8 +45,43 @@ int main(int argc, char* argv[]) {
   if(vm.count("simulate-cameras")) {
     renderer.add_module(
       boost::make_shared<simulated_world::SimulatedWorld>(*ps));
+      
+    /* Adds menu buttons */
+    /* First param: file name */
+    /* Second param: # of buttons */
+    /* Third param: location of button, 0 in middle */
+    
+    /*renderer.add_module(
+      boost::make_shared<menu::Menu>("Call_Button.png", 7, 1));
     renderer.add_module(
-      boost::make_shared<menu1::Menu1>());
+      boost::make_shared<menu::Menu>("Options_Button.png", 7, 2));
+    renderer.add_module(
+      boost::make_shared<menu::Menu>("Hide_All_Button.png", 7, 3));
+    renderer.add_module(
+      boost::make_shared<menu::Menu>("Call_Button.png", 7, 4));
+    renderer.add_module(
+      boost::make_shared<menu::Menu>("Options_Button.png", 7, 5));
+    renderer.add_module(
+      boost::make_shared<menu::Menu>("Call_Button.png", 7, 6));
+    renderer.add_module(
+      boost::make_shared<menu::Menu>("Options_Button.png", 7, 7));*/
+    
+    renderer.add_module(
+      boost::make_shared<menu::Menu>("Call_Button.png", 8, 1));
+    renderer.add_module(
+      boost::make_shared<menu::Menu>("Options_Button.png", 8, 2));
+    renderer.add_module(
+      boost::make_shared<menu::Menu>("Hide_All_Button.png", 8, 3));
+    renderer.add_module(
+      boost::make_shared<menu::Menu>("Hide_All_Button.png", 8, 4));
+    renderer.add_module(
+      boost::make_shared<menu::Menu>("Call_Button.png", 8, 5));
+    renderer.add_module(
+      boost::make_shared<menu::Menu>("Options_Button.png", 8, 6));
+    renderer.add_module(
+      boost::make_shared<menu::Menu>("Hide_All_Button.png", 8, 7));
+    renderer.add_module(
+      boost::make_shared<menu::Menu>("Hide_All_Button.png", 8, 8));
   }
   
   io.run();
