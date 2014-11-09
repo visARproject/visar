@@ -214,16 +214,18 @@ begin
 		if rising_edge(pclk) then
 			hsync_prev <= hsync;	
 			vsync_prev <= vsync;
+			
 			video_output.frame_rst <= '0';
 			if unsigned(h_cnt) /= H_MAX then
 				h_cnt <= std_logic_vector(unsigned(h_cnt) + 1);
-			elsif unsigned(h_cnt) = H_MAX and unsigned(v_cnt) /= V_MAX then
+			else
 				h_cnt <= (others => '0');
-				v_cnt <= std_logic_vector(unsigned(v_cnt) + 1);
-			elsif unsigned(h_cnt) = H_MAX and unsigned(v_cnt) = V_MAX then
-				video_output.frame_rst <= '1';
-				h_cnt <= (others => '0');
-				v_cnt <= (others => '0');
+				if unsigned(v_cnt) /= V_MAX then
+					v_cnt <= std_logic_vector(unsigned(v_cnt) + 1);
+				else
+					v_cnt <= (others => '0');
+					video_output.frame_rst <= '1';
+				end if;
 			end if;
 			
 			-- Synchronization 
