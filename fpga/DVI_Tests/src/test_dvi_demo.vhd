@@ -7,20 +7,31 @@ entity test_dvi_demo is
     port (
         clk_100MHz : in std_logic;
         rst_n : in std_logic;
-        tmds : out std_logic_vector(3 downto 0);
-        tmdsb : out std_logic_vector(3 downto 0)
+        rx_tmds : in std_logic_vector(3 downto 0);
+        rx_tmdsb : in std_logic_vector(3 downto 0);
+        tx_tmds : out std_logic_vector(3 downto 0);
+        tx_tmdsb : out std_logic_vector(3 downto 0)
     );
 end entity test_dvi_demo;
 
 
 architecture RTL of test_dvi_demo is
     signal clk_132MHz : std_logic;
-    signal video : video_bus;
-    signal video_out : video_bus;
+    signal pattern_gen_video_out : video_bus;
+    signal mux_video_out, dvi_rx_video_out : video_bus;
     signal rst : std_logic;
+    signal dvi_connected : std_logic;
     
 begin
-    rst <= not rst_n;
+	rst <= not rst_n;
+	
+	U_DVI_RX : entity work.dvi_receiver
+		port map(rst          => rst,
+			     rx_tmds      => rx_tmds,
+			     rx_tmdsb     => rx_tmdsb,
+			     video_output => dvi_rx_video_out,
+			     dvi_connected => dvi_connected);
+	
     U_PIXEL_CLK_GEN : entity work.pixel_clk_gen
         port map(CLK_IN1  => clk_100MHz,
                  CLK_OUT1 => clk_132MHz,
@@ -31,18 +42,19 @@ begin
         port map(
                 reset => rst,
                 clk_in => clk_132MHz,
-                 video  => video);
+                 video  => pattern_gen_video_out);
                  
     U_SRC_MUX : entity work.dvi_mux
-        port map(video0    => video,
-                 video1    => video,
-                 sel       => '1',
-                 video_out => video_out);        
+        port map(video0    => pattern_gen_video_out,
+                 video1    => dvi_rx_video_out,
+                 sel       => dvi_connected,
+                 video_out => mux_video_out);        
                  
     U_DVI_TX : entity work.dvi_transmitter
         port map(rst      => rst,
-                 video_in => video_out,
-                 tx_tmds  => tmds,
-                 tx_tmdsb => tmdsb);     
+                 video_in => mux_video_out,
+                 tx_tmds  => tx_tmds,
+                 tx_tmdsb => tx_tmdsb);  
+ 
     
 end architecture RTL;

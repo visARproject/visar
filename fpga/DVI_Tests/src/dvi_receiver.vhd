@@ -11,7 +11,8 @@ entity dvi_receiver is
 		rst : in std_logic;
 		rx_tmds : in std_logic_vector(3 downto 0);
 		rx_tmdsb: in std_logic_vector(3 downto 0);
-		video_output : out video_bus
+		video_output : out video_bus;
+		dvi_connected : out std_logic
 	);
 end entity dvi_receiver;
 
@@ -28,7 +29,6 @@ architecture RTL of dvi_receiver is
     signal extrst    : std_logic;--  (~rstbtn_n),
     signal rxclkint  : std_logic;
     signal rxclk	 : std_logic;
-    signal tmdsclk   : std_logic;
     signal clkfbout  : std_logic;
     signal pllclk0   : std_logic;
     signal pllclk1   : std_logic;
@@ -84,26 +84,27 @@ begin
 	red_n 		<= rx_tmdsb(2);
 	
 	
-	ibuf_rxclk : entity IBUFDS
+	ibuf_rxclk : component IBUFDS
 		generic map(DIFF_TERM   => false,
 					IOSTANDARD  => "TMDS_33")
 		port map(O  => rxclkint,
 			     I  => tmdsclk_p,
 			     IB => tmdsclk_n);
 	
-	bufio_tmdsclk : entity BUFIO2
+	bufio_tmdsclk : component BUFIO2
 		generic map(DIVIDE_BYPASS => true,
 			        DIVIDE        => 1)
 		port map(DIVCLK       => rxclk,
 			     IOCLK        => open,
 			     SERDESSTROBE => open,
 			     I            => rxclkint);
+
+-- I don't believe this is necessary	     
+--	tmdsclk_bufg : component BUFG
+--		port map(O => tmdsclk,
+--			     I => rxclk);
 			     
-	tmdsclk_bufg : entity BUFG
-		port map(O => tmdsclk,
-			     I => rxclk);
-			     
-	PLL_ISERDES : entity PLL_BASE
+	PLL_ISERDES : component PLL_BASE
 		generic map(CLKFBOUT_MULT         => 10,
 			        CLKIN_PERIOD          => 10.0,
 			        CLKOUT0_DIVIDE        => 1,
@@ -122,17 +123,19 @@ begin
 			     CLKIN    => rxclk,
 			     RST      => extrst);
 			     
-	pclkbufg : entity BUFG
+	dvi_connected <= pll_lckd;
+
+	pclkbufg : component BUFG
 		port map(O => pclk,
 			     I => pllclk1);		
 			     
-	pclkx2bufg : entity BUFG
+	pclkx2bufg : component BUFG
 		port map(O => pclkx2,
 			     I => pllclk2);	     
 
 	intrst <= not bufpll_lock;
 
-	ioclk_buf : entity BUFPLL
+	ioclk_buf : component BUFPLL
 		generic map(DIVIDE      => 5)
 		port map(IOCLK        => pclkx10,
 			     LOCK         => bufpll_lock,
@@ -150,10 +153,10 @@ begin
 			     serdesstrobe  => serdesstrobe,
 			     din_p         => blue_p,
 			     din_n         => blue_n,
-			     other_ch0_vld => green_rdy,
-			     other_ch1_vld => red_rdy,
-			     other_ch0_rdy => green_vld,
-			     other_ch1_rdy => red_vld,
+			     other_ch0_vld => green_vld,
+			     other_ch1_vld => red_vld,
+			     other_ch0_rdy => green_rdy,
+			     other_ch1_rdy => red_rdy,
 			     iamvld        => blue_vld,
 			     iamrdy        => blue_rdy,
 			     psalgnerr     => blue_psalgnerr,
@@ -171,10 +174,10 @@ begin
 			     serdesstrobe  => serdesstrobe,
 			     din_p         => green_p,
 			     din_n         => green_n,
-			     other_ch0_vld => blue_rdy,
-			     other_ch1_vld => red_rdy,
-			     other_ch0_rdy => blue_vld,
-			     other_ch1_rdy => red_vld,
+			     other_ch0_vld => blue_vld,
+			     other_ch1_vld => red_vld,
+			     other_ch0_rdy => blue_rdy,
+			     other_ch1_rdy => red_rdy,
 			     iamvld        => green_vld,
 			     iamrdy        => green_rdy,
 			     psalgnerr     => green_psalgnerr,

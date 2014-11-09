@@ -11,15 +11,17 @@ architecture RTL of dvi_test_tb is
 
 	signal clk_100MHz : std_logic := '0';
 	signal rst_n : std_logic;
-	signal tmds : std_logic_vector(3 downto 0);
-	signal tmdsb : std_logic_vector(3 downto 0);
+	signal tx_tmds, rx_tmds : std_logic_vector(3 downto 0);
+	signal tx_tmdsb, rx_tmdsb : std_logic_vector(3 downto 0);
 	
 begin
 	UUT : entity work.test_dvi_demo
 		port map(clk_100MHz => clk_100MHz,
-			     rst_n        => rst_n,
-			     tmds       => tmds,
-			     tmdsb      => tmdsb);
+			     rst_n      => rst_n,
+			     rx_tmds    => rx_tmds,
+			     rx_tmdsb   => rx_tmdsb,
+			     tx_tmds    => tx_tmds,
+			     tx_tmdsb   => tx_tmdsb);
 			     
 	clk_100MHz <= not clk_100MHz after 5 ns;
 	     
