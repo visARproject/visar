@@ -1,8 +1,10 @@
 library ieee;
-library UNISIM;
+library unisim;
 use ieee.std_logic_1164.all;
-use UNISIM.VComponents.all;
+use ieee.numeric_std.all;
+use unisim.VComponents.all;
 use work.video_bus.all;
+use work.dvi_lib.all;
 
 entity dvi_receiver is
 	port (
@@ -23,7 +25,7 @@ architecture RTL of dvi_receiver is
     signal blue_n    : std_logic;--  (RX0_TMDSB[0]),
     signal green_n   : std_logic;--  (RX0_TMDSB[1]),
     signal red_n     : std_logic;--  (RX0_TMDSB[2]),
-    signal extrst     : std_logic;--  (~rstbtn_n),
+    signal extrst    : std_logic;--  (~rstbtn_n),
     signal rxclkint  : std_logic;
     signal rxclk	 : std_logic;
     signal tmdsclk   : std_logic;
@@ -43,7 +45,9 @@ architecture RTL of dvi_receiver is
     signal blue_psalgnerr, green_psalgnerr, red_psalgnerr : std_logic;
     signal data_enable_blue, data_enable_green, data_enable_red : std_logic;
     
-    signal hsync, vsync : std_logic;
+    signal hsync, hsync_prev, vsync, vsync_prev : std_logic;
+    
+    signal h_cnt, v_cnt : std_logic_vector(11 downto 0);
     
     component decode 
     port(
@@ -80,14 +84,14 @@ begin
 	red_n 		<= rx_tmdsb(2);
 	
 	
-	ibuf_rxclk : entity unisim.IBUFDS
+	ibuf_rxclk : entity IBUFDS
 		generic map(DIFF_TERM   => false,
 					IOSTANDARD  => "TMDS_33")
 		port map(O  => rxclkint,
 			     I  => tmdsclk_p,
 			     IB => tmdsclk_n);
 	
-	bufio_tmdsclk : entity unisim.BUFIO2
+	bufio_tmdsclk : entity BUFIO2
 		generic map(DIVIDE_BYPASS => true,
 			        DIVIDE        => 1)
 		port map(DIVCLK       => rxclk,
@@ -95,11 +99,11 @@ begin
 			     SERDESSTROBE => open,
 			     I            => rxclkint);
 			     
-	tmdsclk_bufg : entity unisim.BUFG
+	tmdsclk_bufg : entity BUFG
 		port map(O => tmdsclk,
 			     I => rxclk);
 			     
-	PLL_ISERDES : entity unisim.PLL_BASE
+	PLL_ISERDES : entity PLL_BASE
 		generic map(CLKFBOUT_MULT         => 10,
 			        CLKIN_PERIOD          => 10.0,
 			        CLKOUT0_DIVIDE        => 1,
@@ -118,17 +122,17 @@ begin
 			     CLKIN    => rxclk,
 			     RST      => extrst);
 			     
-	pclkbufg : entity unisim.BUFG
+	pclkbufg : entity BUFG
 		port map(O => pclk,
 			     I => pllclk1);		
 			     
-	pclkx2bufg : entity unisim.BUFG
+	pclkx2bufg : entity BUFG
 		port map(O => pclkx2,
 			     I => pllclk2);	     
 
 	intrst <= not bufpll_lock;
 
-	ioclk_buf : entity unisim.BUFPLL
+	ioclk_buf : entity BUFPLL
 		generic map(DIVIDE      => 5)
 		port map(IOCLK        => pclkx10,
 			     LOCK         => bufpll_lock,
@@ -203,5 +207,35 @@ begin
 			     
 			     
 	video_output.pixel_clk <= pclk;
+
+	-- Derive the frame reset from hsync and vsync
+	process(pclk)
+	begin		
+		if rising_edge(pclk) then
+			hsync_prev <= hsync;	
+			vsync_prev <= vsync;
+			video_output.frame_rst <= '0';
+			if unsigned(h_cnt) /= H_MAX then
+				h_cnt <= std_logic_vector(unsigned(h_cnt) + 1);
+			elsif unsigned(h_cnt) = H_MAX and unsigned(v_cnt) /= V_MAX then
+				h_cnt <= (others => '0');
+				v_cnt <= std_logic_vector(unsigned(v_cnt) + 1);
+			elsif unsigned(h_cnt) = H_MAX and unsigned(v_cnt) = V_MAX then
+				video_output.frame_rst <= '1';
+				h_cnt <= (others => '0');
+				v_cnt <= (others => '0');
+			end if;
+			
+			-- Synchronization 
+			if hsync_prev = '1' and hsync = '0' then
+				h_cnt <= std_logic_vector(to_unsigned(HSYNC_END, 12) + 1); 
+			end if;
+			
+			if vsync_prev = '0' and vsync = '1' then
+				v_cnt <= std_logic_vector(to_unsigned(VSYNC_END, 12) + 1);
+			end if;			
+		end if;			
+	end process;
+	
 
 end architecture RTL;
