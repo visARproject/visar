@@ -4,18 +4,18 @@ use ieee.std_logic_1164.all;
 use unisim.VCOMPONENTS.all;
 use work.video_bus.all;
 
-entity video_combiner is
+entity video_overlay is
     port(
         video_over  : in  video_data;
         video_under : in  video_data;
         video_out   : out video_data
     );
-end entity video_combiner;
+end entity video_overlay;
 
 -- Architecture assumes that the video data signals are synchronized together.
 
-architecture RTL of video_combiner is
-    
+architecture RTL of video_overlay is
+
 begin
     process(video_over, video_under)
     begin
@@ -25,9 +25,9 @@ begin
         else
             video_out <= video_over;
         end if;
-              
-              
+
+
         -- Later on add options for alpha layering.  For now, this is sufficient.
-        
+
     end process;
 end architecture RTL;
