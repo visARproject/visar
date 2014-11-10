@@ -30,6 +30,9 @@ NET "tx_tmds(2)"  	LOC = "B8" | IOSTANDARD = TMDS_33 ; # Green
 NET "tx_tmdsb(2)"  LOC = "A8" | IOSTANDARD = TMDS_33 ;
 NET "tx_tmds(3)"  	LOC = "B6" | IOSTANDARD = TMDS_33 ; # Clock
 NET "tx_tmdsb(3)"  LOC = "A6" | IOSTANDARD = TMDS_33 ;
+NET "rx_scl"  LOC = "M16"; # Bank = 1, Pin name = IO_L47P_FWE_B_M1DQ0, Sch name = TMDS-RX-SCL
+NET "rx_sda"  LOC = "M18"; # Bank = 1, Pin name = IO_L47N_LDC_M1DQ1,   Sch name = TMDS-RX-SDA
+
 
 NET "rx_tmds(3)"  	LOC = "H17" |IOSTANDARD = TMDS_33 ; # CLK
 NET "rx_tmdsb(3)"  LOC = "H18" |IOSTANDARD = TMDS_33 ;

@@ -11,6 +11,8 @@ entity test_dvi_demo is
         rx_tmdsb : in std_logic_vector(3 downto 0);
         tx_tmds : out std_logic_vector(3 downto 0);
         tx_tmdsb : out std_logic_vector(3 downto 0);
+        rx_sda : inout std_logic;
+        rx_scl : inout std_logic;
         led : out std_logic_vector(0 downto 0)
     );
 end entity test_dvi_demo;
@@ -55,5 +57,10 @@ begin
                  tx_tmds  => tx_tmds,
                  tx_tmdsb => tx_tmdsb);  
  
-    
+    U_EDID : entity work.edid_wrapper
+        port map(clk_132MHz => clk_132MHz,
+                 reset        => rst,
+                 scl        => rx_scl,
+                 sda        => rx_sda);
+                 
 end architecture RTL;
