@@ -11,9 +11,7 @@ entity dvi_receiver is
 		rst : in std_logic;
 		rx_tmds : in std_logic_vector(3 downto 0);
 		rx_tmdsb: in std_logic_vector(3 downto 0);
-		video_output : out video_bus;
-		dvi_connected : out std_logic
-	);
+		video_output : out video_bus);
 end entity dvi_receiver;
 
 architecture RTL of dvi_receiver is
@@ -123,7 +121,7 @@ begin
 			     CLKIN    => rxclk,
 			     RST      => extrst);
 			     
-	dvi_connected <= pll_lckd;
+	video_output.valid <= pll_lckd;
 
 	pclkbufg : component BUFG
 		port map(O => pclk,

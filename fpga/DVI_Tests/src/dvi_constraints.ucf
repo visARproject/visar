@@ -17,7 +17,7 @@ TIMEGRP "bramra" = FFS(U_DVI_TX/U_dvi_tx/pixel2x/ra<*>);
 TIMESPEC "TS_ramdo" = FROM "bramgrp" TO "fddbgrp" TS_PCLK;
 TIMESPEC "TS_ramra" = FROM "bramra" TO "fddbgrp" TS_PCLK;
 
-
+VCCAUX = 3.3;
 
 NET "rst_n" LOC = T15;
 NET "clk_100MHz" LOC = L15 | IOSTANDARD = "LVCMOS33" | PERIOD = 100 MHz HIGH 50%;
@@ -39,3 +39,5 @@ NET "rx_tmds(1)"  	LOC = "L17" |IOSTANDARD = TMDS_33 ; # Green
 NET "rx_tmdsb(1)"  LOC = "L18" |IOSTANDARD = TMDS_33 ;
 NET "rx_tmds(0)"  	LOC = "K17" |IOSTANDARD = TMDS_33 ; # Blue	
 NET "rx_tmdsb(0)"  LOC = "K18" |IOSTANDARD = TMDS_33 ;
+
+NET "led<0>" LOC = "U18"; # Bank = 1, Pin name = IO_L52N_M1DQ15, 	   Sch name = LD0

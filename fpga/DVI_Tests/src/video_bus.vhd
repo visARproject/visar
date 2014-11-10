@@ -19,6 +19,7 @@ package video_bus is
      red 			      	: std_logic_vector(7 downto 0);
 	 green 					: std_logic_vector(7 downto 0);
 	 blue  					: std_logic_vector(7 downto 0);
+	 valid : std_logic;
  end record;
 --
 -- Declare constants

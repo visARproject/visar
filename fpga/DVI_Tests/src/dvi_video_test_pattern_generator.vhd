@@ -74,6 +74,7 @@ begin
 		end if;
 		
 		video.pixel_clk <= clk_in;
+		video.valid <= not reset;
 	
 	
 	end process;

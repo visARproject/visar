@@ -6,7 +6,6 @@ use work.video_bus.all;
 
 entity dvi_transmitter is
 	port (
-		rst      	: in std_logic;
 		video_in 	: in video_bus;
 		tx_tmds 	: out std_logic_vector(3 downto 0);
 		tx_tmdsb	: out std_logic_vector(3 downto 0)
@@ -14,6 +13,7 @@ entity dvi_transmitter is
 end entity dvi_transmitter;
 	
 architecture RTL of dvi_transmitter is
+	signal rst : std_logic;
 	signal h_sync_S : std_logic;
 	signal v_sync_S : std_logic;
 	signal data_en_S : std_logic;
@@ -50,6 +50,7 @@ architecture RTL of dvi_transmitter is
   	end component;
 	
 begin
+	rst <= not video_in.valid;
 	
 	tx0_pclk <= video_in.pixel_clk;
 	
