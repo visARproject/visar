@@ -49,36 +49,33 @@ begin
 				h_cnt <= std_logic_vector(to_unsigned(H_MAX, h_cnt'length));
 				v_cnt <= std_logic_vector(to_unsigned(V_MAX, v_cnt'length));
 			else
-				video.frame_rst <= '0';
+				video.sync.frame_rst <= '0';
 				if unsigned(h_cnt) /= H_MAX then
 					h_cnt <= std_logic_vector(unsigned(h_cnt) + 1);
 				elsif unsigned(h_cnt) = H_MAX and unsigned(v_cnt) /= V_MAX then
 					h_cnt <= (others => '0');
 					v_cnt <= std_logic_vector(unsigned(v_cnt) + 1);
 				elsif unsigned(h_cnt) = H_MAX and unsigned(v_cnt) = V_MAX then
-					video.frame_rst <= '1';
+					video.sync.frame_rst <= '1';
 					h_cnt <= (others => '0');
 					v_cnt <= (others => '0');
 				end if;
-			
+
 				if ((unsigned(h_cnt) / 16) mod 2 ) = 0 xor ((unsigned(v_cnt) / 16) mod 2 ) = 0 then
-					video.red <= x"FF";
-					video.green <= x"FF";
-					video.blue <= x"FF";
+					video.data.red   <= x"FF";
+					video.data.green <= x"FF";
+					video.data.blue  <= x"FF";
 				else
-					video.red <= x"00";
-					video.green <= x"00";
-					video.blue <= x"00";
+					video.data.red   <= x"00";
+					video.data.green <= x"00";
+					video.data.blue  <= x"00";
 				end if;
 			end if;
 		end if;
-		
-		video.pixel_clk <= clk_in;
-		video.valid <= not reset;
-	
-	
-	end process;
 
+		video.sync.pixel_clk <= clk_in;
+		video.sync.valid <= not reset;
+	end process;
 
 end Behavioral;
 

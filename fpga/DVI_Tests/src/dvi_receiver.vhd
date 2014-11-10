@@ -121,7 +121,7 @@ begin
 			     CLKIN    => rxclk,
 			     RST      => extrst);
 			     
-	video_output.valid <= pll_lckd;
+	video_output.sync.valid <= pll_lckd;
 
 	pclkbufg : component BUFG
 		port map(O => pclk,
@@ -162,7 +162,7 @@ begin
 			     c1            => vsync,
 			     de            => data_enable_blue,
 			     sdout         => open,
-			     dout          => video_output.blue);
+			     dout          => video_output.data.blue);
 			     
 	green_decoder : decode
 		port map(reset         => intrst,
@@ -183,7 +183,7 @@ begin
 			     c1            => open,
 			     de            => data_enable_green,
 			     sdout         => open,
-			     dout          => video_output.green);
+			     dout          => video_output.data.green);
 			     
 	red_decoder : decode
 		port map(reset         => intrst,
@@ -204,10 +204,10 @@ begin
 			     c1            => open,
 			     de            => data_enable_red,
 			     sdout         => open,
-			     dout          => video_output.red);
+			     dout          => video_output.data.red);
 			     
 			     
-	video_output.pixel_clk <= pclk;
+	video_output.sync.pixel_clk <= pclk;
 
 	-- Derive the frame reset from hsync and vsync
 	process(pclk)
@@ -216,7 +216,7 @@ begin
 			hsync_prev <= hsync;	
 			vsync_prev <= vsync;
 			
-			video_output.frame_rst <= '0';
+			video_output.sync.frame_rst <= '0';
 			if unsigned(h_cnt) /= H_MAX then
 				h_cnt <= std_logic_vector(unsigned(h_cnt) + 1);
 			else
@@ -225,7 +225,7 @@ begin
 					v_cnt <= std_logic_vector(unsigned(v_cnt) + 1);
 				else
 					v_cnt <= (others => '0');
-					video_output.frame_rst <= '1';
+					video_output.sync.frame_rst <= '1';
 				end if;
 			end if;
 			

@@ -30,7 +30,7 @@ begin
 			     rx_tmdsb     => rx_tmdsb,
 			     video_output => dvi_rx_video_out);
     
-    led(0) <= dvi_rx_video_out.valid;
+    led(0) <= dvi_rx_video_out.sync.valid;
 	
     U_PIXEL_CLK_GEN : entity work.pixel_clk_gen
         port map(CLK_IN1  => clk_100MHz,
@@ -47,7 +47,7 @@ begin
     U_SRC_MUX : entity work.dvi_mux
         port map(video0    => pattern_gen_video_out,
                  video1    => dvi_rx_video_out,
-                 sel       => dvi_rx_video_out.valid,
+                 sel       => dvi_rx_video_out.sync.valid,
                  video_out => mux_video_out);        
                  
     U_DVI_TX : entity work.dvi_transmitter

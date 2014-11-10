@@ -47,9 +47,9 @@ architecture Behavioral of video_sync_gen is
 	signal v_cnt : std_logic_vector(11 downto 0);	
 	
 begin
-	process (video.pixel_clk) is
+	process (video.sync.pixel_clk) is
 	begin
-		if rising_edge(video.pixel_clk) then
+		if rising_edge(video.sync.pixel_clk) then
 			if unsigned(h_cnt) /= H_MAX then
 				h_cnt <= std_logic_vector(unsigned(h_cnt) + 1);
 			elsif unsigned(h_cnt) = H_MAX and unsigned(v_cnt) /= V_MAX then
@@ -78,7 +78,7 @@ begin
 			end if;
 			
 			-- If the frame reset comes in, then reset the counters.
-			if video.frame_rst = '1' then
+			if video.sync.frame_rst = '1' then
 				h_cnt <= (others => '0');
 				v_cnt <= (others => '0');
 			end if;

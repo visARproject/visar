@@ -50,9 +50,9 @@ architecture RTL of dvi_transmitter is
   	end component;
 	
 begin
-	rst <= not video_in.valid;
+	rst <= not video_in.sync.valid;
 	
-	tx0_pclk <= video_in.pixel_clk;
+	tx0_pclk <= video_in.sync.pixel_clk;
 	
 	U_SYNC_GEN : entity work.video_sync_gen
 		port map(video   => video_in,
@@ -108,9 +108,9 @@ begin
 			     pclkx10      => tx0_pclkx10,
 			     serdesstrobe => tx0_serdesstrobe,
 			     rstin        => tx0_reset,
-			     blue_din     => video_in.blue,
-			     green_din    => video_in.green,
-			     red_din      => video_in.red,
+			     blue_din     => video_in.data.blue,
+			     green_din    => video_in.data.green,
+			     red_din      => video_in.data.red,
 			     hsync        => h_sync_S,
 			     vsync        => v_sync_S,
 			     de           => data_en_S,
