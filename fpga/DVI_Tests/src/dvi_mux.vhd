@@ -42,7 +42,7 @@ begin
 			     
 	video_out.sync.pixel_clk <= px_clk_out;
 	
-	process(sel, video0, video1) 
+	process(sel, video0, video1, valid_shift_reg) 
 	begin
 		if sel = '0' then
 			video_out.data.blue <= video0.data.blue;
