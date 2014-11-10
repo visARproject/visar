@@ -324,7 +324,7 @@ begin
 
                 if data_valid = '1' then
                     edid_index <= data_from_master;
-                elsif edid_index = std_logic_vector(to_unsigned(EDID_LENGTH-1, edid_index'length)) then
+                elsif edid_index = std_logic_vector(to_unsigned(EDID_LENGTH - 1, edid_index'length)) then
                     edid_index <= (others => '0');
                 elsif read_req = '1' then
                     edid_index <= std_logic_vector(unsigned(edid_index) + 1);
