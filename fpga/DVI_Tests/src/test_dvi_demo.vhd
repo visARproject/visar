@@ -52,7 +52,7 @@ begin
     combiner_video_under_in.red <= x"00";
     combiner_video_under_in.green <= x"00";                
 
-    U_COMBINER : entity work.video_combiner
+    U_OVERLAY : entity work.video_overlay
         port map(video_over  => pattern_gen_video_out.data,
                  video_under => combiner_video_under_in,
                  video_out   => combiner_video_out.data);
