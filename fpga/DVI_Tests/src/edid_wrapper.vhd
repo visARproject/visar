@@ -90,8 +90,8 @@ architecture RTL of edid_wrapper is
         -- End Standard Timing Identification --
         -- Begin Detailed Timing Descriptions --
         -- Begin Detailed Timing Description #1 --
-        x"72",
-        x"40",
+        x"8E",                          -- Pixel clock in 10 kHz units. (0.01–655.35 MHz, little-endian), lower byte -- 4072 = 164.98 MHz (checksum of original is 0x45) --
+        x"33",                          -- Pixel clock in 10 kHz units. (0.01–655.35 MHz, little-endian), lower byte -- 338E = 131.90 MHz (checksum with this change is 0x36) --
         x"38",
         x"3a",
         x"40",
