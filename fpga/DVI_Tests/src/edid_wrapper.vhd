@@ -113,21 +113,21 @@ architecture RTL of edid_wrapper is
         x"00",
         x"00",
         x"00",
-        x"fc", -- String Descriptor (EDID implementation guide section 3.7.6)
+        x"fc",                          -- String Descriptor (EDID implementation guide section 3.7.6)
         x"00",
-        x"52", -- ASCII R
-        x"69", -- ASCII i
-        x"66", -- ASCII f
-        x"74", -- ASCII t
-        x"20", -- ASCII Space
-        x"44", -- ASCII D
-        x"4b", -- ASCII K
-        x"32", -- ASCII 2
-        x"0a", -- ASCII Line Feed
-        x"20", -- ASCII Space (required by specification to fill unused slots with space)
-        x"20", -- ASCII Space
-        x"20", -- ASCII Space
-        x"20", -- ASCII Space
+        x"52",                          -- ASCII R
+        x"69",                          -- ASCII i
+        x"66",                          -- ASCII f
+        x"74",                          -- ASCII t
+        x"20",                          -- ASCII Space
+        x"44",                          -- ASCII D
+        x"4b",                          -- ASCII K
+        x"32",                          -- ASCII 2
+        x"0a",                          -- ASCII Line Feed
+        x"20",                          -- ASCII Space (required by specification to fill unused slots with space)
+        x"20",                          -- ASCII Space
+        x"20",                          -- ASCII Space
+        x"20",                          -- ASCII Space
         -- End Detailed Timing Description #2 --
         -- Begin Detailed Timing Description #3 --
         x"00",
@@ -153,12 +153,12 @@ architecture RTL of edid_wrapper is
         x"00",
         x"00",
         x"00",
-        x"fd", -- Range Limits Descriptor (EDID implementation guide section 3.7.5)
-        x"00", -- Minimum vertical field rate (Hz) --
-        x"38", -- Maximum vertical field rate (Hz) --
-        x"4d", -- Minimum horizontal field rate (Hz) --
-        x"1e", -- Maximum horizontal field rate (Hz) --
-        x"96", -- Maximum pixel clock rate x 10 MHz --
+        x"fd",                          -- Range Limits Descriptor (EDID implementation guide section 3.7.5)
+        x"00",                          -- Minimum vertical field rate (Hz) --
+        x"38",                          -- Maximum vertical field rate (Hz) --
+        x"4d",                          -- Minimum horizontal field rate (Hz) --
+        x"1e",                          -- Maximum horizontal field rate (Hz) --
+        x"96",                          -- Maximum pixel clock rate x 10 MHz --
         x"11",
         x"00",
         x"0a",
@@ -169,8 +169,8 @@ architecture RTL of edid_wrapper is
         x"20",
         x"20",
         -- End Detailed Timing Description #4 --
-        x"01", -- Extension Flag, 01 means 1 extension to follow --
-        x"45", -- Checksum --
+        x"01",                          -- Extension Flag, 01 means 1 extension to follow --
+        x"36",                          -- Checksum --
         -- Begin CEA EDID Timing Extension Version 3 block --
         x"02",
         x"03",
