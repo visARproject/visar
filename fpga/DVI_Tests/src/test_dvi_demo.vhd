@@ -23,6 +23,8 @@ architecture RTL of test_dvi_demo is
     signal pattern_gen_video_out : video_bus;
     signal mux_video_out, dvi_rx_video_out : video_bus;
     signal rst : std_logic;
+    signal combiner_video_out : video_bus;
+    signal combiner_video_under_in : video_data;
 begin
 	rst <= not rst_n;
 	
@@ -44,10 +46,21 @@ begin
         port map(
                 reset => rst,
                 clk_in => clk_132MHz,
-                 video  => pattern_gen_video_out);
+                video  => pattern_gen_video_out);
+                
+    combiner_video_under_in.blue <= x"FF";
+    combiner_video_under_in.red <= x"00";
+    combiner_video_under_in.green <= x"00";                
+
+    U_COMBINER : entity work.video_combiner
+        port map(video_over  => pattern_gen_video_out.data,
+                 video_under => combiner_video_under_in,
+                 video_out   => combiner_video_out.data);
                  
+    combiner_video_out.sync <= pattern_gen_video_out.sync;
+ 
     U_SRC_MUX : entity work.dvi_mux
-        port map(video0    => pattern_gen_video_out,
+        port map(video0    => combiner_video_out,
                  video1    => dvi_rx_video_out,
                  sel       => dvi_rx_video_out.sync.valid,
                  video_out => mux_video_out);        
