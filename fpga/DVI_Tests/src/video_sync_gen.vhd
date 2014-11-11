@@ -50,14 +50,14 @@ begin
 	process (video.sync.pixel_clk) is
 	begin
 		if rising_edge(video.sync.pixel_clk) then
-			if unsigned(h_cnt) /= H_MAX then
+			if unsigned(h_cnt) /= H_MAX - 1 then
 				h_cnt <= std_logic_vector(unsigned(h_cnt) + 1);
-			elsif unsigned(h_cnt) = H_MAX and unsigned(v_cnt) /= V_MAX then
+			elsif unsigned(h_cnt) = H_MAX - 1 and unsigned(v_cnt) /= V_MAX - 1 then
 				h_cnt <= (others => '0');
 				v_cnt <= std_logic_vector(unsigned(v_cnt) + 1);
 			end if;
 			
-			if((unsigned(h_cnt) <= H_DISPLAY_END) and (unsigned(v_cnt) <= V_DISPLAY_END)) then
+			if((unsigned(h_cnt) < H_DISPLAY_END) and (unsigned(v_cnt) < V_DISPLAY_END)) then
 				data_en <= '1';
 			else
 				data_en <= '0';		
@@ -65,13 +65,13 @@ begin
 			
 			-- +hsync -vsync
 			
-			if((unsigned(h_cnt) > HSYNC_BEGIN) and (unsigned(h_cnt) <= HSYNC_END)) then
+			if((unsigned(h_cnt) >= HSYNC_BEGIN) and (unsigned(h_cnt) < HSYNC_END)) then
 				h_sync <= '1';
 			else
 				h_sync <= '0';
 			end if;
 			
-			if((unsigned(v_cnt) > VSYNC_BEGIN) and (unsigned(v_cnt) <= VSYNC_END)) then
+			if((unsigned(v_cnt) >= VSYNC_BEGIN) and (unsigned(v_cnt) < VSYNC_END)) then
 				v_sync <= '0';
 			else
 				v_sync <= '1';
