@@ -194,8 +194,8 @@ architecture RTL of edid_wrapper is
         x"00",
         x"00",
         x"1a",
-        x"de",
-        x"3d",
+        x"8e", --de
+        x"33", --3d
         x"38",
         x"3a",
         x"40",
@@ -297,8 +297,8 @@ architecture RTL of edid_wrapper is
         x"00",
         x"00",
         x"00",
-        x"00",
-        x"00",
+        x"f0",
+        x"5a",
         x"f0"
     );
 
