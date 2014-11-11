@@ -1,81 +1,64 @@
-----------------------------------------------------------------------------------
--- Company: 
--- Engineer: 
--- 
--- Create Date:    22:54:50 10/23/2014 
--- Design Name: 
--- Module Name:    test_dvi_decoder - Behavioral 
--- Project Name: 
--- Target Devices: 
--- Tool versions: 
--- Description: 
---
--- Dependencies: 
---
--- Revision: 
--- Revision 0.01 - File Created
--- Additional Comments: 
---
-----------------------------------------------------------------------------------
-library IEEE;
-use IEEE.STD_LOGIC_1164.ALL;
-use WORK.VIDEO_BUS.ALL;
-use IEEE.NUMERIC_STD.ALL;
-use work.DVI_LIB.all;
+library ieee;
+use ieee.std_logic_1164.all;
+use ieee.numeric_std.all;
 
--- Uncomment the following library declaration if instantiating
--- any Xilinx primitives in this code.
---library UNISIM;
---use UNISIM.VComponents.all;
+use work.video_bus.all;
+use work.dvi_lib.all;
+
 
 entity dvi_video_test_pattern_generator is
-	port(
-		reset	: in std_logic;
-		clk_in 	: in std_logic;
-		video 	: out video_bus
-		);
+    port (
+        reset  : in  std_logic;
+        clk_in : in  std_logic;
+        video  : out video_bus);
 end dvi_video_test_pattern_generator;
 
 architecture Behavioral of dvi_video_test_pattern_generator is
-
-	signal h_cnt 	: std_logic_vector(11 downto 0);
-	signal v_cnt 	: std_logic_vector(11 downto 0);
+    signal h_cnt : unsigned(11 downto 0);
+    signal v_cnt : unsigned(11 downto 0);
 begin
 
-	process(clk_in)
-	begin
-		if(rising_edge(clk_in)) then
-			if reset = '1' then
-				h_cnt <= std_logic_vector(to_unsigned(H_MAX, h_cnt'length));
-				v_cnt <= std_logic_vector(to_unsigned(V_MAX, v_cnt'length));
-			else
-				video.sync.frame_rst <= '0';
-				if unsigned(h_cnt) /= H_MAX then
-					h_cnt <= std_logic_vector(unsigned(h_cnt) + 1);
-				elsif unsigned(h_cnt) = H_MAX and unsigned(v_cnt) /= V_MAX then
-					h_cnt <= (others => '0');
-					v_cnt <= std_logic_vector(unsigned(v_cnt) + 1);
-				elsif unsigned(h_cnt) = H_MAX and unsigned(v_cnt) = V_MAX then
-					video.sync.frame_rst <= '1';
-					h_cnt <= (others => '0');
-					v_cnt <= (others => '0');
-				end if;
+    process(clk_in)
+    begin
+        if rising_edge(clk_in) then
+            if reset = '1' then
+                h_cnt <= to_unsigned(H_MAX, h_cnt'length);
+                v_cnt <= to_unsigned(V_MAX, v_cnt'length);
+            else
+                if h_cnt /= H_MAX - 1 then
+                    h_cnt <= h_cnt + 1;
+                else
+                    h_cnt <= to_unsigned(0, h_cnt'length);
+                    if v_cnt /= V_MAX - 1 then
+                        v_cnt <= v_cnt + 1;
+                    else
+                        v_cnt <= to_unsigned(0, v_cnt'length);
+                    end if;
+                end if;
+            end if;
+        end if;
+    end process;
 
-				if ((unsigned(h_cnt) / 16) mod 2 ) = 0 xor ((unsigned(v_cnt) / 16) mod 2 ) = 0 then
-					video.data.red   <= x"FF";
-					video.data.green <= x"FF";
-					video.data.blue  <= x"FF";
-				else
-					video.data.red   <= x"00";
-					video.data.green <= x"00";
-					video.data.blue  <= x"00";
-				end if;
-			end if;
-		end if;
-
-		video.sync.pixel_clk <= clk_in;
-		video.sync.valid <= not reset;
-	end process;
+    process(clk_in, reset, h_cnt, v_cnt)
+    begin
+        video.sync.pixel_clk <= clk_in;
+        video.sync.valid <= not reset;
+        
+        if ((h_cnt / 16) mod 2) = 0 xor ((v_cnt / 16) mod 2) = 0 then
+            video.data.red   <= x"FF";
+            video.data.green <= x"FF";
+            video.data.blue  <= x"FF";
+        else
+            video.data.red   <= x"00";
+            video.data.green <= x"00";
+            video.data.blue  <= x"00";
+        end if;
+        
+        video.sync.frame_rst <= '0';
+        if h_cnt = H_MAX - 1 and v_cnt = V_MAX - 1 then
+            video.sync.frame_rst <= '1';
+        end if;
+    end process;
 
 end Behavioral;
 

@@ -45,7 +45,7 @@ architecture RTL of dvi_receiver is
     
     signal hsync, hsync_prev, vsync, vsync_prev : std_logic;
     
-    signal h_cnt, v_cnt : std_logic_vector(11 downto 0);
+    signal h_cnt, v_cnt : unsigned(11 downto 0);
     
     component decode 
     port(
@@ -213,32 +213,38 @@ begin
 	process(pclk)
 	begin		
 		if rising_edge(pclk) then
+            if h_cnt /= H_MAX - 1 then
+                h_cnt <= h_cnt + 1;
+            else
+                h_cnt <= to_unsigned(0, h_cnt'length);
+                if v_cnt /= V_MAX - 1 then
+                    v_cnt <= v_cnt + 1;
+                else
+                    v_cnt <= to_unsigned(0, v_cnt'length);
+                end if;
+            end if;
+			
+			-- Synchronization
 			hsync_prev <= hsync;	
 			vsync_prev <= vsync;
 			
-			video_output.sync.frame_rst <= '0';
-			if unsigned(h_cnt) /= H_MAX then
-				h_cnt <= std_logic_vector(unsigned(h_cnt) + 1);
-			else
-				h_cnt <= (others => '0');
-				if unsigned(v_cnt) /= V_MAX then
-					v_cnt <= std_logic_vector(unsigned(v_cnt) + 1);
-				else
-					v_cnt <= (others => '0');
-					video_output.sync.frame_rst <= '1';
-				end if;
-			end if;
-			
-			-- Synchronization 
 			if hsync_prev = '1' and hsync = '0' then
-				h_cnt <= std_logic_vector(to_unsigned(HSYNC_END, 12) + 1); 
+				h_cnt <= to_unsigned(HSYNC_END + 1, h_cnt'length); 
 			end if;
 			
 			if vsync_prev = '0' and vsync = '1' then
-				v_cnt <= std_logic_vector(to_unsigned(VSYNC_END, 12) + 1);
+				v_cnt <= to_unsigned(VSYNC_END + 1, v_cnt'length);
 			end if;			
 		end if;			
 	end process;
+	
+	process(h_cnt, v_cnt)
+	begin
+        video_output.sync.frame_rst <= '0';
+        if h_cnt = H_MAX - 1 and v_cnt = V_MAX - 1 then
+            video_output.sync.frame_rst <= '1';
+        end if;
+    end process;
 	
 
 end architecture RTL;

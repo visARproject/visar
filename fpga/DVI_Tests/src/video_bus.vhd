@@ -6,7 +6,7 @@ package video_bus is
     type video_sync is
     record
         pixel_clk : std_logic;
-        frame_rst : std_logic;
+        frame_rst : std_logic; -- 1 for the last pixel of a frame
         valid     : std_logic;
     end record;
 
