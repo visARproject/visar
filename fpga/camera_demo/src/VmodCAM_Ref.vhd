@@ -1,13 +1,13 @@
 ----------------------------------------------------------------------------------
 -- Company: Digilent Ro
 -- Engineer: Elod Gyorgy
--- 
--- Create Date:    12:50:18 04/21/2011 
+--
+-- Create Date:    12:50:18 04/21/2011
 -- Design Name:        VmodCAM Reference Design 2
 -- Module Name:        VmodCAM_Ref - Behavioral
--- Project Name:         
--- Target Devices: 
--- Tool versions: 
+-- Project Name:
+-- Target Devices:
+-- Tool versions:
 -- Description: The design shows off the video feed from two cameras located on
 -- a VmodCAM add-on board connected to an Atlys. The video feeds are displayed on
 -- a DVI-capable flat panel at 1600x900@60Hz resolution. Each of the video feeds
@@ -18,9 +18,9 @@
 -- digilent VHDL library (Video, VideoTimingCtl, TWICtl, TMDSEncoder,
 -- DVITransmitter, SerializerN_1...)
 --
--- Revision: 
+-- Revision:
 -- Revision 0.01 - File Created
--- Additional Comments: 
+-- Additional Comments:
 --
 ----------------------------------------------------------------------------------
 library IEEE;
@@ -84,7 +84,7 @@ entity VmodCAM_Ref is
         CAMB_LV_I        : inout STD_LOGIC; -- inout Workaround for IN_TERM bug AR#     40818
         CAMB_FV_I        : inout STD_LOGIC; -- inout Workaround for IN_TERM bug AR#     40818
         CAMB_RST_O       : out   STD_LOGIC; --Reset active LOW
-        CAMB_PWDN_O      : out   STD_LOGIC; --Power-down active HIGH              
+        CAMB_PWDN_O      : out   STD_LOGIC; --Power-down active HIGH
         ----------------------------------------------------------------------------------
         -- DDR2 Interface
         ----------------------------------------------------------------------------------
@@ -370,7 +370,7 @@ begin
             O  => int_CAMA_PCLK_I,      -- Buffer output
             IO => CAMA_PCLK_I,          -- Buffer inout port (connect directly to top-level port)
             I  => '0',                  -- Buffer input
-            T  => dummy_t               -- 3-state enable input, high=input, low=output 
+            T  => dummy_t               -- 3-state enable input, high=input, low=output
         );
     Inst_IOBUF_CAMA_FV : IOBUF
         generic map(
@@ -381,7 +381,7 @@ begin
             O  => int_CAMA_FV_I,        -- Buffer output
             IO => CAMA_FV_I,            -- Buffer inout port (connect directly to top-level port)
             I  => '0',                  -- Buffer input
-            T  => dummy_t               -- 3-state enable input, high=input, low=output 
+            T  => dummy_t               -- 3-state enable input, high=input, low=output
         );
     Inst_IOBUF_CAMA_LV : IOBUF
         generic map(
@@ -392,7 +392,7 @@ begin
             O  => int_CAMA_LV_I,        -- Buffer output
             IO => CAMA_LV_I,            -- Buffer inout port (connect directly to top-level port)
             I  => '0',                  -- Buffer input
-            T  => dummy_t               -- 3-state enable input, high=input, low=output 
+            T  => dummy_t               -- 3-state enable input, high=input, low=output
         );
     Gen_IOBUF_CAMA_D : for i in 7 downto 0 generate
         Inst_IOBUF_CAMA_D : IOBUF
@@ -404,7 +404,7 @@ begin
                 O  => int_CAMA_D_I(i),  -- Buffer output
                 IO => CAMA_D_I(i),      -- Buffer inout port (connect directly to top-level port)
                 I  => '0',              -- Buffer input
-                T  => dummy_t           -- 3-state enable input, high=input, low=output 
+                T  => dummy_t           -- 3-state enable input, high=input, low=output
             );
     end generate;
 
@@ -417,7 +417,7 @@ begin
             O  => int_CAMB_PCLK_I,      -- Buffer output
             IO => CAMB_PCLK_I,          -- Buffer inout port (connect directly to top-level port)
             I  => '0',                  -- Buffer input
-            T  => dummy_t               -- 3-state enable input, high=input, low=output 
+            T  => dummy_t               -- 3-state enable input, high=input, low=output
         );
     Inst_IOBUF_CAMB_FV : IOBUF
         generic map(
@@ -428,7 +428,7 @@ begin
             O  => int_CAMB_FV_I,        -- Buffer output
             IO => CAMB_FV_I,            -- Buffer inout port (connect directly to top-level port)
             I  => '0',                  -- Buffer input
-            T  => dummy_t               -- 3-state enable input, high=input, low=output 
+            T  => dummy_t               -- 3-state enable input, high=input, low=output
         );
     Inst_IOBUF_CAMB_LV : IOBUF
         generic map(
@@ -439,7 +439,7 @@ begin
             O  => int_CAMB_LV_I,        -- Buffer output
             IO => CAMB_LV_I,            -- Buffer inout port (connect directly to top-level port)
             I  => '0',                  -- Buffer input
-            T  => dummy_t               -- 3-state enable input, high=input, low=output 
+            T  => dummy_t               -- 3-state enable input, high=input, low=output
         );
     Gen_IOBUF_CAMB_D : for i in 7 downto 0 generate
         Inst_IOBUF_CAMB_D : IOBUF
@@ -451,7 +451,7 @@ begin
                 O  => int_CAMB_D_I(i),  -- Buffer output
                 IO => CAMB_D_I(i),      -- Buffer inout port (connect directly to top-level port)
                 I  => '0',              -- Buffer input
-                T  => dummy_t           -- 3-state enable input, high=input, low=output 
+                T  => dummy_t           -- 3-state enable input, high=input, low=output
             );
     end generate;
     dummy_t <= '1';
@@ -562,7 +562,7 @@ begin
             SRC_MAC   => x"000000000000",
             DST_MAC   => x"00249b09740d",
             SRC_IP    => x"00000000",   -- 0.0.0.0
-            DST_IP    => x"FFFFFFFF",   -- 255.255.255.255 
+            DST_IP    => x"FFFFFFFF",   -- 255.255.255.255
             SRC_PORT  => x"0000",
             DST_PORT  => x"1441",
             DATA_SIZE => 812)
@@ -597,4 +597,3 @@ begin
     phymdi <= 'Z';
 
 end Behavioral;
-
