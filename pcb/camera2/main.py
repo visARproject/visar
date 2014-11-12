@@ -18,6 +18,8 @@ from autoee_components.xilinx.XC2C64A import XC2C64A_5QFG48C
 '''
 TODO
 
+add termination resistors to buffers and camera clock input
+
 LED
     IR LEDs
     LED drivers
@@ -144,7 +146,7 @@ def main():
     )
     
     bufout = {}
-    for i in [-2, -3, -4, 5, 6, 10, 11, 16, 17, 18, 19, 20]:
+    for i in [2, 3, 4, -5, -6, -10, 11, 15, 16, -17, 18, 19]:
         swap = i < 0
         i = abs(i)
         bufout[i] = harnesses.LVDSPair.new('out%i' % (i,))
@@ -160,7 +162,7 @@ def main():
         )
     
     bufin = {}
-    for i in [1, 15]:
+    for i in [-1, 20]:
         swap = i < 0
         i = abs(i)
         bufin[i] = harnesses.LVDSPair.new('out%i' % (i,))
@@ -190,8 +192,8 @@ def main():
         vcc1_8=vcc1_8,
         vcc3_3=vcc3_3,
         spi_bus=spi_bus,
-        clock_in=bufin[20].swapped,
-        douts=[bufout[i] for i in xrange(15, 19)],
+        clock_in=bufin[20],
+        douts=[bufout[15], bufout[16], bufout[17].swapped, bufout[18]],
         sync=bufout[19],
         clock=bufout[11],
     )
