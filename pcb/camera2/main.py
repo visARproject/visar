@@ -113,6 +113,7 @@ def camera(prefix, gnd, vcc3_3, vcc1_8, spi_bus, clock_in, clock, douts, sync):
         reset_n=reset_n,
     )
     yield CMT821.CMT821(prefix+'M1')
+    yield resistor.resistor(100, error=0, tolerance=0.01)(prefix+'R2', A=clock_in.P, B=clock_in.N)
 
 @util.listify
 def main():
