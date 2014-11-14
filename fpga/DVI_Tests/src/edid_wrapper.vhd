@@ -19,7 +19,7 @@ architecture RTL of edid_wrapper is
 
     signal edid_index : std_logic_vector(7 downto 0) := (others => '0');
     type edid_t is array (0 to EDID_LENGTH - 1) of std_logic_vector(7 downto 0);
-    signal edid_data : edid_t := (      -- xxd -c1 ~/repos/visar/fpga/DK2.edid | cut -c10-12
+    constant edid_data : edid_t := (      -- xxd -c1 ~/repos/visar/fpga/DK2.edid | cut -c10-12
         -- Begin Header --
         x"00",
         x"ff",
