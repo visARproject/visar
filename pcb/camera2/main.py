@@ -285,6 +285,18 @@ def main():
         #IO1_13
         
         VCCIO2=vcc3_0,
+        IO2_2=pairs[7].N,
+        IO2_1=pairs[7].P,
+        IO2_48=pairs[8].N,
+        IO2_47=pairs[8].P,
+        IO2_46=pairs[9].P,
+        IO2_45=pairs[9].N,
+        IO2_44=pairs[12].N,
+        IO2_43=pairs[12].P,
+        IO2_39=pairs[13].P,
+        IO2_38=pairs[13].N,
+        IO2_37=pairs[14].P,
+        IO2_36=pairs[14].N,
     )
     
     for i in xrange(4):
