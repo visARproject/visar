@@ -8,30 +8,33 @@ from autoee import kicad, bom, easypart, landpattern, model, util, harnesses
 from autoee.units import INCH, MM
 from autoee.components import resistor, capacitor
 
+from autoee_components.mounting_hole import mounting_hole
 from autoee_components.on_semiconductor import NOIV1SE1300A_QDC
 from autoee_components.molex import _71430, _1050281001
 from autoee_components.sunex import CMT821
 from autoee_components.stmicroelectronics.STM32F103TB import STM32F103TB
 from autoee_components.texas_instruments.DS10BR150 import DS10BR150TSD
 from autoee_components.xilinx.XC2C64A import XC2C64A_5QFG48C
+from autoee_components.vishay_semiconductors.VSMY7850X01 import VSMY7850X01
+from autoee_components.rohm_semiconductor import BUxxTD3WG
 
 '''
 TODO
 
-add termination resistors to buffers and camera clock input
+buffers could use incoming 3.3v instead of regulated?
 
 LED
-    IR LEDs
     LED drivers
 
 power
-    regulators
-        connect to microcontroller for sequencing
+    decoupling caps everywhere
+    connect regulators to microcontroller for sequencing
 
 thermal
     ???
 
 IMU/barometer
+    need to insert
 
 pins
     12 free after LVDS connected
@@ -117,14 +120,28 @@ def camera(prefix, gnd, vcc3_3, vcc1_8, spi_bus, clock_in, clock, douts, sync):
 
 @util.listify
 def main():
-    gnd = Net('gnd')
-    vcc1_2 = Net('vcc1_2')
-    vcc2_8 = Net('vcc2_8')
-    vcc1_8 = Net('vcc1_8') # CPLD
-    vcc3_3 = Net('vcc3_3')
-    vcc5 = Net('vcc5')
+    for i in xrange(4):
+        yield mounting_hole('M%i' % (i,))
     
-    yield capacitor.capacitor(10e-6, voltage=5*2)('C1', A=vcc3_3, B=gnd)
+    gnd = Net('gnd')
+    
+    vcc5in = Net('vcc5in')
+    vcc3_3in = Net('vcc3_3in')
+    
+    vcc1_2 = Net('vcc1_2') # thermal (110mA*2)
+    vcc1_8 = Net('vcc1_8') # CMOS (75mA*2), CPLD (17.77mA) - needs to be switched, in part
+    vcc2_8 = Net('vcc2_8') # thermal (16mA*2)
+    vcc3_0 = Net('vcc3_0') # CPLD, thermal (4mA*2), ARM, CMOS ((130+2.5mA)*2) - needs to be switched, in part
+    
+    for i, (n, v) in enumerate({vcc1_2: 1.2, vcc1_8: 1.8, vcc2_8: 2.8, vcc3_0: 3.0}.iteritems()):
+        yield BUxxTD3WG.by_voltage[v]('REG%i' % (i,),
+            VIN=vcc3_3in,
+            GND=gnd,
+            nSTBY=vcc3_3in,
+            VOUT=n,
+        )
+    
+    yield capacitor.capacitor(10e-6, voltage=5*2)('C1', A=vcc3_0, B=gnd)
     
     spi_bus = harnesses.SPIBus(MISO=Net('MISO'), MOSI=Net('MOSI'), SCLK=Net('SCLK'))
     i2c_bus = harnesses.I2CBus(SDA=Net('SDA'), SCL=Net('SCL'))
@@ -137,8 +154,8 @@ def main():
     yield digilent_vhdci('P1',
         GND=gnd,
         SHIELD=shield,
-        VU=vcc5,
-        # not using VCC - maybe for buffers?
+        VU=vcc5in,
+        VCC=vcc3_3in,
         CLK10_P=pairs[10].P, CLK10_N=pairs[10].N,
         CLK11_P=pairs[11].P, CLK11_N=pairs[11].N,
         **dict(
@@ -153,11 +170,12 @@ def main():
         bufout[i] = harnesses.LVDSPair.new('out%i' % (i,))
         a = bufout[i].swapped if swap else bufout[i]
         b = pairs[i].swapped if swap else pairs[i]
+        yield capacitor.capacitor(100e-9)('B%iC' % (i,), A=vcc3_3in, B=gnd)
         yield DS10BR150TSD('B%i' % (i,),
             GND=gnd,
             INn=a.N,
             INp=a.P,
-            VCC=vcc3_3,
+            VCC=vcc3_3in,
             OUTp=b.P,
             OUTn=b.N,
         )
@@ -169,11 +187,12 @@ def main():
         bufin[i] = harnesses.LVDSPair.new('out%i' % (i,))
         a = pairs[i].swapped if swap else pairs[i]
         b = bufin[i].swapped if swap else bufin[i]
+        yield capacitor.capacitor(100e-9)('B%iC' % (i,), A=vcc3_3in, B=gnd)
         yield DS10BR150TSD('B%i' % (i,),
             GND=gnd,
             INn=a.N,
             INp=a.P,
-            VCC=vcc3_3,
+            VCC=vcc3_3in,
             OUTp=b.P,
             OUTn=b.N,
         )
@@ -181,7 +200,7 @@ def main():
     yield camera('C1',
         gnd=gnd,
         vcc1_8=vcc1_8,
-        vcc3_3=vcc3_3,
+        vcc3_3=vcc3_0,
         spi_bus=spi_bus,
         clock_in=bufin[1].swapped,
         douts=[bufout[6], bufout[5], bufout[4].swapped, bufout[3].swapped],
@@ -191,7 +210,7 @@ def main():
     yield camera('C2',
         gnd=gnd,
         vcc1_8=vcc1_8,
-        vcc3_3=vcc3_3,
+        vcc3_3=vcc3_0,
         spi_bus=spi_bus,
         clock_in=bufin[20],
         douts=[bufout[15], bufout[16], bufout[17].swapped, bufout[18]],
@@ -207,7 +226,7 @@ def main():
         SPI_MISO=spi_bus.MISO,
         SPI_CLK=spi_bus.SCLK,
         SPI_CS_L=lepton1_cs_n,
-        VDDIO=vcc2_8,
+        VDDIO=vcc3_0,
         VDD=vcc2_8,
         SCL=i2c_bus.SCL,
         SDA=i2c_bus.SDA,
@@ -224,7 +243,7 @@ def main():
         SPI_MISO=spi_bus.MISO,
         SPI_CLK=spi_bus.SCLK,
         SPI_CS_L=lepton2_cs_n,
-        VDDIO=vcc2_8,
+        VDDIO=vcc3_0,
         VDD=vcc2_8,
         SCL=i2c_bus.SCL,
         SDA=i2c_bus.SDA,
@@ -238,8 +257,8 @@ def main():
     yield STM32F103TB('U1',
         VSS=gnd,
         BOOT0=gnd,
-        NRST=vcc3_3,
-        VDD=vcc3_3,
+        NRST=vcc3_0,
+        VDD=vcc3_0,
         
         PA13=jtag.TMS,
         PA14=jtag.TCK,
@@ -254,13 +273,23 @@ def main():
         GND=gnd,
         VCC=vcc1_8,
         
+        VAUX=vcc3_0, # XXX
         TDI=cpld_jtag.TDI,
         TDO=cpld_jtag.TDO,
         TCK=cpld_jtag.TCK,
         TMS=cpld_jtag.TMS,
         
+        VCCIO1=vcc3_0,
+        #IO1_11 # GCKs
+        #IO1_12
+        #IO1_13
         
+        VCCIO2=vcc3_0,
     )
+    
+    for i in xrange(4):
+        yield VSMY7850X01('D%i' % (i,),
+        )
     
 
 desc = main()
