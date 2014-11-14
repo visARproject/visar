@@ -4,7 +4,6 @@ use ieee.std_logic_1164.all;
 use ieee.numeric_std.all;
 use unisim.VComponents.all;
 use work.video_bus.all;
-use work.dvi_lib.all;
 
 entity dvi_receiver is
 	port (

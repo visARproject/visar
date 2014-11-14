@@ -1,0 +1,5 @@
+Entities/packages should be named according to their path plus their name.
+
+For example, a/b/c.vhd should contain an entity or package named a_b_c.
+
+This rule is relaxed for code that originated externally.

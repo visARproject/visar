@@ -15,7 +15,7 @@ architecture RTL of dvi_test_tb is
 	signal tx_tmdsb, rx_tmdsb : std_logic_vector(3 downto 0);
 	
 begin
-	UUT : entity work.test_dvi_demo
+	UUT : entity work.toplevel
 		port map(clk_100MHz => clk_100MHz,
 			     rst_n      => rst_n,
 			     rx_tmds    => rx_tmds,

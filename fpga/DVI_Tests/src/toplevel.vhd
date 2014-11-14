@@ -3,7 +3,7 @@ use ieee.std_logic_1164.all;
 use work.video_bus.all;
 
 
-entity test_dvi_demo is
+entity toplevel is
     port (
         clk_100MHz : in std_logic;
         rst_n : in std_logic;
@@ -15,10 +15,10 @@ entity test_dvi_demo is
         rx_scl : inout std_logic;
         led : out std_logic_vector(0 downto 0)
     );
-end entity test_dvi_demo;
+end entity toplevel;
 
 
-architecture RTL of test_dvi_demo is
+architecture RTL of toplevel is
     signal clk_132MHz : std_logic;
     signal pattern_gen_video_out : video_bus;
     signal mux_video_out, dvi_rx_video_out : video_bus;
