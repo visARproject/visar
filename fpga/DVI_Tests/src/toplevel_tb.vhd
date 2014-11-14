@@ -2,12 +2,12 @@ library ieee;
 use ieee.std_logic_1164.all;
 
 
-entity dvi_test_tb is
-end entity dvi_test_tb;
+entity toplevel_tb is
+end entity toplevel_tb;
 
 
 
-architecture RTL of dvi_test_tb is
+architecture RTL of toplevel_tb is
 
 	signal clk_100MHz : std_logic := '0';
 	signal rst_n : std_logic;

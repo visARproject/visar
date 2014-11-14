@@ -4,17 +4,17 @@ use ieee.std_logic_1164.all;
 use work.video_bus.all;
 use unisim.vcomponents.all;
 
-entity dvi_mux is
+entity video_mux is
 	port (
 		video0    : in video_bus;
 		video1    : in video_bus;
 		sel       : in std_logic;
 		video_out : out video_bus
 	);
-end entity dvi_mux;
+end entity video_mux;
 
 
-architecture RTL of dvi_mux is
+architecture RTL of video_mux is
 	signal px_clk_out : std_logic;
 	signal sel_last, sel_last_last : std_logic;
 	signal valid_shift_reg : std_logic_vector(9 downto 0);

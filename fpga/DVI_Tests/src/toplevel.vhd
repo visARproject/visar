@@ -42,7 +42,7 @@ begin
                  RESET    => '0',
                  LOCKED   => open);
     
-    U_PATTERN_GEN : entity work.dvi_video_test_pattern_generator
+    U_PATTERN_GEN : entity work.video_pattern_generator
         port map(
                 reset => rst,
                 clk_in => clk_132MHz,
@@ -59,7 +59,7 @@ begin
                  
     combiner_video_out.sync <= pattern_gen_video_out.sync;
  
-    U_SRC_MUX : entity work.dvi_mux
+    U_SRC_MUX : entity work.video_mux
         port map(video0    => combiner_video_out,
                  video1    => dvi_rx_video_out,
                  sel       => dvi_rx_video_out.sync.valid,

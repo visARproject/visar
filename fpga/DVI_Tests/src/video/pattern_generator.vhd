@@ -5,14 +5,14 @@ use ieee.numeric_std.all;
 use work.video_bus.all;
 
 
-entity dvi_video_test_pattern_generator is
+entity video_pattern_generator is
     port (
         reset  : in  std_logic;
         clk_in : in  std_logic;
         video  : out video_bus);
-end dvi_video_test_pattern_generator;
+end video_pattern_generator;
 
-architecture Behavioral of dvi_video_test_pattern_generator is
+architecture Behavioral of video_pattern_generator is
     signal h_cnt : unsigned(11 downto 0);
     signal v_cnt : unsigned(11 downto 0);
 begin
