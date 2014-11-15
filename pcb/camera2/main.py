@@ -59,20 +59,27 @@ lepton = _1050281001._1050281001('''
     GND MASTER_CLK GND MIPI_CLK_N MIPI_CLK_P GND MIPI_DATA_N MIPI_DATA_P
 '''.split())
 
-def camera(prefix, gnd, vcc3_3, vcc1_8, spi_bus, clock_in, clock, douts, sync):
-    cs_n = Net(prefix+'cs_n')
-    
-    douts = list(douts)
-    assert len(douts) == 4
-    
+class CameraHarness(object):
+    def __init__(self, prefix,
+            spi_bus=None, ss_n=None, 
+            clock_in=None, clock=None, douts=None, sync=None,
+            triggers=None, monitors=None, reset_n=None):
+        self.spi_bus = harnesses.SPIBus.new(prefix) if spi_bus is None else spi_bus
+        self.ss_n = Net(prefix + '_ss_n') if ss_n is None else ss_n
+        self.clock_in = harnesses.LVDSPair.new(prefix + '_clock_in') if clock_in is None else clock_in
+        self.clock = harnesses.LVDSPair.new(prefix + '_clock') if clock is None else clock
+        self.douts = [harnesses.LVDSPair.new(prefix + '_dout%i' % (i,)) for i in xrange(4)] if douts is None else list(douts)
+        assert len(self.douts) == 4
+        self.sync = harnesses.LVDSPair.new(prefix + '_sync') if sync is None else sync
+        self.triggers = [Net(prefix+'trigger%i' % (i,)) for i in xrange(3)] if triggers is None else list(triggers)
+        assert len(self.triggers) == 3
+        self.monitors = [Net(prefix+'monitor%i' % (i,)) for i in xrange(2)] if monitors is None else list(monitors)
+        assert len(self.monitors) == 2
+        self.reset_n = Net(prefix+'reset_n') if reset_n is None else reset_n
+
+def camera(prefix, gnd, vcc3_3, vcc1_8, harness):
     ibias_master = Net(prefix+'IBIAS')
     yield resistor.resistor(47e3)(prefix+'R1', A=ibias_master, B=gnd) # gnd_33
-    
-    triggers = [Net(prefix+'trigger%i' % (i,)) for i in xrange(3)]
-    monitors = [Net(prefix+'monitor%i' % (i,)) for i in xrange(2)]
-    
-    reset_n = Net(prefix+'reset_n')
-    
     
     yield NOIV1SE1300A_QDC.NOIV1SE1300A_QDC(prefix+'U1',
         vdd_33=vcc3_3,
@@ -82,41 +89,41 @@ def camera(prefix, gnd, vcc3_3, vcc1_8, spi_bus, clock_in, clock, douts, sync):
         vdd_18=vcc1_8,
         gnd_18=gnd,
         
-        mosi=spi_bus.MOSI,
-        miso=spi_bus.MISO,
-        sck=spi_bus.SCLK,
-        ss_n=cs_n,
+        mosi=harness.spi_bus.MOSI,
+        miso=harness.spi_bus.MISO,
+        sck=harness.spi_bus.SCLK,
+        ss_n=harness.ss_n,
         
-        clock_outn=clock.N,
-        clock_outp=clock.P,
-        doutn0=douts[0].N,
-        doutp0=douts[0].P,
-        doutn1=douts[1].N,
-        doutp1=douts[1].P,
-        doutn2=douts[2].N,
-        doutp2=douts[2].P,
-        doutn3=douts[3].N,
-        doutp3=douts[3].P,
-        syncn=sync.N,
-        syncp=sync.P,
+        clock_outn=harness.clock.N,
+        clock_outp=harness.clock.P,
+        doutn0=harness.douts[0].N,
+        doutp0=harness.douts[0].P,
+        doutn1=harness.douts[1].N,
+        doutp1=harness.douts[1].P,
+        doutn2=harness.douts[2].N,
+        doutp2=harness.douts[2].P,
+        doutn3=harness.douts[3].N,
+        doutp3=harness.douts[3].P,
+        syncn=harness.sync.N,
+        syncp=harness.sync.P,
         
-        lvds_clock_inn=clock_in.N,
-        lvds_clock_inp=clock_in.P,
+        lvds_clock_inn=harness.clock_in.N,
+        lvds_clock_inp=harness.clock_in.P,
         
         clk_pll=gnd, # XXX maybe do put a 62 MHz clock here?
         
         ibias_master=ibias_master,
         
-        trigger0=triggers[0],
-        trigger1=triggers[1],
-        trigger2=triggers[2],
-        monitor0=monitors[0],
-        monitor1=monitors[1],
+        trigger0=harness.triggers[0],
+        trigger1=harness.triggers[1],
+        trigger2=harness.triggers[2],
+        monitor0=harness.monitors[0],
+        monitor1=harness.monitors[1],
         
-        reset_n=reset_n,
+        reset_n=harness.reset_n,
     )
     yield CMT821.CMT821(prefix+'M1')
-    yield resistor.resistor(100, error=0, tolerance=0.01)(prefix+'R2', A=clock_in.P, B=clock_in.N)
+    yield resistor.resistor(100, error=0, tolerance=0.01)(prefix+'R2', A=harness.clock_in.P, B=harness.clock_in.N)
 
 @util.listify
 def main():
@@ -142,9 +149,6 @@ def main():
         )
     
     yield capacitor.capacitor(10e-6, voltage=5*2)('C1', A=vcc3_0, B=gnd)
-    
-    spi_bus = harnesses.SPIBus(MISO=Net('MISO'), MOSI=Net('MOSI'), SCLK=Net('SCLK'))
-    i2c_bus = harnesses.I2CBus(SDA=Net('SDA'), SCL=Net('SCL'))
     
     shield = Net('shield')
     yield capacitor.capacitor(1e-9, voltage=250)('C2', A=shield, B=gnd)
@@ -197,27 +201,35 @@ def main():
             OUTn=b.N,
         )
     
-    yield camera('C1',
-        gnd=gnd,
-        vcc1_8=vcc1_8,
-        vcc3_3=vcc3_0,
-        spi_bus=spi_bus,
+    C1_harness = CameraHarness('C1',
         clock_in=bufin[1].swapped,
         douts=[bufout[6], bufout[5], bufout[4].swapped, bufout[3].swapped],
         sync=bufout[2].swapped,
         clock=bufout[10],
     )
-    yield camera('C2',
+    yield camera('C1',
         gnd=gnd,
         vcc1_8=vcc1_8,
         vcc3_3=vcc3_0,
-        spi_bus=spi_bus,
+        harness=C1_harness,
+    )
+    
+    C2_harness = CameraHarness('C2',
         clock_in=bufin[20],
         douts=[bufout[15], bufout[16], bufout[17].swapped, bufout[18]],
         sync=bufout[19],
         clock=bufout[11],
     )
+    yield camera('C2',
+        gnd=gnd,
+        vcc1_8=vcc1_8,
+        vcc3_3=vcc3_0,
+        harness=C2_harness,
+    )
     
+    
+    spi_bus = harnesses.SPIBus(MISO=Net('MISO'), MOSI=Net('MOSI'), SCLK=Net('SCLK'))
+    i2c_bus = harnesses.I2CBus(SDA=Net('SDA'), SCL=Net('SCL'))
     lepton1_cs_n = Net('lepton1_cs_n')
     yield lepton('T1',
         GND=gnd,
@@ -279,24 +291,26 @@ def main():
         TCK=cpld_jtag.TCK,
         TMS=cpld_jtag.TMS,
         
+        # IO pins can be rearranged any which way, except that GCK pins need
+        # to be connected to expansion connector
         VCCIO1=vcc3_0,
         #IO1_11 # GCKs
         #IO1_12
         #IO1_13
         
         VCCIO2=vcc3_0,
-        IO2_2=pairs[7].N,
-        IO2_1=pairs[7].P,
-        IO2_48=pairs[8].N,
-        IO2_47=pairs[8].P,
-        IO2_46=pairs[9].P,
-        IO2_45=pairs[9].N,
-        IO2_44=pairs[12].N,
-        IO2_43=pairs[12].P,
-        IO2_39=pairs[13].P,
-        IO2_38=pairs[13].N,
-        IO2_37=pairs[14].P,
-        IO2_36=pairs[14].N,
+        IO1_13=pairs[7].N,
+        IO1_12=pairs[7].P,
+        IO1_11=pairs[8].N,
+        IO1_10=pairs[8].P,
+        IO1_9=pairs[9].P,
+        IO1_8=pairs[9].N,
+        IO1_7=pairs[12].N,
+        IO1_6=pairs[12].P,
+        IO2_5=pairs[13].P,
+        IO2_4=pairs[13].N,
+        IO2_2=pairs[14].P,
+        IO2_1=pairs[14].N,
     )
     
     for i in xrange(4):
