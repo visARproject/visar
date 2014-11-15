@@ -35,14 +35,14 @@ CONFIG MCB_PERFORMANCE= EXTENDED;
 ##################################################################################
 # Timing Ignore constraints for paths crossing the clock domain 
 ##################################################################################
-NET "memc?_wrapper_inst/memc?_mcb_raw_wrapper_inst/selfrefresh_mcb_mode" TIG;
-NET "c?_pll_lock" TIG;
-INST "memc?_wrapper_inst/memc?_mcb_raw_wrapper_inst/gen_term_calib.mcb_soft_calibration_top_inst/mcb_soft_calibration_inst/DONE_SOFTANDHARD_CAL*" TIG;
+NET "*/memc?_wrapper_inst/memc?_mcb_raw_wrapper_inst/selfrefresh_mcb_mode" TIG;
+NET "*/c?_pll_lock" TIG;
+#INST "*/memc?_wrapper_inst/memc?_mcb_raw_wrapper_inst/gen_term_calib.mcb_soft_calibration_top_inst/mcb_soft_calibration_inst/DONE_SOFTANDHARD_CAL*" TIG;
 
 #Please uncomment the below TIG if used in a design which enables self-refresh mode
-#NET "memc?_wrapper_inst/memc?_mcb_raw_wrapper_inst/gen_term_calib.mcb_soft_calibration_top_inst/mcb_soft_calibration_inst/SELFREFRESH_MCB_REQ" TIG;
+#NET "*/memc?_wrapper_inst/memc?_mcb_raw_wrapper_inst/gen_term_calib.mcb_soft_calibration_top_inst/mcb_soft_calibration_inst/SELFREFRESH_MCB_REQ" TIG;
      
-NET "memc?_wrapper_inst/memc?_mcb_raw_wrapper_inst/gen_term_calib.mcb_soft_calibration_top_inst/mcb_soft_calibration_inst/CKE_Train" TIG; ## This path exists for DDR2 only
+NET "*/memc?_wrapper_inst/memc?_mcb_raw_wrapper_inst/gen_term_calib.mcb_soft_calibration_top_inst/mcb_soft_calibration_inst/CKE_Train" TIG; ## This path exists for DDR2 only
      
 
 ############################################################################
@@ -56,8 +56,8 @@ NET "memc?_wrapper_inst/memc?_mcb_raw_wrapper_inst/gen_term_calib.mcb_soft_calib
 ############################################################################
 ## Clock constraints                                                        
 ############################################################################
-NET "memc3_infrastructure_inst/sys_clk_ibufg" TNM_NET = "SYS_CLK3";
-TIMESPEC "TS_SYS_CLK3" = PERIOD "SYS_CLK3"  2.5  ns HIGH 50 %;
+#NET "memc3_infrastructure_inst/sys_clk_ibufg" TNM_NET = "SYS_CLK3";
+#TIMESPEC "TS_SYS_CLK3" = PERIOD "SYS_CLK3"  2.5  ns HIGH 50 %;
 ############################################################################
 
 ############################################################################
@@ -91,8 +91,8 @@ NET  "mcb3_dram_dm"                                  IOSTANDARD = SSTL18_II ;
 NET  "mcb3_dram_udm"                                 IOSTANDARD = SSTL18_II ;
 NET  "mcb3_rzq"                                      IOSTANDARD = SSTL18_II ;
 NET  "mcb3_zio"                                      IOSTANDARD = SSTL18_II ;
-NET  "c3_sys_clk"                                  IOSTANDARD = LVCMOS25 ;
-NET  "c3_sys_rst_i"                                IOSTANDARD = LVCMOS18 ;
+#NET  "c3_sys_clk"                                  IOSTANDARD = LVCMOS25 ;
+#NET  "c3_sys_rst_i"                                IOSTANDARD = LVCMOS18 ;
 ############################################################################
 # MCB 3
 # Pin Location Constraints for Clock, Masks, Address, and Controls
@@ -139,8 +139,8 @@ NET  "mcb3_dram_dqs"                             LOC = "L4" ;
 NET  "mcb3_dram_dqs_n"                           LOC = "L3" ;
 NET  "mcb3_dram_odt"                             LOC = "K6" ;
 NET  "mcb3_dram_ras_n"                           LOC = "L5" ;
-NET  "c3_sys_clk"                                LOC = "R10" ;
-NET  "c3_sys_rst_i"                              LOC = "M8" ;
+#NET  "c3_sys_clk"                                LOC = "R10" ;
+#NET  "c3_sys_rst_i"                              LOC = "M8" ;
 NET  "mcb3_dram_udm"                             LOC = "K4" ;
 NET  "mcb3_dram_udqs"                            LOC = "P2" ;
 NET  "mcb3_dram_udqs_n"                          LOC = "P1" ;

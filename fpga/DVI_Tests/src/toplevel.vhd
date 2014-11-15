@@ -3,6 +3,9 @@ use ieee.std_logic_1164.all;
 use work.video_bus.all;
 use work.ram_port.all;
 
+library unisim;
+use unisim.vcomponents.all;
+
 entity toplevel is
     port (
         clk_100MHz : in std_logic;
@@ -29,8 +32,6 @@ entity toplevel is
         mcb3_rzq         : inout  std_logic;
         mcb3_zio         : inout  std_logic;
         mcb3_dram_udm    : out std_logic;
-        c3_sys_clk       : in  std_logic;
-        c3_sys_rst_i     : in  std_logic;
         mcb3_dram_dqs    : inout  std_logic;
         mcb3_dram_dqs_n  : inout  std_logic;
         mcb3_dram_ck     : out std_logic;
@@ -39,6 +40,8 @@ end entity toplevel;
 
 
 architecture RTL of toplevel is
+    signal clk_100MHz_buf : std_logic;
+    
     signal clk_132MHz : std_logic;
     signal pattern_gen_video_out : video_bus;
     signal mux_video_out, dvi_rx_video_out : video_bus;
@@ -46,7 +49,8 @@ architecture RTL of toplevel is
     signal combiner_video_out : video_bus;
     signal combiner_video_under_in : video_data;
     
-    
+    signal c3_sys_clk : std_logic;
+    signal c3_sys_rst_i : std_logic;
     signal c3_calib_done : std_logic;
     signal c3_clk0       : std_logic;
     signal c3_rst0       : std_logic;
@@ -63,6 +67,15 @@ architecture RTL of toplevel is
     signal c3_p3_in : ram_rd_port_in;
     signal c3_p3_out : ram_rd_port_out;
 begin
+    IBUFG_inst : IBUFG
+        port map(
+            O => clk_100MHz_buf, -- Clock buffer output
+            I => clk_100MHz      -- Clock buffer input (connect directly to top-level port)
+        );
+    
+    c3_sys_clk <= clk_100MHz_buf;
+    c3_sys_rst_i <= not rst;
+    
     u_dram : entity work.dram port map (
         c3_sys_clk          => c3_sys_clk,
         c3_sys_rst_i        => c3_sys_rst_i,                        
@@ -178,7 +191,7 @@ begin
     led(0) <= dvi_rx_video_out.sync.valid;
     
     U_PIXEL_CLK_GEN : entity work.pixel_clk_gen
-        port map(CLK_IN1  => clk_100MHz,
+        port map(CLK_IN1  => clk_100MHz_buf,
                  CLK_OUT1 => clk_132MHz,
                  RESET    => '0',
                  LOCKED   => open);

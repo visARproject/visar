@@ -442,7 +442,7 @@ component memc3_wrapper is
    constant C3_CLKOUT1_DIVIDE       : integer := 1; 
    constant C3_CLKOUT2_DIVIDE       : integer := 16; 
    constant C3_CLKOUT3_DIVIDE       : integer := 8; 
-   constant C3_CLKFBOUT_MULT        : integer := 2; 
+   constant C3_CLKFBOUT_MULT        : integer := 8; 
    constant C3_DIVCLK_DIVIDE        : integer := 1; 
    constant C3_INCLK_PERIOD         : integer := ((C3_MEMCLK_PERIOD * C3_CLKFBOUT_MULT) / (C3_DIVCLK_DIVIDE * C3_CLKOUT0_DIVIDE * 2)); 
    constant C3_ARB_NUM_TIME_SLOTS   : integer := 12; 

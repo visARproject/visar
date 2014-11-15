@@ -104,10 +104,10 @@ begin
 
   -- Input buffering
   --------------------------------------
-  clkin1_buf : IBUFG
-  port map
-   (O => clkin1,
-    I => CLK_IN1);
+  --clkin1_buf : IBUFG
+  --port map
+  -- (O => clkin1,
+  --  I => CLK_IN1);
 
 
   -- Clocking primitive
@@ -143,7 +143,7 @@ begin
     RST                 => RESET,
     -- Input clock control
     CLKFBIN             => clkfbout_buf,
-    CLKIN               => clkin1);
+    CLKIN               => CLK_IN1);
 
   -- Output buffering
   -------------------------------------
