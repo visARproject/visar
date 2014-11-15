@@ -20,7 +20,7 @@
 ############################################################################
 # VCC AUX VOLTAGE 
 ############################################################################
-CONFIG VCCAUX=2.5; # Valid values are 2.5 and 3.3
+CONFIG VCCAUX=3.3; # Valid values are 2.5 and 3.3
 
 ############################################################################
 # DDR2 requires the MCB to operate in Extended performance mode with higher Vccint

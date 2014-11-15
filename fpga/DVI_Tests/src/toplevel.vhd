@@ -15,29 +15,26 @@ entity toplevel is
         rx_scl : inout std_logic;
         led : out std_logic_vector(0 downto 0);
         
-        mcb3_dram_dq                            : inout  std_logic_vector(16-1 downto 0);
-        mcb3_dram_a                             : out std_logic_vector(13-1 downto 0);
-        mcb3_dram_ba                            : out std_logic_vector(3-1 downto 0);
-        mcb3_dram_ras_n                         : out std_logic;
-        mcb3_dram_cas_n                         : out std_logic;
-        mcb3_dram_we_n                          : out std_logic;
-        mcb3_dram_odt                           : out std_logic;
-        mcb3_dram_cke                           : out std_logic;
-        mcb3_dram_dm                            : out std_logic;
-        mcb3_dram_udqs                          : inout  std_logic;
-        mcb3_dram_udqs_n                        : inout  std_logic;
-        mcb3_rzq                                : inout  std_logic;
-        mcb3_zio                                : inout  std_logic;
-        mcb3_dram_udm                           : out std_logic;
-        c3_sys_clk                              : in  std_logic;
-        c3_sys_rst_i                            : in  std_logic;
-        c3_calib_done                           : out std_logic;
-        c3_clk0                                 : out std_logic;
-        c3_rst0                                 : out std_logic;
-        mcb3_dram_dqs                           : inout  std_logic;
-        mcb3_dram_dqs_n                         : inout  std_logic;
-        mcb3_dram_ck                            : out std_logic;
-        mcb3_dram_ck_n                          : out std_logic);
+        mcb3_dram_dq     : inout  std_logic_vector(16-1 downto 0);
+        mcb3_dram_a      : out std_logic_vector(13-1 downto 0);
+        mcb3_dram_ba     : out std_logic_vector(3-1 downto 0);
+        mcb3_dram_ras_n  : out std_logic;
+        mcb3_dram_cas_n  : out std_logic;
+        mcb3_dram_we_n   : out std_logic;
+        mcb3_dram_odt    : out std_logic;
+        mcb3_dram_cke    : out std_logic;
+        mcb3_dram_dm     : out std_logic;
+        mcb3_dram_udqs   : inout  std_logic;
+        mcb3_dram_udqs_n : inout  std_logic;
+        mcb3_rzq         : inout  std_logic;
+        mcb3_zio         : inout  std_logic;
+        mcb3_dram_udm    : out std_logic;
+        c3_sys_clk       : in  std_logic;
+        c3_sys_rst_i     : in  std_logic;
+        mcb3_dram_dqs    : inout  std_logic;
+        mcb3_dram_dqs_n  : inout  std_logic;
+        mcb3_dram_ck     : out std_logic;
+        mcb3_dram_ck_n   : out std_logic);
 end entity toplevel;
 
 
@@ -49,112 +46,126 @@ architecture RTL of toplevel is
     signal combiner_video_out : video_bus;
     signal combiner_video_under_in : video_data;
     
-    signal c3_p0_in : ram_port_in;
-    signal c3_p0_out : ram_port_out;
+    
+    signal c3_calib_done : std_logic;
+    signal c3_clk0       : std_logic;
+    signal c3_rst0       : std_logic;
+    
+    signal c3_p0_in : ram_bidir_port_in;
+    signal c3_p0_out : ram_bidir_port_out;
+    
+    signal c3_p1_in : ram_bidir_port_in;
+    signal c3_p1_out : ram_bidir_port_out;
+    
+    signal c3_p2_in : ram_wr_port_in;
+    signal c3_p2_out : ram_wr_port_out;
+    
+    signal c3_p3_in : ram_rd_port_in;
+    signal c3_p3_out : ram_rd_port_out;
 begin
     u_dram : entity work.dram port map (
-        c3_sys_clk  =>         c3_sys_clk,
-        c3_sys_rst_i    =>       c3_sys_rst_i,                        
-        mcb3_dram_dq       =>    mcb3_dram_dq,  
-        mcb3_dram_a        =>    mcb3_dram_a,  
-        mcb3_dram_ba       =>    mcb3_dram_ba,
-        mcb3_dram_ras_n    =>    mcb3_dram_ras_n,                        
-        mcb3_dram_cas_n    =>    mcb3_dram_cas_n,                        
-        mcb3_dram_we_n     =>    mcb3_dram_we_n,                          
-        mcb3_dram_odt    =>      mcb3_dram_odt,
-        mcb3_dram_cke      =>    mcb3_dram_cke,                          
-        mcb3_dram_ck       =>    mcb3_dram_ck,                          
-        mcb3_dram_ck_n     =>    mcb3_dram_ck_n,       
-        mcb3_dram_dqs      =>    mcb3_dram_dqs,                          
-        mcb3_dram_dqs_n  =>      mcb3_dram_dqs_n,
-        mcb3_dram_udqs  =>       mcb3_dram_udqs,    -- for X16 parts           
-        mcb3_dram_udqs_n    =>   mcb3_dram_udqs_n,  -- for X16 parts
-        mcb3_dram_udm  =>        mcb3_dram_udm,     -- for X16 parts
-        mcb3_dram_dm  =>       mcb3_dram_dm,
-        c3_clk0    =>            c3_clk0,
-        c3_rst0        =>        c3_rst0,
-        c3_calib_done      =>    c3_calib_done,
-        mcb3_rzq        =>            mcb3_rzq,
-        mcb3_zio        =>            mcb3_zio,
-        c3_p0_cmd_clk                           =>  c3_p0_in.cmd_clk,
-        c3_p0_cmd_en                            =>  c3_p0_in.cmd_en,
-        c3_p0_cmd_instr                         =>  c3_p0_in.cmd_instr,
-        c3_p0_cmd_bl                            =>  c3_p0_in.cmd_bl,
-        c3_p0_cmd_byte_addr                     =>  c3_p0_in.cmd_byte_addr,
-        c3_p0_cmd_empty                         =>  c3_p0_out.cmd_empty,
-        c3_p0_cmd_full                          =>  c3_p0_out.cmd_full,
-        c3_p0_wr_clk                            =>  c3_p0_in.wr_clk,
-        c3_p0_wr_en                             =>  c3_p0_in.wr_en,
-        c3_p0_wr_mask                           =>  c3_p0_in.wr_mask,
-        c3_p0_wr_data                           =>  c3_p0_in.wr_data,
-        c3_p0_wr_full                           =>  c3_p0_out.wr_full,
-        c3_p0_wr_empty                          =>  c3_p0_out.wr_empty,
-        c3_p0_wr_count                          =>  c3_p0_out.wr_count,
-        c3_p0_wr_underrun                       =>  c3_p0_out.wr_underrun,
-        c3_p0_wr_error                          =>  c3_p0_out.wr_error,
-        c3_p0_rd_clk                            =>  c3_p0_in.rd_clk,
-        c3_p0_rd_en                             =>  c3_p0_in.rd_en,
-        c3_p0_rd_data                           =>  c3_p0_out.rd_data,
-        c3_p0_rd_full                           =>  c3_p0_out.rd_full,
-        c3_p0_rd_empty                          =>  c3_p0_out.rd_empty,
-        c3_p0_rd_count                          =>  c3_p0_out.rd_count,
-        c3_p0_rd_overflow                       =>  c3_p0_out.rd_overflow,
-        c3_p0_rd_error                          =>  c3_p0_out.rd_error,
-        c3_p1_cmd_clk                           =>  c3_p1_cmd_clk,
-        c3_p1_cmd_en                            =>  c3_p1_cmd_en,
-        c3_p1_cmd_instr                         =>  c3_p1_cmd_instr,
-        c3_p1_cmd_bl                            =>  c3_p1_cmd_bl,
-        c3_p1_cmd_byte_addr                     =>  c3_p1_cmd_byte_addr,
-        c3_p1_cmd_empty                         =>  c3_p1_cmd_empty,
-        c3_p1_cmd_full                          =>  c3_p1_cmd_full,
-        c3_p1_wr_clk                            =>  c3_p1_wr_clk,
-        c3_p1_wr_en                             =>  c3_p1_wr_en,
-        c3_p1_wr_mask                           =>  c3_p1_wr_mask,
-        c3_p1_wr_data                           =>  c3_p1_wr_data,
-        c3_p1_wr_full                           =>  c3_p1_wr_full,
-        c3_p1_wr_empty                          =>  c3_p1_wr_empty,
-        c3_p1_wr_count                          =>  c3_p1_wr_count,
-        c3_p1_wr_underrun                       =>  c3_p1_wr_underrun,
-        c3_p1_wr_error                          =>  c3_p1_wr_error,
-        c3_p1_rd_clk                            =>  c3_p1_rd_clk,
-        c3_p1_rd_en                             =>  c3_p1_rd_en,
-        c3_p1_rd_data                           =>  c3_p1_rd_data,
-        c3_p1_rd_full                           =>  c3_p1_rd_full,
-        c3_p1_rd_empty                          =>  c3_p1_rd_empty,
-        c3_p1_rd_count                          =>  c3_p1_rd_count,
-        c3_p1_rd_overflow                       =>  c3_p1_rd_overflow,
-        c3_p1_rd_error                          =>  c3_p1_rd_error,
-        c3_p2_cmd_clk                           =>  c3_p2_cmd_clk,
-        c3_p2_cmd_en                            =>  c3_p2_cmd_en,
-        c3_p2_cmd_instr                         =>  c3_p2_cmd_instr,
-        c3_p2_cmd_bl                            =>  c3_p2_cmd_bl,
-        c3_p2_cmd_byte_addr                     =>  c3_p2_cmd_byte_addr,
-        c3_p2_cmd_empty                         =>  c3_p2_cmd_empty,
-        c3_p2_cmd_full                          =>  c3_p2_cmd_full,
-        c3_p2_wr_clk                            =>  c3_p2_wr_clk,
-        c3_p2_wr_en                             =>  c3_p2_wr_en,
-        c3_p2_wr_mask                           =>  c3_p2_wr_mask,
-        c3_p2_wr_data                           =>  c3_p2_wr_data,
-        c3_p2_wr_full                           =>  c3_p2_wr_full,
-        c3_p2_wr_empty                          =>  c3_p2_wr_empty,
-        c3_p2_wr_count                          =>  c3_p2_wr_count,
-        c3_p2_wr_underrun                       =>  c3_p2_wr_underrun,
-        c3_p2_wr_error                          =>  c3_p2_wr_error,
-        c3_p3_cmd_clk                           =>  c3_p3_cmd_clk,
-        c3_p3_cmd_en                            =>  c3_p3_cmd_en,
-        c3_p3_cmd_instr                         =>  c3_p3_cmd_instr,
-        c3_p3_cmd_bl                            =>  c3_p3_cmd_bl,
-        c3_p3_cmd_byte_addr                     =>  c3_p3_cmd_byte_addr,
-        c3_p3_cmd_empty                         =>  c3_p3_cmd_empty,
-        c3_p3_cmd_full                          =>  c3_p3_cmd_full,
-        c3_p3_rd_clk                            =>  c3_p3_rd_clk,
-        c3_p3_rd_en                             =>  c3_p3_rd_en,
-        c3_p3_rd_data                           =>  c3_p3_rd_data,
-        c3_p3_rd_full                           =>  c3_p3_rd_full,
-        c3_p3_rd_empty                          =>  c3_p3_rd_empty,
-        c3_p3_rd_count                          =>  c3_p3_rd_count,
-        c3_p3_rd_overflow                       =>  c3_p3_rd_overflow,
-        c3_p3_rd_error                          =>  c3_p3_rd_error);
+        c3_sys_clk          => c3_sys_clk,
+        c3_sys_rst_i        => c3_sys_rst_i,                        
+        mcb3_dram_dq        => mcb3_dram_dq,  
+        mcb3_dram_a         => mcb3_dram_a,  
+        mcb3_dram_ba        => mcb3_dram_ba,
+        mcb3_dram_ras_n     => mcb3_dram_ras_n,                        
+        mcb3_dram_cas_n     => mcb3_dram_cas_n,                        
+        mcb3_dram_we_n      => mcb3_dram_we_n,                          
+        mcb3_dram_odt       => mcb3_dram_odt,
+        mcb3_dram_cke       => mcb3_dram_cke,                          
+        mcb3_dram_ck        => mcb3_dram_ck,                          
+        mcb3_dram_ck_n      => mcb3_dram_ck_n,       
+        mcb3_dram_dqs       => mcb3_dram_dqs,                          
+        mcb3_dram_dqs_n     => mcb3_dram_dqs_n,
+        mcb3_dram_udqs      => mcb3_dram_udqs,    -- for X16 parts           
+        mcb3_dram_udqs_n    => mcb3_dram_udqs_n,  -- for X16 parts
+        mcb3_dram_udm       => mcb3_dram_udm,     -- for X16 parts
+        mcb3_dram_dm        => mcb3_dram_dm,
+        c3_clk0             => c3_clk0,
+        c3_rst0             => c3_rst0,
+        c3_calib_done       => c3_calib_done,
+        mcb3_rzq            => mcb3_rzq,
+        mcb3_zio            => mcb3_zio,
+        c3_p0_cmd_clk       => c3_p0_in.cmd.clk,
+        c3_p0_cmd_en        => c3_p0_in.cmd.en,
+        c3_p0_cmd_instr     => c3_p0_in.cmd.instr,
+        c3_p0_cmd_bl        => c3_p0_in.cmd.bl,
+        c3_p0_cmd_byte_addr => c3_p0_in.cmd.byte_addr,
+        c3_p0_cmd_empty     => c3_p0_out.cmd.empty,
+        c3_p0_cmd_full      => c3_p0_out.cmd.full,
+        c3_p0_wr_clk        => c3_p0_in.wr.clk,
+        c3_p0_wr_en         => c3_p0_in.wr.en,
+        c3_p0_wr_mask       => c3_p0_in.wr.mask,
+        c3_p0_wr_data       => c3_p0_in.wr.data,
+        c3_p0_wr_full       => c3_p0_out.wr.full,
+        c3_p0_wr_empty      => c3_p0_out.wr.empty,
+        c3_p0_wr_count      => c3_p0_out.wr.count,
+        c3_p0_wr_underrun   => c3_p0_out.wr.underrun,
+        c3_p0_wr_error      => c3_p0_out.wr.error,
+        c3_p0_rd_clk        => c3_p0_in.rd.clk,
+        c3_p0_rd_en         => c3_p0_in.rd.en,
+        c3_p0_rd_data       => c3_p0_out.rd.data,
+        c3_p0_rd_full       => c3_p0_out.rd.full,
+        c3_p0_rd_empty      => c3_p0_out.rd.empty,
+        c3_p0_rd_count      => c3_p0_out.rd.count,
+        c3_p0_rd_overflow   => c3_p0_out.rd.overflow,
+        c3_p0_rd_error      => c3_p0_out.rd.error,
+        c3_p1_cmd_clk       => c3_p1_in.cmd.clk,
+        c3_p1_cmd_en        => c3_p1_in.cmd.en,
+        c3_p1_cmd_instr     => c3_p1_in.cmd.instr,
+        c3_p1_cmd_bl        => c3_p1_in.cmd.bl,
+        c3_p1_cmd_byte_addr => c3_p1_in.cmd.byte_addr,
+        c3_p1_cmd_empty     => c3_p1_out.cmd.empty,
+        c3_p1_cmd_full      => c3_p1_out.cmd.full,
+        c3_p1_wr_clk        => c3_p1_in.wr.clk,
+        c3_p1_wr_en         => c3_p1_in.wr.en,
+        c3_p1_wr_mask       => c3_p1_in.wr.mask,
+        c3_p1_wr_data       => c3_p1_in.wr.data,
+        c3_p1_wr_full       => c3_p1_out.wr.full,
+        c3_p1_wr_empty      => c3_p1_out.wr.empty,
+        c3_p1_wr_count      => c3_p1_out.wr.count,
+        c3_p1_wr_underrun   => c3_p1_out.wr.underrun,
+        c3_p1_wr_error      => c3_p1_out.wr.error,
+        c3_p1_rd_clk        => c3_p1_in.rd.clk,
+        c3_p1_rd_en         => c3_p1_in.rd.en,
+        c3_p1_rd_data       => c3_p1_out.rd.data,
+        c3_p1_rd_full       => c3_p1_out.rd.full,
+        c3_p1_rd_empty      => c3_p1_out.rd.empty,
+        c3_p1_rd_count      => c3_p1_out.rd.count,
+        c3_p1_rd_overflow   => c3_p1_out.rd.overflow,
+        c3_p1_rd_error      => c3_p1_out.rd.error,
+        c3_p2_cmd_clk       => c3_p2_in.cmd.clk,
+        c3_p2_cmd_en        => c3_p2_in.cmd.en,
+        c3_p2_cmd_instr     => c3_p2_in.cmd.instr,
+        c3_p2_cmd_bl        => c3_p2_in.cmd.bl,
+        c3_p2_cmd_byte_addr => c3_p2_in.cmd.byte_addr,
+        c3_p2_cmd_empty     => c3_p2_out.cmd.empty,
+        c3_p2_cmd_full      => c3_p2_out.cmd.full,
+        c3_p2_wr_clk        => c3_p2_in.wr.clk,
+        c3_p2_wr_en         => c3_p2_in.wr.en,
+        c3_p2_wr_mask       => c3_p2_in.wr.mask,
+        c3_p2_wr_data       => c3_p2_in.wr.data,
+        c3_p2_wr_full       => c3_p2_out.wr.full,
+        c3_p2_wr_empty      => c3_p2_out.wr.empty,
+        c3_p2_wr_count      => c3_p2_out.wr.count,
+        c3_p2_wr_underrun   => c3_p2_out.wr.underrun,
+        c3_p2_wr_error      => c3_p2_out.wr.error,
+        c3_p3_cmd_clk       => c3_p3_in.cmd.clk,
+        c3_p3_cmd_en        => c3_p3_in.cmd.en,
+        c3_p3_cmd_instr     => c3_p3_in.cmd.instr,
+        c3_p3_cmd_bl        => c3_p3_in.cmd.bl,
+        c3_p3_cmd_byte_addr => c3_p3_in.cmd.byte_addr,
+        c3_p3_cmd_empty     => c3_p3_out.cmd.empty,
+        c3_p3_cmd_full      => c3_p3_out.cmd.full,
+        c3_p3_rd_clk        => c3_p3_in.rd.clk,
+        c3_p3_rd_en         => c3_p3_in.rd.en,
+        c3_p3_rd_data       => c3_p3_out.rd.data,
+        c3_p3_rd_full       => c3_p3_out.rd.full,
+        c3_p3_rd_empty      => c3_p3_out.rd.empty,
+        c3_p3_rd_count      => c3_p3_out.rd.count,
+        c3_p3_rd_overflow   => c3_p3_out.rd.overflow,
+        c3_p3_rd_error      => c3_p3_out.rd.error);
 
     rst <= not rst_n;
     
