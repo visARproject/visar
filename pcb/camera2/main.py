@@ -6,7 +6,7 @@ import math
 from autoee import Net, Bus
 from autoee import kicad, bom, easypart, landpattern, model, util, harnesses
 from autoee.units import INCH, MM
-from autoee.components import resistor, capacitor
+from autoee.components import resistor, capacitor, inductor
 
 from autoee_components.mounting_hole import mounting_hole
 from autoee_components.on_semiconductor import NOIV1SE1300A_QDC
@@ -17,6 +17,7 @@ from autoee_components.texas_instruments.DS10BR150 import DS10BR150TSD
 from autoee_components.xilinx.XC2C64A import XC2C64A_5QFG48C
 from autoee_components.vishay_semiconductors.VSMY7850X01 import VSMY7850X01
 from autoee_components.rohm_semiconductor import BUxxTD3WG
+from autoee_components.linear_technology.LT3476 import LT3476
 
 '''
 TODO
@@ -124,6 +125,12 @@ def camera(prefix, gnd, vcc3_3, vcc1_8, harness):
     )
     yield CMT821.CMT821(prefix+'M1')
     yield resistor.resistor(100, error=0, tolerance=0.01)(prefix+'R2', A=harness.clock_in.P, B=harness.clock_in.N)
+
+def combine_dicts(*xs):
+    res = {}
+    for a in xs:
+        res.update(a)
+    return res
 
 @util.listify
 def main():
@@ -313,9 +320,33 @@ def main():
         IO2_1=pairs[14].N,
     )
     
+    cap = [Net('cap%i' % (i,)) for i in xrange(4)]
+    led = [Net('led%i' % (i,)) for i in xrange(4)]
+    cat = [Net('cat%i' % (i,)) for i in xrange(4)]
+    pwm = [Net('pwm%i' % (i,)) for i in xrange(4)]
+    sw = [Net('sw%i' % (i,)) for i in xrange(4)]
     for i in xrange(4):
         yield VSMY7850X01('D%i' % (i,),
+            A=led[i],
+            C=cat[i],
         )
+        yield inductor.inductor(10e-6)('L%i' % (i,), A=cat[i], B=sw[i])
+    ref = Net('ref')
+    rt = Net('rt')
+    yield resistor.resistor(21e3)('RT', A=rt, B=gnd)
+    yield capacitor.capacitor(2.2e-6)('U3C', A=vcc5in, B=gnd)
+    yield LT3476('U3',
+        GND=gnd,
+        VIN=vcc5in,
+        nSHDN=vcc5in,
+        REF=ref,
+        RT=rt,
+        **combine_dicts(
+            {'PWM%i' % (i+1,): pwm[i] for i in xrange(4)},
+            {'SW%i' % (i+1,): sw[i] for i in xrange(4)},
+            {'CAP%i' % (i+1,): cap[i] for i in xrange(4)},
+            {'LED%i' % (i+1,): led[i] for i in xrange(4)},
+        ))
     
 
 desc = main()
