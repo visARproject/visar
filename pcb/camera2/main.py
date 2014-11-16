@@ -14,7 +14,7 @@ from autoee_components.molex import _71430, _1050281001
 from autoee_components.sunex import CMT821
 from autoee_components.stmicroelectronics.STM32F103TB import STM32F103TB
 from autoee_components.texas_instruments.DS10BR150 import DS10BR150TSD
-from autoee_components.xilinx.XC2C64A import XC2C64A_5QFG48C
+from autoee_components.xilinx.XC2C128 import XC2C128_6VQG100C
 from autoee_components.vishay_semiconductors.VSMY7850X01 import VSMY7850X01
 from autoee_components.rohm_semiconductor import BUxxTD3WG
 from autoee_components.linear_technology.LT3476 import LT3476
@@ -59,6 +59,40 @@ lepton = _1050281001._1050281001('''
     NC GND VDD GND SCL SDA PWR_DWN_L RESET_L
     GND MASTER_CLK GND MIPI_CLK_N MIPI_CLK_P GND MIPI_DATA_N MIPI_DATA_P
 '''.split())
+
+class LeptonHarness(object):
+    def __init__(self, prefix,
+            gnd=None, vddc=None, vdd=None, vddio=None,
+            video_spi_bus=None, video_ss_n=None,
+            i2c_bus=None, pwr_dwn_l=None, reset_l=None, master_clk=None):
+        self.prefix = prefix
+        self.gnd = Net(prefix+'_gnd') if gnd is None else gnd
+        self.vddc = Net(prefix+'_vddc') if vddc is None else vddc
+        self.vdd = Net(prefix+'_vdd') if vdd is None else vdd
+        self.vddio = Net(prefix+'_vddio') if vddio is None else vddio
+        self.video_spi_bus = harnesses.SPIBus.new(prefix) if video_spi_bus is None else video_spi_bus
+        self.video_ss_n = Net(prefix + '_ss_n') if video_ss_n is None else video_ss_n
+        self.i2c_bus = harnesses.I2CBus.new(prefix) if i2c_bus is None else i2c_bus
+        self.pwr_dwn_l = Net(prefix+'_pwr_dwn_l') if pwr_dwn_l is None else pwr_dwn_l
+        self.reset_l = Net(prefix+'_reset_l') if reset_l is None else reset_l
+        self.master_clk = Net(prefix+'_master_clk') if master_clk is None else master_clk
+    
+    def make(self):
+        yield lepton(self.prefix+'U',
+            GND=self.gnd,
+            VDDC=self.vddc,
+            SPI_MOSI=self.video_spi_bus.MOSI,
+            SPI_MISO=self.video_spi_bus.MISO,
+            SPI_CLK=self.video_spi_bus.SCLK,
+            SPI_CS_L=self.video_ss_n,
+            VDDIO=self.vddio,
+            VDD=self.vdd,
+            SCL=self.i2c_bus.SCL,
+            SDA=self.i2c_bus.SDA,
+            PWR_DWN_L=self.pwr_dwn_l,
+            RESET_L=self.reset_l,
+            MASTER_CLK=self.master_clk,
+        )
 
 class CameraHarness(object):
     def __init__(self, prefix,
@@ -235,41 +269,21 @@ def main():
     )
     
     
-    spi_bus = harnesses.SPIBus(MISO=Net('MISO'), MOSI=Net('MOSI'), SCLK=Net('SCLK'))
-    i2c_bus = harnesses.I2CBus(SDA=Net('SDA'), SCL=Net('SCL'))
-    lepton1_cs_n = Net('lepton1_cs_n')
-    yield lepton('T1',
-        GND=gnd,
-        VDDC=vcc1_2,
-        SPI_MOSI=spi_bus.MOSI,
-        SPI_MISO=spi_bus.MISO,
-        SPI_CLK=spi_bus.SCLK,
-        SPI_CS_L=lepton1_cs_n,
-        VDDIO=vcc3_0,
-        VDD=vcc2_8,
-        SCL=i2c_bus.SCL,
-        SDA=i2c_bus.SDA,
-        #PWR_DWN_L
-        #RESET_L
-        #MASTER_CLK
+    lepton1 = LeptonHarness('T1',
+        gnd=gnd,
+        vddc=vcc1_2,
+        vdd=vcc2_8,
+        vddio=vcc3_0,
     )
+    yield lepton1.make()
     
-    lepton2_cs_n = Net('lepton2_cs_n')
-    yield lepton('T2',
-        GND=gnd,
-        VDDC=vcc1_2,
-        SPI_MOSI=spi_bus.MOSI,
-        SPI_MISO=spi_bus.MISO,
-        SPI_CLK=spi_bus.SCLK,
-        SPI_CS_L=lepton2_cs_n,
-        VDDIO=vcc3_0,
-        VDD=vcc2_8,
-        SCL=i2c_bus.SCL,
-        SDA=i2c_bus.SDA,
-        #PWR_DWN_L
-        #RESET_L
-        #MASTER_CLK
+    lepton2 = LeptonHarness('T2',
+        gnd=gnd,
+        vddc=vcc1_2,
+        vdd=vcc2_8,
+        vddio=vcc3_0,
     )
+    yield lepton2.make()
     
     jtag = harnesses.JTAG.new('mc_')
     
@@ -288,7 +302,7 @@ def main():
     
     cpld_jtag = harnesses.JTAG.new('cpld_')
     
-    yield XC2C64A_5QFG48C('U2',
+    yield XC2C128_6VQG100C('U2',
         GND=gnd,
         VCC=vcc1_8,
         
@@ -301,23 +315,62 @@ def main():
         # IO pins can be rearranged any which way, except that GCK pins need
         # to be connected to expansion connector
         VCCIO1=vcc3_0,
-        #IO1_11 # GCKs
-        #IO1_12
-        #IO1_13
-        
         VCCIO2=vcc3_0,
-        IO1_13=pairs[7].N,
-        IO1_12=pairs[7].P,
-        IO1_11=pairs[8].N,
-        IO1_10=pairs[8].P,
-        IO1_9=pairs[9].P,
-        IO1_8=pairs[9].N,
-        IO1_7=pairs[12].N,
-        IO1_6=pairs[12].P,
-        IO2_5=pairs[13].P,
-        IO2_4=pairs[13].N,
-        IO2_2=pairs[14].P,
-        IO2_1=pairs[14].N,
+        IO1_27=pairs[7].N,
+        IO1_24=pairs[7].P,
+        IO1_23=pairs[8].N,
+        IO1_22=pairs[8].P,
+        IO1_19=pairs[9].P,
+        IO1_18=pairs[9].N,
+        IO1_17=pairs[12].N,
+        IO1_16=pairs[12].P,
+        IO1_15=pairs[13].P,
+        IO1_14=pairs[13].N,
+        IO2_13=pairs[14].P,
+        IO2_12=pairs[14].N,
+        
+        IO1_28=C1_harness.spi_bus.SCLK,
+        IO1_29=C1_harness.spi_bus.MISO,
+        IO1_30=C1_harness.spi_bus.MOSI,
+        IO1_32=C1_harness.ss_n,
+        IO1_33=C1_harness.reset_n,
+        IO1_34=C1_harness.monitors[1],
+        IO1_35=C1_harness.monitors[0],
+        IO1_36=C1_harness.triggers[2],
+        IO1_37=C1_harness.triggers[1],
+        IO1_39=C1_harness.triggers[0],
+        
+        IO1_40=lepton1.master_clk,
+        IO1_41=lepton1.pwr_dwn_l,
+        IO1_42=lepton1.reset_l,
+        IO1_43=lepton1.i2c_bus.SCL,
+        IO1_44=lepton1.i2c_bus.SDA,
+        IO1_46=lepton1.video_spi_bus.MOSI,
+        IO1_49=lepton1.video_spi_bus.MISO,
+        IO1_50=lepton1.video_spi_bus.SCLK,
+        IO1_52=lepton1.video_ss_n,
+        
+        
+        IO2_89=C2_harness.spi_bus.SCLK,
+        IO2_90=C2_harness.spi_bus.MISO,
+        IO2_91=C2_harness.spi_bus.MOSI,
+        IO2_92=C2_harness.ss_n,
+        IO2_93=C2_harness.reset_n,
+        IO2_94=C2_harness.monitors[1],
+        IO2_95=C2_harness.monitors[0],
+        IO2_96=C2_harness.triggers[2],
+        IO2_97=C2_harness.triggers[1],
+        IO2_99=C2_harness.triggers[0],
+        
+        IO2_87=lepton2.reset_l,
+        IO2_86=lepton2.pwr_dwn_l,
+        IO2_85=lepton2.master_clk,
+        IO2_82=lepton2.video_ss_n,
+        IO2_81=lepton2.video_spi_bus.SCLK,
+        IO2_80=lepton2.video_spi_bus.MISO,
+        IO2_79=lepton2.video_spi_bus.MOSI,
+        IO2_78=lepton2.i2c_bus.SDA,
+        IO2_77=lepton2.i2c_bus.SCL,
     )
     
     cap = [Net('cap%i' % (i,)) for i in xrange(4)]
