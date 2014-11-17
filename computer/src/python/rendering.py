@@ -44,8 +44,8 @@ class Renderer:
   def draw_map(self, draw):
     temp_surface = self.display_surface.copy() # copy surface
     img = draw(temp_surface) # call the module's draw
-    temp_surface.set_colorkey((0,0,0)) # tell blit to ignore black
-    return temp_surface
+    img.set_colorkey((0,0,0)) # tell blit to ignore black
+    return img
         
   # add a drawable object to the list     
   def add_module(self, module_draw):
