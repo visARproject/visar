@@ -27,15 +27,20 @@ class Renderer:
         pygame.quit()
         break
       
-      # get the objects and draw them on the screen buffer
-      self.display_surface.fill((0,0,0)) # wipe display buffer
-      for drawable in self.drawables: #draw each object
-        img = drawable.draw(self.display_surface.convert_alpha())
-        self.display_surface.blit(img,(0,0)) # combine surfaces
+      # get and combine each modules's drawn output
+      renders = map(self.draw_map,self.drawables) # call the draw's
+      for img in renders:
+        self.display_surface.blit(img,(0,0)) #combine the images
 
       pygame.display.update() # update the display
       self.clock.tick(FPS) # wait for next frame
 
+  # function wrapper for mapping onto drawables
+  def draw_map(self, drawable):
+    temp_surface = self.display_surface.copy() # copy surface
+    img = drawable.draw(temp_surface) # call the module's draw
+    temp_surface.set_colorkey((0,0,0)) # tell blit to ignore black
+    return temp_surface
         
   # add a drawable object to the list     
   def add_module(self, module):
