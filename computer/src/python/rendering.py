@@ -11,7 +11,7 @@ class Renderer:
     self.drawables = [] # list of drawable objects
     # initialize a fullscreen display
     self.display_surface = pygame.display.set_mode((0,0),pygame.FULLSCREEN,0)
-    #self.display_surface = pygame.display.set_mode((400,300))
+    #self.display_surface = pygame.display.set_mode((400,300)) #DEBUG
     self.clock = pygame.time.Clock() # timer for fpsing
 
   # method contains a loop running at 30hz
@@ -29,9 +29,9 @@ class Renderer:
       
       # get the objects and draw them on the screen buffer
       self.display_surface.fill((0,0,0)) # wipe display buffer
-      for drawable in self.drawables:
+      for drawable in self.drawables: #draw each object
         img = drawable.draw(self.display_surface.convert_alpha())
-        self.display_surface.blit(img,(0,0))
+        self.display_surface.blit(img,(0,0)) # combine surfaces
 
       pygame.display.update() # update the display
       self.clock.tick(FPS) # wait for next frame
