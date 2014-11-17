@@ -3,14 +3,15 @@ import numpy as np
 import pygame
 from pygame.locals import *
 
-class Fps_Pose:
+class FPS_Pose:
   # static definitions for velocity
-  LIN_VELOCITY = .01      # linear speed
-  ANG_VELOCITY = np.pi/10 # angluar speed base
+  LIN_VELOCITY = 5.0   # linear speed (1 px/frame)
+  ANG_VELOCITY = np.pi # angluar speed base (pi/size/frame)
   
-  def __init__(self, position=[0,0,0], angle=[0,0,0]):
+  def __init__(self, position=[0,0,0], angle=[0,0,0], two_d=False):
     self.position = np.array(position,dtype=float)
     self.angle = np.array(angle,dtype=float)
+    self.two_d = two_d
 
   # compose and return an affine transform
   def get_affine(self):
@@ -18,7 +19,7 @@ class Fps_Pose:
       [0,0,1,position[2]],[0,0,0,1]],dtype=float)
     return np.dot(translation, angle_rotation_matrix(self.angle))
   
-  # call for updates
+  # do updates
   def update(self):
     info = pygame.display.Info()  # get display informaton for mouse
     width  = info.current_w # window width
@@ -27,18 +28,23 @@ class Fps_Pose:
     # create movement vector (to be rotated later)
     temp_position = np.array([0,0,0,0],dtype=float)
     keys = pygame.key.get_pressed() # get all pressed keys
-    if(keys[K_LEFT]):  temp_position[0] += Fps_Pose.LIN_VELOCITY
-    if(keys[K_RIGHT]): temp_position[0] -= Fps_Pose.LIN_VELOCITY
-    if(keys[K_UP]):    temp_position[2] -= Fps_Pose.LIN_VELOCITY
-    if(keys[K_DOWN]):  temp_position[2] += Fps_Pose.LIN_VELOCITY            
+    if(keys[K_LEFT]):  temp_position[0] += FPS_Pose.LIN_VELOCITY
+    if(keys[K_RIGHT]): temp_position[0] -= FPS_Pose.LIN_VELOCITY
+    if(keys[K_UP]):    temp_position[2] += FPS_Pose.LIN_VELOCITY
+    if(keys[K_DOWN]):  temp_position[2] -= FPS_Pose.LIN_VELOCITY            
+    
+    # finish early if we're not doing angle updates, map to 2d
+    if(self.two_d):
+      self.position += [temp_position[0],temp_position[2],0] # update position
+      return None # leave method
     
     # adjust angles
     mouse = pygame.mouse.get_pos() # get mouse position
     # check tolerance boundarys, update angle relative to position
     if(mouse[0] > width/2 + width/5 or mouse[0] < width/2 - width/5):
-      self.angle[1] += Fps_Pose.ANG_VELOCITY * (mouse[0] - width/2) / width
+      self.angle[1] += FPS_Pose.ANG_VELOCITY * (mouse[0] - width/2) / width
     if(mouse[1] > height/2 + height/5 or mouse[1] < height/2 - height/5):
-      self.angle[0] += Fps_Pose.ANG_VELOCITY * (mouse[1] - height/2) / height
+      self.angle[0] += FPS_Pose.ANG_VELOCITY * (mouse[1] - height/2) / height
       
     # wrap horizontal angle (angle 1) in [0,2pi)
     if(self.angle[1] >= 2*np.pi): self.angle[1] -= 2*np.pi

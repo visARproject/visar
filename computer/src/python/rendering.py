@@ -7,8 +7,9 @@ from pygame.locals import *
 FPS = 30 # run at 30FPS
 
 class Renderer:
-  def __init__(self):
-    self.drawables = [] # list of drawable objects
+  def __init__(self, controller=None):
+    self.draws = [] # list of draw methods from modules
+    self.controller = controller # controller object for the visAR program 
     # initialize a fullscreen display
     self.display_surface = pygame.display.set_mode((0,0),pygame.FULLSCREEN,0)
     #self.display_surface = pygame.display.set_mode((400,300)) #DEBUG
@@ -27,8 +28,12 @@ class Renderer:
         pygame.quit()
         break
       
+      # call controller update
+      if(self.controller is not None): self.controller.do_update()
+      
       # get and combine each modules's drawn output
-      renders = map(self.draw_map,self.drawables) # call the draw's
+      self.display_surface.fill((0,0,0)) # wipe the buffer
+      renders = map(self.draw_map,self.draws) # call the draw's
       for img in renders:
         self.display_surface.blit(img,(0,0)) #combine the images
 
@@ -36,12 +41,12 @@ class Renderer:
       self.clock.tick(FPS) # wait for next frame
 
   # function wrapper for mapping onto drawables
-  def draw_map(self, drawable):
+  def draw_map(self, draw):
     temp_surface = self.display_surface.copy() # copy surface
-    img = drawable.draw(temp_surface) # call the module's draw
+    img = draw(temp_surface) # call the module's draw
     temp_surface.set_colorkey((0,0,0)) # tell blit to ignore black
     return temp_surface
         
   # add a drawable object to the list     
-  def add_module(self, module):
-    self.drawables.append(module)
+  def add_module(self, module_draw):
+    self.draws.append(module_draw)
