@@ -16,8 +16,8 @@ class Renderer:
     #self.display_surface = pygame.display.set_mode((400,300)) #DEBUG
     self.eye_size = (self.display_surface.get_width()/2, self.display_surface.get_height())
     self.eye_surface = pygame.Surface(self.eye_size) # eye surface template
-    if(debug): self.eye_surface = debug_surface.copy()
-    self.eye_surface.fill((0,0,0)) # fill with zero
+    if(debug): self.eye_surface = self.display_surface.copy()
+    else: self.eye_surface.fill((0,0,0)) # fill with zero
     self.clock = pygame.time.Clock() # timer for fpsing
     self.debug_mode = debug # debug mode only displays left eye
 
@@ -57,7 +57,7 @@ class Renderer:
 
       # debug mode only shows one eye, with no distortion
       if(self.debug_mode):
-        self.display_surface.blit(left_eye(0,0))
+        self.display_surface.blit(left_eye,(0,0))
         pygame.display.update()
         self.clock.tick(FPS)
         continue

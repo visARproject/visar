@@ -8,7 +8,7 @@ import menu_button
 import sys
 
 def visar():
-  debug_mode = (sys.argv[0] == '--debug') # check for debug mode
+  debug_mode = (sys.argv[1] == '--debug') # check for debug mode
 
   # initialize things
   pose_source = user_pose.FPS_Pose() # initialize position source
