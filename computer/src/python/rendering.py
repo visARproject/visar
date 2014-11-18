@@ -93,7 +93,6 @@ FOCAL_LENGTH = 20 # Literally no idea, get from somebody, assume 20m
 class Surface_3D:
   def __init__(self, surface, depth=0):  
     self.surface = surface
-    self.depth = depth
 
     # derived from stereo-vision distance equation
     # Z = f*b/d -> d = f*b/Z, d = 2*shift amount
@@ -103,13 +102,13 @@ class Surface_3D:
   # return the surface for the left eye (move left, -dx)
   def left_eye_surface(self):
     left = self.surface.copy()
-    left.scroll(dx=-self.shift_amt)
+    left.scroll(dx=self.shift_amt)
     return left
     
   # return the surface for the right eye (move right, dx)
   def right_eye_surface(self):
     right = self.surface.copy()
-    right.scroll(dx=self.shift_amt)
+    right.scroll(dx=-self.shift_amt)
     return right
   
 
