@@ -21,8 +21,9 @@ class Controller_Book:
   def __init__(self, pose_source):
     self.pose_source = pose_source # position information
     
-    # menu botton information, queue events
-    self.menu_status = [] # 'up', 'down', or 'hide all'
+    # menu botton information, stores changes
+    # '', 'up', 'down', 'forward', 'back', or 'hide all'
+    self.menu_status = '' 
     
   def get_pose(self):
     return pose_source.get_pose()

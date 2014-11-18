@@ -5,19 +5,22 @@ import rendertest
 import user_pose
 import controller
 import menu_button
+import sys
 
 def visar():
+  debug_mode = (sys.argv[0] == '--debug') # check for debug mode
+
   # initialize things
   pose_source = user_pose.FPS_Pose() # initialize position source
   visar_controller = controller.Controller(pose_source) # initialize controller
-  renderer = rendering.Renderer(visar_controller) # initialize renderer
+  renderer = rendering.Renderer(visar_controller,debug_mode) # initialize renderer
   
   # add pose source to update stack
   visar_controller.add_update(pose_source.update) 
   
   # menu buttons 
   button1 = menu_button.Menu()
-  renderer.add_module(button1.draw)
+  renderer.add_2d_module(button1.draw)
   
   # run the renderer
   renderer.do_loop()

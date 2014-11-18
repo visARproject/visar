@@ -7,7 +7,7 @@ from pygame.locals import *
 FPS = 30 # run at 30FPS or so
 
 class Renderer:
-  def __init__(self, controller=None):
+  def __init__(self, controller=None, debug=False):
     self.draws_2d = [] # list of draw methods from 2d modules
     self.draws_3d = [] # list of draw methods from 3d modules
     self.controller = controller # controller object for the visAR program 
@@ -16,8 +16,10 @@ class Renderer:
     #self.display_surface = pygame.display.set_mode((400,300)) #DEBUG
     self.eye_size = (self.display_surface.get_width()/2, self.display_surface.get_height())
     self.eye_surface = pygame.Surface(self.eye_size) # eye surface template
+    if(debug): self.eye_surface = debug_surface.copy()
     self.eye_surface.fill((0,0,0)) # fill with zero
     self.clock = pygame.time.Clock() # timer for fpsing
+    self.debug_mode = debug # debug mode only displays left eye
 
   # method contains a loop running at 30hz
   def do_loop(self):
@@ -52,6 +54,13 @@ class Renderer:
         # combine the images (both eyes are equal)
         left_eye.blit(img,(0,0))
         right_eye.blit(img,(0,0))
+
+      # debug mode only shows one eye, with no distortion
+      if(self.debug_mode):
+        self.display_surface.blit(left_eye(0,0))
+        pygame.display.update()
+        self.clock.tick(FPS)
+        continue
 
       # JAKE: DO OCULUS DISTORTION HERE
 
