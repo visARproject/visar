@@ -24,8 +24,8 @@ def visar():
   visar_controller.add_pose_update(square2.update) # add pose listener
   renderer.add_module(square2.draw) # add draw method to render stack
 
-  button1 = menu_button.Menu()
-  renderer.add_module(button1.draw)
+  menu = menu_button.Menu()
+  renderer.add_module(menu.draw)
   
   # run the renderer
   renderer.do_loop()
