@@ -99,7 +99,6 @@ class Surface_3D:
     # Z = f*b/d -> d = f*b/Z, d = 2*shift amount
     if(depth < .001): self.shift_amt = 0; # don't divide by zero, or overdo it
     else: self.shift_amt = int(FOCAL_LENGTH * EYE_DISTANCE / depth / 2)
-    print (depth, self.shift_amt)
   
   # return the surface for the left eye (move left, -dx)
   def left_eye_surface(self):

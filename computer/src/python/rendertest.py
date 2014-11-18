@@ -17,16 +17,16 @@ def debug_wrapper():
   visar_controller.add_update(pose_source.update) 
   
   # setup a static square object (from rendertest)
-  square1 = rendertest.Debug_Static() # create a render module
+  square1 = Debug_Static() # create a render module
   renderer.add_2d_module(square1.draw) # add module's draw to render stack
   
   # setup dynamic (moving) square object (rendertest)
-  square2 = rendertest.Debug_Dynamic() # create another module
+  square2 = Debug_Dynamic() # create another module
   visar_controller.add_update(square2.update) # add pose listener
   renderer.add_2d_module(square2.draw) # add draw method to render stack
   
   # setup a static square object with depth (from rendertest)
-  square3 = rendertest.Debug_Depth() # create a render module
+  square3 = Debug_Depth() # create a render module
   renderer.add_3d_module(square3.draw) # add module's draw to render stack
   
   #run the renderer
