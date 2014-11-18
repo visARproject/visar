@@ -4,7 +4,7 @@
 import pygame
 from pygame.locals import *
 
-FPS = 30 # run at 30FPS
+FPS = 30 # run at 30FPS or so
 
 class Renderer:
   def __init__(self, controller=None):

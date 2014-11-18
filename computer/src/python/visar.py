@@ -20,7 +20,7 @@ def visar():
   
   # setup dynamic (moving) square object (rendertest)
   square2 = rendertest.Debug_Dynamic() # create another module
-  visar_controller.add_pose_update(square2.update) # add pose listener
+  visar_controller.add_update(square2.update) # add pose listener
   renderer.add_module(square2.draw) # add draw method to render stack
   
   # run the renderer

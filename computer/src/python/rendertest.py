@@ -21,7 +21,8 @@ class Debug_Dynamic:
     pygame.draw.rect(surface,(255,0,0),self.location+self.size) #draw rectangle
     return surface # return the updated surface
   # update the location  
-  def update(self, pose):
+  def update(self, book):
+    pose = book.pose_source.position
     self.location = (int(-pose[0]),int(-pose[1])) # grab x/y from pose, convert to int
 
 # test class will draw a green rectangle
