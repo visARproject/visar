@@ -41,3 +41,6 @@ NET "rx_tmds(0)"  	LOC = "K17" |IOSTANDARD = TMDS_33 ; # Blue
 NET "rx_tmdsb(0)"  LOC = "K18" |IOSTANDARD = TMDS_33 ;
 
 NET "led<0>" LOC = "U18"; # Bank = 1, Pin name = IO_L52N_M1DQ15, 	   Sch name = LD0
+
+NET "uart_tx" LOC = "B16" | IOSTANDARD = LVCMOS33;
+NET "uart_rx" LOC = "A16" | IOSTANDARD = LVCMOS33;

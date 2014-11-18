@@ -18,6 +18,9 @@ entity toplevel is
         rx_scl : inout std_logic;
         led : out std_logic_vector(0 downto 0);
         
+        uart_tx : out std_logic;
+        uart_rx : in std_logic;
+        
         mcb3_dram_dq     : inout  std_logic_vector(16-1 downto 0);
         mcb3_dram_a      : out std_logic_vector(13-1 downto 0);
         mcb3_dram_ba     : out std_logic_vector(3-1 downto 0);
@@ -66,6 +69,9 @@ architecture RTL of toplevel is
     
     signal c3_p3_in : ram_rd_port_in;
     signal c3_p3_out : ram_rd_port_out;
+    
+    signal uart_valid : std_logic;
+    signal uart_data : std_logic_vector(7 downto 0);
 begin
     IBUFG_inst : IBUFG
         port map(
@@ -229,5 +235,27 @@ begin
                  reset        => rst,
                  scl        => rx_scl,
                  sda        => rx_sda);
-                 
+    
+    U_UART : entity work.uart_transmitter
+        generic map(
+            CLOCK_FREQUENCY => 100000000.0,
+            BAUD_RATE => 4000000.0)
+        port map (
+            clock => clk_100MHz_buf,
+            reset => rst,
+            tx    => uart_tx,
+            ready => open,
+            data  => uart_data,
+            write => uart_valid);
+    
+    U_UART2 : entity work.uart_receiver
+        generic map(
+            CLOCK_FREQUENCY => 100000000.0,
+            BAUD_RATE => 4000000.0)
+        port map (
+            clock => clk_100MHz_buf,
+            reset => rst,
+            rx    => uart_rx,
+            valid => uart_valid,
+            data  => uart_data);
 end architecture RTL;
