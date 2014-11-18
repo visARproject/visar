@@ -19,8 +19,8 @@ def visar():
   visar_controller.add_update(pose_source.update) 
   
   # menu buttons 
-  button1 = menu_button.Menu()
-  renderer.add_2d_module(button1.draw)
+  menu = menu_button.Menu()
+  renderer.add_2d_module(menu.draw)
   
   # run the renderer
   renderer.do_loop()
