@@ -42,8 +42,8 @@ end entity video_sync_gen;
 
 
 architecture Behavioral of video_sync_gen is
-	signal h_cnt : std_logic_vector(11 downto 0);
-	signal v_cnt : std_logic_vector(11 downto 0);	
+	signal h_cnt : std_logic_vector(11 downto 0) := (others => '0');
+	signal v_cnt : std_logic_vector(11 downto 0) := (others => '0');
 	
 begin
 	process (video.sync.pixel_clk) is
