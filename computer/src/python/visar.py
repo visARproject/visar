@@ -4,6 +4,7 @@ import rendering
 import rendertest
 import user_pose
 import controller
+import menu_button
 
 def visar():
   # initialize things
@@ -22,6 +23,9 @@ def visar():
   square2 = rendertest.Debug_Dynamic() # create another module
   visar_controller.add_update(square2.update) # add pose listener
   renderer.add_module(square2.draw) # add draw method to render stack
+
+  button1 = menu_button.Menu()
+  renderer.add_module(button1.draw)
   
   # run the renderer
   renderer.do_loop()
