@@ -20,7 +20,7 @@ class FPS_Pose:
     return np.dot(translation, angle_rotation_matrix(self.angle))
   
   # do updates
-  def update(self):
+  def update(self, book):
     info = pygame.display.Info()  # get display informaton for mouse
     width  = info.current_w # window width
     height = info.current_h # window height

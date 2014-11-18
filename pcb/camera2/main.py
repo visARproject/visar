@@ -177,9 +177,9 @@ def main():
     vcc3_3in = Net('vcc3_3in')
     
     vcc1_2 = Net('vcc1_2') # thermal (110mA*2)
-    vcc1_8 = Net('vcc1_8') # CMOS (75mA*2), CPLD (17.77mA) - needs to be switched, in part
+    vcc1_8 = Net('vcc1_8') # CMOS (75mA*2), CPLD (40mA) - CMOS needs to be switched
     vcc2_8 = Net('vcc2_8') # thermal (16mA*2)
-    vcc3_0 = Net('vcc3_0') # CPLD, thermal (4mA*2), ARM, CMOS ((130+2.5mA)*2) - needs to be switched, in part
+    vcc3_0 = Net('vcc3_0') # CPLD, thermal (4mA*2), ARM, CMOS ((130+2.5mA)*2) - CMOS needs to be switched
     
     for i, (n, v) in enumerate({vcc1_2: 1.2, vcc1_8: 1.8, vcc2_8: 2.8, vcc3_0: 3.0}.iteritems()):
         yield BUxxTD3WG.by_voltage[v]('REG%i' % (i,),
@@ -373,17 +373,20 @@ def main():
         IO2_77=lepton2.i2c_bus.SCL,
     )
     
-    cap = [Net('cap%i' % (i,)) for i in xrange(4)]
+    cap = [vcc5in for i in xrange(4)]
     led = [Net('led%i' % (i,)) for i in xrange(4)]
     cat = [Net('cat%i' % (i,)) for i in xrange(4)]
     pwm = [Net('pwm%i' % (i,)) for i in xrange(4)]
     sw = [Net('sw%i' % (i,)) for i in xrange(4)]
     for i in xrange(4):
+        yield resistor.resistor(100e-3)('D%iR' % (i,), A=cap[i], B=led[i]) # check power rating
         yield VSMY7850X01('D%i' % (i,),
             A=led[i],
             C=cat[i],
         )
+        yield capacitor.capacitor(0.22e-6)('D%iC' % (i,), A=cap[i], B=cat[i])
         yield inductor.inductor(10e-6)('L%i' % (i,), A=cat[i], B=sw[i])
+        #yield capacitor.capacitor
     ref = Net('ref')
     rt = Net('rt')
     yield resistor.resistor(21e3)('RT', A=rt, B=gnd)
