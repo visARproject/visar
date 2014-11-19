@@ -13,7 +13,7 @@ class Menu:
     button2 = Button("Hide All");
     button3 = Button("Call");
 
-    self.active = button1;
+    self.active = button2;
     self.current = [button0, button1, button2, button3]
 
     self.active.setActive()
