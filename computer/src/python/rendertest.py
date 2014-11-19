@@ -56,7 +56,7 @@ class Debug_Static:
 class Debug_Depth:
   def draw(self, surface):
     pygame.draw.rect(surface,(0,0,255),(200,300,100,50))
-    return rendering.Surface_3D(surface,depth=.01)
+    return rendering.Surface_3D(surface,depth=20)
   
 # run debug_wrapper when called from command line
 if __name__ == '__main__':
