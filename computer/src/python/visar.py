@@ -19,12 +19,13 @@ def visar():
   visar_controller = controller.Controller(pose_source) # initialize controller
   renderer = rendering.Renderer(visar_controller,debug_mode) # initialize renderer
   
-  # add pose source to update stack
-  visar_controller.add_update(pose_source.update) 
-  
   # menu buttons 
   menu = menu_button.Menu()
   renderer.add_module(menu)
+
+  # add pose source to update stack
+  visar_controller.add_update(pose_source.update)
+  visar_controller.add_update(menu.update)
   
   # run the renderer
   renderer.do_loop()
