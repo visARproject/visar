@@ -2,8 +2,9 @@
 
 import pygame
 from pygame.locals import *
+import rendering
 
-class Menu:
+class Menu(rendering.Drawable):
   def __init__(self):
     self.active = None
     self.current = [self.active]
@@ -18,20 +19,22 @@ class Menu:
 
     self.active.setActive()
 
-  def draw(self, surface):
-    button_width = int(surface.get_width() * .05)
-    button_height = int(surface.get_height() * .05)
+  def draw(self, surface_size):
+    button_width = int(surface_size[0] * .05)
+    button_height = int(surface_size[1] * .05)
     
-    gap = surface.get_height() * .01
-    align = surface.get_height() * .05
+    gap = surface_size[0] * .01
+    align = surface_size[1] * .05
 
     total_width = button_width
     total_height = (len(self.current) - 1) * (gap + button_height) + (2 * button_height)
 
-    top = int(surface.get_height() / 2) - int(total_height / 2)
+    top = int(surface_size[1] / 2) - int(total_height / 2)
 
     check = False
 
+    surface = pygame.Surface(surface_size) # create new surface (See Josh)
+    
     for x in range(0, len(self.current)):
       y = top + x*(gap + button_height)
 
@@ -42,7 +45,7 @@ class Menu:
         check = True
 
       surface.blit(self.current[x].getSurface(button_width, button_height), (align, y))
-    return surface
+    return rendering.Render_Surface(surface) # See Josh
 
 class Button:
   def __init__(self, name = "0", size = (2, 1)):

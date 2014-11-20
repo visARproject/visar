@@ -24,7 +24,7 @@ def visar():
   
   # menu buttons 
   menu = menu_button.Menu()
-  renderer.add_2d_module(menu.draw)
+  renderer.add_module(menu)
   
   # run the renderer
   renderer.do_loop()
