@@ -21,66 +21,108 @@ entity uart_ram_interface is
 end entity;
 
 architecture arc of uart_ram_interface is
-    type CommandStateType is (COMMANDSTATE_IDLE);
-    signal commandstate : CommandStateType;
-    
-    type ReadStateType is (READSTATE_IDLE, READSTATE_GO, READSTATE_GO2, READSTATE_GO3);
-    signal readstate : ReadStateType;
-    subtype PosType is integer range 0 to DATA_PORT_SIZE/8-1;
-    signal pos : PosType;
 begin
-    ram_in.cmd.clk <= clock;
-    ram_in.rd.clk <= clock;
-    
-    process(clock)
+    process(clock, reset, uart_rx_valid, uart_rx_data)
+        type StateType is (IDLE, READ, EXEC);
+        variable state, next_state : StateType;
+        subtype PosType is integer range 0 to 8;
+        variable pos, next_pos : PosType;
+        variable command, next_command : std_logic_vector(71 downto 0);
     begin
+        ram_in.cmd.clk <= clock;
+        ram_in.wr.clk <= clock;
+        
+        next_state := state;
+        next_pos := pos;
+        next_command := command;
+        
+        ram_in.cmd.en <= '0';
+        ram_in.cmd.instr <= (others => '-');
+        ram_in.cmd.byte_addr <= (others => '-');
+        ram_in.cmd.bl <= (others => '-');
+        ram_in.wr.en <= '0';
+        ram_in.wr.data <= (others => '-');
+        ram_in.wr.mask <= (others => '-');
+        
+        if reset = '1' then
+            next_state := IDLE;
+        elsif state = IDLE then
+            if uart_rx_valid = '1' and uart_rx_data = x"da" then
+                next_pos := 0;
+                next_state := READ;
+            end if;
+        elsif state = READ then
+            if uart_rx_valid = '1' then
+                next_command(8*pos+7 downto 8*pos) := uart_rx_data;
+                if pos /= 8 then
+                    next_pos := pos + 1;
+                else
+                    if next_command(7 downto 0) = x"00" then -- read
+                    else
+                        ram_in.wr.en <= '1';
+                        ram_in.wr.data <= next_command(71 downto 40);
+                        ram_in.wr.mask <= (others => '0');
+                    end if;
+                    next_state := EXEC;
+                end if;
+            end if;
+        elsif state = EXEC then
+            ram_in.cmd.en <= '1';
+            if command(7 downto 0) = x"00" then -- read
+                ram_in.cmd.instr <= READ_COMMAND;
+            else
+                ram_in.cmd.instr <= WRITE_COMMAND;
+            end if;
+            ram_in.cmd.byte_addr <= command(37 downto 8);
+            ram_in.cmd.bl <= std_logic_vector(to_unsigned(0, ram_in.cmd.bl'length));
+            next_state := IDLE;
+        end if;
+        
         if rising_edge(clock) then
-            ram_in.cmd.en <= '0';
-            
-            
-            ram_in.rd.en <= '0';
-            uart_tx_write <= '0';
-            
-            if reset = '1' then
-                commandstate <= COMMANDSTATE_IDLE;
-            elsif commandstate = COMMANDSTATE_IDLE then
-                if uart_rx_valid = '1' then
-                    if uart_rx_data = x"00" then
-                        uart_tx_write <= '1';
-                        uart_tx_data <= x"40";
-                    else
-                        ram_in.cmd.en <= '1';
-                        ram_in.cmd.instr <= READ_COMMAND;
-                        ram_in.cmd.byte_addr <= std_logic_vector(resize(unsigned(uart_rx_data & "00"), ram_in.cmd.byte_addr'length));
-                        ram_in.cmd.bl <= std_logic_vector(to_unsigned(0, ram_in.cmd.bl'length));
-                    end if;
+            state := next_state;
+            pos := next_pos;
+            command := next_command;
+        end if;
+    end process;
+    
+    process(clock, reset, ram_out, uart_tx_ready)
+        type ReadStateType is (READSTATE_IDLE, READSTATE_GO);
+        variable state, next_state : ReadStateType;
+        subtype PosType is integer range 0 to DATA_PORT_SIZE/8-1;
+        variable pos, next_pos : PosType;
+    begin
+        ram_in.rd.clk <= clock;
+        
+        next_state := state;
+        next_pos := pos;
+        
+        ram_in.rd.en <= '0';
+        uart_tx_write <= '0';
+        uart_tx_data <= (others => '-');
+        
+        if reset = '1' then
+            next_state := READSTATE_IDLE;
+        elsif state = READSTATE_IDLE then
+            if ram_out.rd.empty = '0' then
+                ram_in.rd.en <= '1';
+                next_pos := 0;
+                next_state := READSTATE_GO;
+            end if;
+        elsif state = READSTATE_GO then
+            if uart_tx_ready = '1' then
+                uart_tx_write <= '1';
+                uart_tx_data <= ram_out.rd.data(8*pos+7 downto 8*pos);
+                if pos /= DATA_PORT_SIZE/8-1 then
+                    next_pos := pos + 1;
+                else
+                    next_state := READSTATE_IDLE;
                 end if;
             end if;
-            
-            if reset = '1' then
-                readstate <= READSTATE_IDLE;
-            elsif readstate = READSTATE_IDLE then
-                if ram_out.rd.empty = '0' then
-                    ram_in.rd.en <= '1';
-                    readstate <= READSTATE_GO;
-                end if;
-            elsif readstate = READSTATE_GO then
-                readstate <= READSTATE_GO2;
-                pos <= 0;
-            elsif readstate = READSTATE_GO2 then
-                if uart_tx_ready = '1' then
-                    uart_tx_write <= '1';
-                    uart_tx_data <= ram_out.rd.data(8*pos+7 downto 8*pos);
-                    if pos /= DATA_PORT_SIZE/8-1 then
-                        readstate <= READSTATE_GO3;
-                        pos <= pos + 1;
-                    else
-                        readstate <= READSTATE_IDLE;
-                    end if;
-                end if;
-            elsif readstate = READSTATE_GO3 then
-                readstate <= READSTATE_GO2;
-            end if;
+        end if;
+        
+        if rising_edge(clock) then
+            state := next_state;
+            pos := next_pos;
         end if;
     end process;
 end architecture;
