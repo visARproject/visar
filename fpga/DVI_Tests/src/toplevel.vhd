@@ -70,8 +70,12 @@ architecture RTL of toplevel is
     signal c3_p3_in : ram_rd_port_in;
     signal c3_p3_out : ram_rd_port_out;
     
-    signal uart_valid : std_logic;
-    signal uart_data : std_logic_vector(7 downto 0);
+    signal uart_tx_ready : std_logic;
+    signal uart_tx_data : std_logic_vector(7 downto 0);
+    signal uart_tx_write : std_logic;
+    
+    signal uart_rx_valid : std_logic;
+    signal uart_rx_data : std_logic_vector(7 downto 0);
 begin
     IBUFG_inst : IBUFG
         port map(
@@ -80,7 +84,7 @@ begin
         );
     
     c3_sys_clk <= clk_100MHz_buf;
-    c3_sys_rst_i <= not rst;
+    c3_sys_rst_i <= rst;
     
     u_dram : entity work.dram port map (
         c3_sys_clk          => c3_sys_clk,
@@ -194,7 +198,7 @@ begin
                  rx_tmdsb     => rx_tmdsb,
                  video_output => dvi_rx_video_out);
     
-    led(0) <= dvi_rx_video_out.sync.valid;
+    led(0) <= c3_calib_done;
     
     U_PIXEL_CLK_GEN : entity work.pixel_clk_gen
         port map(CLK_IN1  => clk_100MHz_buf,
@@ -238,24 +242,36 @@ begin
     
     U_UART : entity work.uart_transmitter
         generic map(
-            CLOCK_FREQUENCY => 100000000.0,
+            CLOCK_FREQUENCY => 132000000.0,
             BAUD_RATE => 4000000.0)
         port map (
-            clock => clk_100MHz_buf,
+            clock => clk_132MHz,
             reset => rst,
             tx    => uart_tx,
-            ready => open,
-            data  => uart_data,
-            write => uart_valid);
+            ready => uart_tx_ready,
+            data  => uart_tx_data,
+            write => uart_tx_write);
     
     U_UART2 : entity work.uart_receiver
         generic map(
-            CLOCK_FREQUENCY => 100000000.0,
+            CLOCK_FREQUENCY => 132000000.0,
             BAUD_RATE => 4000000.0)
         port map (
-            clock => clk_100MHz_buf,
+            clock => clk_132MHz,
             reset => rst,
             rx    => uart_rx,
-            valid => uart_valid,
-            data  => uart_data);
+            valid => uart_rx_valid,
+            data  => uart_rx_data);
+    
+    U_UART_RAM : entity work.uart_ram_interface
+        port map (
+            clock => clk_132MHz,
+            reset => rst,
+            ram_in => c3_p0_in,
+            ram_out => c3_p0_out,
+            uart_tx_ready => uart_tx_ready,
+            uart_tx_data => uart_tx_data,
+            uart_tx_write => uart_tx_write,
+            uart_rx_valid => uart_rx_valid,
+            uart_rx_data => uart_rx_data);
 end architecture RTL;

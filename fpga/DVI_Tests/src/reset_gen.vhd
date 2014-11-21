@@ -12,7 +12,7 @@ end entity reset_gen;
 
 
 architecture RTL of reset_gen is
-	signal shift : std_logic_vector(LENGTH-1 downto 0);
+	signal shift : std_logic_vector(LENGTH-1 downto 0) := (others => '1');
 begin
 	process(reset_in, clock)
 	begin
@@ -20,7 +20,8 @@ begin
 			shift <= (others => '1');
 		elsif rising_edge(clock) then
 			shift <= shift(shift'length-2 downto 0) & '0';
-			reset_out <= shift(shift'length-1);
 		end if;
 	end process;
+	
+	reset_out <= shift(shift'length-1);
 end architecture RTL;
