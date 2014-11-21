@@ -1,4 +1,4 @@
-<?xml version='1.0' encoding='UTF-8'?>
+<?xml version="1.0" encoding="UTF-8"?>
 <Project NoOfControllers="1" >
     <ModuleName>dram</ModuleName>
     <TargetFPGA>xc6slx45-csg324/-3</TargetFPGA>
@@ -9,7 +9,7 @@
         <EnableVoltageRange>1</EnableVoltageRange>
         <DataMask>1</DataMask>
         <CustomPart>FALSE</CustomPart>
-        <NewPartName/>
+        <NewPartName></NewPartName>
         <RowAddress>13</RowAddress>
         <ColAddress>10</ColAddress>
         <BankAddress>3</BankAddress>
@@ -32,9 +32,9 @@
         <DataClass>Class II</DataClass>
         <InputPinTermination>CALIB_TERM</InputPinTermination>
         <DataTermination>25 Ohms</DataTermination>
-        <CalibrationRowAddress/>
-        <CalibrationColumnAddress/>
-        <CalibrationBankAddress/>
+        <CalibrationRowAddress></CalibrationRowAddress>
+        <CalibrationColumnAddress></CalibrationColumnAddress>
+        <CalibrationBankAddress></CalibrationBankAddress>
         <SystemClock>Single-Ended</SystemClock>
         <BypassCalibration>1</BypassCalibration>
         <DebugSignals>Disable</DebugSignals>
@@ -42,21 +42,21 @@
         <Configuration>Two 32-bit bi-directional and four 32-bit unidirectional ports</Configuration>
         <RzqPin>L6</RzqPin>
         <ZioPin>C2</ZioPin>
-        <PortsSelected>Port0,Port1,Port2,Port3</PortsSelected>
-        <PortDirections>Bi-directional,Bi-directional,Write,Read,none,none</PortDirections>
-        <UserMemoryAddressMap>ROW_BANK_COLUMN</UserMemoryAddressMap>
+        <PortsSelected>Port0,Port1,Port2,Port3,Port4,Port5</PortsSelected>
+        <PortDirections>Bi-directional,Bi-directional,Read,Read,Write,Write</PortDirections>
+        <UserMemoryAddressMap>BANK_ROW_COLUMN</UserMemoryAddressMap>
         <ArbitrationAlgorithm>Round Robin</ArbitrationAlgorithm>
-        <TimeSlot0>0123</TimeSlot0>
-        <TimeSlot1>1230</TimeSlot1>
-        <TimeSlot2>2301</TimeSlot2>
-        <TimeSlot3>3012</TimeSlot3>
-        <TimeSlot4>0123</TimeSlot4>
-        <TimeSlot5>1230</TimeSlot5>
-        <TimeSlot6>2301</TimeSlot6>
-        <TimeSlot7>3012</TimeSlot7>
-        <TimeSlot8>0123</TimeSlot8>
-        <TimeSlot9>1230</TimeSlot9>
-        <TimeSlot10>2301</TimeSlot10>
-        <TimeSlot11>3012</TimeSlot11>
+        <TimeSlot0>012345</TimeSlot0>
+        <TimeSlot1>123450</TimeSlot1>
+        <TimeSlot2>234501</TimeSlot2>
+        <TimeSlot3>345012</TimeSlot3>
+        <TimeSlot4>450123</TimeSlot4>
+        <TimeSlot5>501234</TimeSlot5>
+        <TimeSlot6>012345</TimeSlot6>
+        <TimeSlot7>123450</TimeSlot7>
+        <TimeSlot8>234501</TimeSlot8>
+        <TimeSlot9>345012</TimeSlot9>
+        <TimeSlot10>450123</TimeSlot10>
+        <TimeSlot11>501234</TimeSlot11>
     </Controller>
 </Project>

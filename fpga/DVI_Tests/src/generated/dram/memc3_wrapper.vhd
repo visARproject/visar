@@ -239,16 +239,15 @@ generic (
       p2_cmd_empty                          : out std_logic;
       p2_cmd_full                           : out std_logic;
 
-      --Data Wr Port signals
-      p2_wr_clk                             : in std_logic;
-      p2_wr_en                              : in std_logic;
-      p2_wr_mask                            : in std_logic_vector(3 downto 0) ;
-      p2_wr_data                            : in std_logic_vector(31 downto 0) ;
-      p2_wr_full                            : out std_logic;
-      p2_wr_empty                           : out std_logic;
-      p2_wr_count                           : out std_logic_vector(6 downto 0) ;
-      p2_wr_underrun                        : out std_logic;
-      p2_wr_error                           : out std_logic;
+      --Data Rd Port signals
+      p2_rd_clk                             : in std_logic;
+      p2_rd_en                              : in std_logic;
+      p2_rd_data                            : out std_logic_vector(31 downto 0) ;
+      p2_rd_full                            : out std_logic;
+      p2_rd_empty                           : out std_logic;
+      p2_rd_count                           : out std_logic_vector(6 downto 0) ;
+      p2_rd_overflow                        : out std_logic;
+      p2_rd_error                           : out std_logic;
 
       --User Port3 Interface Signals
 
@@ -269,6 +268,48 @@ generic (
       p3_rd_count                           : out std_logic_vector(6 downto 0) ;
       p3_rd_overflow                        : out std_logic;
       p3_rd_error                           : out std_logic;
+
+      --User Port4 Interface Signals
+
+      p4_cmd_clk                            : in std_logic;
+      p4_cmd_en                             : in std_logic;
+      p4_cmd_instr                          : in std_logic_vector(2 downto 0) ;
+      p4_cmd_bl                             : in std_logic_vector(5 downto 0) ;
+      p4_cmd_byte_addr                      : in std_logic_vector(29 downto 0) ;
+      p4_cmd_empty                          : out std_logic;
+      p4_cmd_full                           : out std_logic;
+
+      --Data Wr Port signals
+      p4_wr_clk                             : in std_logic;
+      p4_wr_en                              : in std_logic;
+      p4_wr_mask                            : in std_logic_vector(3 downto 0) ;
+      p4_wr_data                            : in std_logic_vector(31 downto 0) ;
+      p4_wr_full                            : out std_logic;
+      p4_wr_empty                           : out std_logic;
+      p4_wr_count                           : out std_logic_vector(6 downto 0) ;
+      p4_wr_underrun                        : out std_logic;
+      p4_wr_error                           : out std_logic;
+
+      --User Port5 Interface Signals
+
+      p5_cmd_clk                            : in std_logic;
+      p5_cmd_en                             : in std_logic;
+      p5_cmd_instr                          : in std_logic_vector(2 downto 0) ;
+      p5_cmd_bl                             : in std_logic_vector(5 downto 0) ;
+      p5_cmd_byte_addr                      : in std_logic_vector(29 downto 0) ;
+      p5_cmd_empty                          : out std_logic;
+      p5_cmd_full                           : out std_logic;
+
+      --Data Wr Port signals
+      p5_wr_clk                             : in std_logic;
+      p5_wr_en                              : in std_logic;
+      p5_wr_mask                            : in std_logic_vector(3 downto 0) ;
+      p5_wr_data                            : in std_logic_vector(31 downto 0) ;
+      p5_wr_full                            : out std_logic;
+      p5_wr_empty                           : out std_logic;
+      p5_wr_count                           : out std_logic_vector(6 downto 0) ;
+      p5_wr_underrun                        : out std_logic;
+      p5_wr_error                           : out std_logic;
 
 
 
@@ -626,23 +667,23 @@ end component;
 
 signal uo_data : std_logic_vector(7 downto 0);
 
- constant C_PORT_ENABLE              : std_logic_vector(5 downto 0) := "001111";
+ constant C_PORT_ENABLE              : std_logic_vector(5 downto 0) := "111111";
 
-constant C_PORT_CONFIG             : string :=  "B32_B32_W32_R32_R32_R32";
+constant C_PORT_CONFIG             : string :=  "B32_B32_R32_R32_W32_W32";
 
 
-constant ARB_TIME_SLOT_0    : bit_vector(17 downto 0) := ("000" & "000" & C_ARB_TIME_SLOT_0(11 downto 9) & C_ARB_TIME_SLOT_0(8 downto 6) & C_ARB_TIME_SLOT_0(5 downto 3) & C_ARB_TIME_SLOT_0(2 downto 0));
-constant ARB_TIME_SLOT_1    : bit_vector(17 downto 0) := ("000" & "000" & C_ARB_TIME_SLOT_1(11 downto 9) & C_ARB_TIME_SLOT_1(8 downto 6) & C_ARB_TIME_SLOT_1(5 downto 3) & C_ARB_TIME_SLOT_1(2 downto 0));
-constant ARB_TIME_SLOT_2    : bit_vector(17 downto 0) := ("000" & "000" & C_ARB_TIME_SLOT_2(11 downto 9) & C_ARB_TIME_SLOT_2(8 downto 6) & C_ARB_TIME_SLOT_2(5 downto 3) & C_ARB_TIME_SLOT_2(2 downto 0));
-constant ARB_TIME_SLOT_3    : bit_vector(17 downto 0) := ("000" & "000" & C_ARB_TIME_SLOT_3(11 downto 9) & C_ARB_TIME_SLOT_3(8 downto 6) & C_ARB_TIME_SLOT_3(5 downto 3) & C_ARB_TIME_SLOT_3(2 downto 0));
-constant ARB_TIME_SLOT_4    : bit_vector(17 downto 0) := ("000" & "000" & C_ARB_TIME_SLOT_4(11 downto 9) & C_ARB_TIME_SLOT_4(8 downto 6) & C_ARB_TIME_SLOT_4(5 downto 3) & C_ARB_TIME_SLOT_4(2 downto 0));
-constant ARB_TIME_SLOT_5    : bit_vector(17 downto 0) := ("000" & "000" & C_ARB_TIME_SLOT_5(11 downto 9) & C_ARB_TIME_SLOT_5(8 downto 6) & C_ARB_TIME_SLOT_5(5 downto 3) & C_ARB_TIME_SLOT_5(2 downto 0));
-constant ARB_TIME_SLOT_6    : bit_vector(17 downto 0) := ("000" & "000" & C_ARB_TIME_SLOT_6(11 downto 9) & C_ARB_TIME_SLOT_6(8 downto 6) & C_ARB_TIME_SLOT_6(5 downto 3) & C_ARB_TIME_SLOT_6(2 downto 0));
-constant ARB_TIME_SLOT_7    : bit_vector(17 downto 0) := ("000" & "000" & C_ARB_TIME_SLOT_7(11 downto 9) & C_ARB_TIME_SLOT_7(8 downto 6) & C_ARB_TIME_SLOT_7(5 downto 3) & C_ARB_TIME_SLOT_7(2 downto 0));
-constant ARB_TIME_SLOT_8    : bit_vector(17 downto 0) := ("000" & "000" & C_ARB_TIME_SLOT_8(11 downto 9) & C_ARB_TIME_SLOT_8(8 downto 6) & C_ARB_TIME_SLOT_8(5 downto 3) & C_ARB_TIME_SLOT_8(2 downto 0));
-constant ARB_TIME_SLOT_9    : bit_vector(17 downto 0) := ("000" & "000" & C_ARB_TIME_SLOT_9(11 downto 9) & C_ARB_TIME_SLOT_9(8 downto 6) & C_ARB_TIME_SLOT_9(5 downto 3) & C_ARB_TIME_SLOT_9(2 downto 0));
-constant ARB_TIME_SLOT_10   : bit_vector(17 downto 0) := ("000" & "000" & C_ARB_TIME_SLOT_10(11 downto 9) & C_ARB_TIME_SLOT_10(8 downto 6) & C_ARB_TIME_SLOT_10(5 downto 3) & C_ARB_TIME_SLOT_10(2 downto 0));
-constant ARB_TIME_SLOT_11   : bit_vector(17 downto 0) := ("000" & "000" & C_ARB_TIME_SLOT_11(11 downto 9) & C_ARB_TIME_SLOT_11(8 downto 6) & C_ARB_TIME_SLOT_11(5 downto 3) & C_ARB_TIME_SLOT_11(2 downto 0));
+constant ARB_TIME_SLOT_0    : bit_vector(17 downto 0) := (C_ARB_TIME_SLOT_0(17 downto 15) & C_ARB_TIME_SLOT_0(14 downto 12) & C_ARB_TIME_SLOT_0(11 downto 9) & C_ARB_TIME_SLOT_0(8 downto 6) & C_ARB_TIME_SLOT_0(5 downto 3) & C_ARB_TIME_SLOT_0(2 downto 0));
+constant ARB_TIME_SLOT_1    : bit_vector(17 downto 0) := (C_ARB_TIME_SLOT_1(17 downto 15) & C_ARB_TIME_SLOT_1(14 downto 12) & C_ARB_TIME_SLOT_1(11 downto 9) & C_ARB_TIME_SLOT_1(8 downto 6) & C_ARB_TIME_SLOT_1(5 downto 3) & C_ARB_TIME_SLOT_1(2 downto 0));
+constant ARB_TIME_SLOT_2    : bit_vector(17 downto 0) := (C_ARB_TIME_SLOT_2(17 downto 15) & C_ARB_TIME_SLOT_2(14 downto 12) & C_ARB_TIME_SLOT_2(11 downto 9) & C_ARB_TIME_SLOT_2(8 downto 6) & C_ARB_TIME_SLOT_2(5 downto 3) & C_ARB_TIME_SLOT_2(2 downto 0));
+constant ARB_TIME_SLOT_3    : bit_vector(17 downto 0) := (C_ARB_TIME_SLOT_3(17 downto 15) & C_ARB_TIME_SLOT_3(14 downto 12) & C_ARB_TIME_SLOT_3(11 downto 9) & C_ARB_TIME_SLOT_3(8 downto 6) & C_ARB_TIME_SLOT_3(5 downto 3) & C_ARB_TIME_SLOT_3(2 downto 0));
+constant ARB_TIME_SLOT_4    : bit_vector(17 downto 0) := (C_ARB_TIME_SLOT_4(17 downto 15) & C_ARB_TIME_SLOT_4(14 downto 12) & C_ARB_TIME_SLOT_4(11 downto 9) & C_ARB_TIME_SLOT_4(8 downto 6) & C_ARB_TIME_SLOT_4(5 downto 3) & C_ARB_TIME_SLOT_4(2 downto 0));
+constant ARB_TIME_SLOT_5    : bit_vector(17 downto 0) := (C_ARB_TIME_SLOT_5(17 downto 15) & C_ARB_TIME_SLOT_5(14 downto 12) & C_ARB_TIME_SLOT_5(11 downto 9) & C_ARB_TIME_SLOT_5(8 downto 6) & C_ARB_TIME_SLOT_5(5 downto 3) & C_ARB_TIME_SLOT_5(2 downto 0));
+constant ARB_TIME_SLOT_6    : bit_vector(17 downto 0) := (C_ARB_TIME_SLOT_6(17 downto 15) & C_ARB_TIME_SLOT_6(14 downto 12) & C_ARB_TIME_SLOT_6(11 downto 9) & C_ARB_TIME_SLOT_6(8 downto 6) & C_ARB_TIME_SLOT_6(5 downto 3) & C_ARB_TIME_SLOT_6(2 downto 0));
+constant ARB_TIME_SLOT_7    : bit_vector(17 downto 0) := (C_ARB_TIME_SLOT_7(17 downto 15) & C_ARB_TIME_SLOT_7(14 downto 12) & C_ARB_TIME_SLOT_7(11 downto 9) & C_ARB_TIME_SLOT_7(8 downto 6) & C_ARB_TIME_SLOT_7(5 downto 3) & C_ARB_TIME_SLOT_7(2 downto 0));
+constant ARB_TIME_SLOT_8    : bit_vector(17 downto 0) := (C_ARB_TIME_SLOT_8(17 downto 15) & C_ARB_TIME_SLOT_8(14 downto 12) & C_ARB_TIME_SLOT_8(11 downto 9) & C_ARB_TIME_SLOT_8(8 downto 6) & C_ARB_TIME_SLOT_8(5 downto 3) & C_ARB_TIME_SLOT_8(2 downto 0));
+constant ARB_TIME_SLOT_9    : bit_vector(17 downto 0) := (C_ARB_TIME_SLOT_9(17 downto 15) & C_ARB_TIME_SLOT_9(14 downto 12) & C_ARB_TIME_SLOT_9(11 downto 9) & C_ARB_TIME_SLOT_9(8 downto 6) & C_ARB_TIME_SLOT_9(5 downto 3) & C_ARB_TIME_SLOT_9(2 downto 0));
+constant ARB_TIME_SLOT_10   : bit_vector(17 downto 0) := (C_ARB_TIME_SLOT_10(17 downto 15) & C_ARB_TIME_SLOT_10(14 downto 12) & C_ARB_TIME_SLOT_10(11 downto 9) & C_ARB_TIME_SLOT_10(8 downto 6) & C_ARB_TIME_SLOT_10(5 downto 3) & C_ARB_TIME_SLOT_10(2 downto 0));
+constant ARB_TIME_SLOT_11   : bit_vector(17 downto 0) := (C_ARB_TIME_SLOT_11(17 downto 15) & C_ARB_TIME_SLOT_11(14 downto 12) & C_ARB_TIME_SLOT_11(11 downto 9) & C_ARB_TIME_SLOT_11(8 downto 6) & C_ARB_TIME_SLOT_11(5 downto 3) & C_ARB_TIME_SLOT_11(2 downto 0));
 
 
 constant C_MC_CALIBRATION_CLK_DIV  : integer  := 1;
@@ -671,7 +712,7 @@ attribute X_CORE_INFO of acch : architecture IS
   "mig_v3_92_ddr2_s6, Coregen 14.2";
 
 attribute CORE_GENERATION_INFO : string;
-attribute CORE_GENERATION_INFO of acch : architecture IS "mcb3_ddr2_s6,mig_v3_92,{LANGUAGE=VHDL, SYNTHESIS_TOOL=ISE,  NO_OF_CONTROLLERS=1, AXI_ENABLE=0, MEM_INTERFACE_TYPE=DDR2_SDRAM, CLK_PERIOD=2500, MEMORY_PART=ede1116axxx-8e, MEMORY_DEVICE_WIDTH=16, OUTPUT_DRV=FULL, RTT_NOM=50OHMS, DQS#_ENABLE=YES, HIGH_TEMP_SR=NORMAL, PORT_CONFIG=Two 32-bit bi-directional and four 32-bit unidirectional ports, MEM_ADDR_ORDER=ROW_BANK_COLUMN, PORT_ENABLE=Port0_Port1_Port2_Port3, CLASS_ADDR=II, CLASS_DATA=II, INPUT_PIN_TERMINATION=CALIB_TERM, DATA_TERMINATION=25 Ohms, CLKFBOUT_MULT_F=2, CLKOUT_DIVIDE=1, DEBUG_PORT=0, INPUT_CLK_TYPE=Single-Ended}";
+attribute CORE_GENERATION_INFO of acch : architecture IS "mcb3_ddr2_s6,mig_v3_92,{LANGUAGE=VHDL, SYNTHESIS_TOOL=ISE,  NO_OF_CONTROLLERS=1, AXI_ENABLE=0, MEM_INTERFACE_TYPE=DDR2_SDRAM, CLK_PERIOD=2500, MEMORY_PART=ede1116axxx-8e, MEMORY_DEVICE_WIDTH=16, OUTPUT_DRV=FULL, RTT_NOM=50OHMS, DQS#_ENABLE=YES, HIGH_TEMP_SR=NORMAL, PORT_CONFIG=Two 32-bit bi-directional and four 32-bit unidirectional ports, MEM_ADDR_ORDER=BANK_ROW_COLUMN, PORT_ENABLE=Port0_Port1_Port2_Port3_Port4_Port5, CLASS_ADDR=II, CLASS_DATA=II, INPUT_PIN_TERMINATION=CALIB_TERM, DATA_TERMINATION=25 Ohms, CLKFBOUT_MULT_F=2, CLKOUT_DIVIDE=1, DEBUG_PORT=0, INPUT_CLK_TYPE=Single-Ended}";
 
 begin
 
@@ -892,23 +933,23 @@ port map
    p2_cmd_byte_addr                     =>  p2_cmd_byte_addr,
    p2_cmd_empty                         =>  p2_cmd_empty,
    p2_cmd_full                          =>  p2_cmd_full,
-   p2_rd_clk                            =>  '0',
-   p2_rd_en                             =>  '0',
-   p2_rd_data                           =>  open,
-   p2_rd_full                           =>  open,
-   p2_rd_empty                          =>  open,
-   p2_rd_count                          =>  open,
-   p2_rd_overflow                       =>  open,
-   p2_rd_error                          =>  open,
-   p2_wr_clk                            =>  p2_wr_clk,
-   p2_wr_en                             =>  p2_wr_en,
-   p2_wr_mask                           =>  p2_wr_mask,
-   p2_wr_data                           =>  p2_wr_data,
-   p2_wr_full                           =>  p2_wr_full,
-   p2_wr_empty                          =>  p2_wr_empty,
-   p2_wr_count                          =>  p2_wr_count,
-   p2_wr_underrun                       =>  p2_wr_underrun,
-   p2_wr_error                          =>  p2_wr_error,
+   p2_rd_clk                            =>  p2_rd_clk,
+   p2_rd_en                             =>  p2_rd_en,
+   p2_rd_data                           =>  p2_rd_data,
+   p2_rd_full                           =>  p2_rd_full,
+   p2_rd_empty                          =>  p2_rd_empty,
+   p2_rd_count                          =>  p2_rd_count,
+   p2_rd_overflow                       =>  p2_rd_overflow,
+   p2_rd_error                          =>  p2_rd_error,
+   p2_wr_clk                            =>  '0',
+   p2_wr_en                             =>  '0',
+   p2_wr_mask                           =>  (others => '0'),
+   p2_wr_data                           =>  (others => '0'),
+   p2_wr_full                           =>  open,
+   p2_wr_empty                          =>  open,
+   p2_wr_count                          =>  open,
+   p2_wr_underrun                       =>  open,
+   p2_wr_error                          =>  open,
    p3_arb_en                            =>  '1',
    p3_cmd_clk                           =>  p3_cmd_clk,
    p3_cmd_en                            =>  p3_cmd_en,
@@ -934,14 +975,14 @@ port map
    p3_wr_count                          =>  open,
    p3_wr_underrun                       =>  open,
    p3_wr_error                          =>  open,
-   p4_arb_en                            =>  '0',
-   p4_cmd_clk                           =>  '0',
-   p4_cmd_en                            =>  '0',
-   p4_cmd_instr                         =>  (others => '0'),
-   p4_cmd_bl                            =>  (others => '0'),
-   p4_cmd_byte_addr                     =>  (others => '0'),
-   p4_cmd_empty                         =>  open,
-   p4_cmd_full                          =>  open,
+   p4_arb_en                            =>  '1',
+   p4_cmd_clk                           =>  p4_cmd_clk,
+   p4_cmd_en                            =>  p4_cmd_en,
+   p4_cmd_instr                         =>  p4_cmd_instr,
+   p4_cmd_bl                            =>  p4_cmd_bl,
+   p4_cmd_byte_addr                     =>  p4_cmd_byte_addr,
+   p4_cmd_empty                         =>  p4_cmd_empty,
+   p4_cmd_full                          =>  p4_cmd_full,
    p4_rd_clk                            =>  '0',
    p4_rd_en                             =>  '0',
    p4_rd_data                           =>  open,
@@ -950,23 +991,23 @@ port map
    p4_rd_count                          =>  open,
    p4_rd_overflow                       =>  open,
    p4_rd_error                          =>  open,
-   p4_wr_clk                            =>  '0',
-   p4_wr_en                             =>  '0',
-   p4_wr_mask                           =>  (others => '0'),
-   p4_wr_data                           =>  (others => '0'),
-   p4_wr_full                           =>  open,
-   p4_wr_empty                          =>  open,
-   p4_wr_count                          =>  open,
-   p4_wr_underrun                       =>  open,
-   p4_wr_error                          =>  open,
-   p5_arb_en                            =>  '0',
-   p5_cmd_clk                           =>  '0',
-   p5_cmd_en                            =>  '0',
-   p5_cmd_instr                         =>  (others => '0'),
-   p5_cmd_bl                            =>  (others => '0'),
-   p5_cmd_byte_addr                     =>  (others => '0'),
-   p5_cmd_empty                         =>  open,
-   p5_cmd_full                          =>  open,
+   p4_wr_clk                            =>  p4_wr_clk,
+   p4_wr_en                             =>  p4_wr_en,
+   p4_wr_mask                           =>  p4_wr_mask,
+   p4_wr_data                           =>  p4_wr_data,
+   p4_wr_full                           =>  p4_wr_full,
+   p4_wr_empty                          =>  p4_wr_empty,
+   p4_wr_count                          =>  p4_wr_count,
+   p4_wr_underrun                       =>  p4_wr_underrun,
+   p4_wr_error                          =>  p4_wr_error,
+   p5_arb_en                            =>  '1',
+   p5_cmd_clk                           =>  p5_cmd_clk,
+   p5_cmd_en                            =>  p5_cmd_en,
+   p5_cmd_instr                         =>  p5_cmd_instr,
+   p5_cmd_bl                            =>  p5_cmd_bl,
+   p5_cmd_byte_addr                     =>  p5_cmd_byte_addr,
+   p5_cmd_empty                         =>  p5_cmd_empty,
+   p5_cmd_full                          =>  p5_cmd_full,
    p5_rd_clk                            =>  '0',
    p5_rd_en                             =>  '0',
    p5_rd_data                           =>  open,
@@ -975,15 +1016,15 @@ port map
    p5_rd_count                          =>  open,
    p5_rd_overflow                       =>  open,
    p5_rd_error                          =>  open,
-   p5_wr_clk                            =>  '0',
-   p5_wr_en                             =>  '0',
-   p5_wr_mask                           =>  (others => '0'),
-   p5_wr_data                           =>  (others => '0'),
-   p5_wr_full                           =>  open,
-   p5_wr_empty                          =>  open,
-   p5_wr_count                          =>  open,
-   p5_wr_underrun                       =>  open,
-   p5_wr_error                          =>  open
+   p5_wr_clk                            =>  p5_wr_clk,
+   p5_wr_en                             =>  p5_wr_en,
+   p5_wr_mask                           =>  p5_wr_mask,
+   p5_wr_data                           =>  p5_wr_data,
+   p5_wr_full                           =>  p5_wr_full,
+   p5_wr_empty                          =>  p5_wr_empty,
+   p5_wr_count                          =>  p5_wr_count,
+   p5_wr_underrun                       =>  p5_wr_underrun,
+   p5_wr_error                          =>  p5_wr_error
 );
 
 
