@@ -1,7 +1,7 @@
 ##############################################################
 #
-# Xilinx Core Generator version 14.3
-# Date: Fri Oct 24 03:12:47 2014
+# Xilinx Core Generator version 14.4
+# Date: Fri Nov 21 08:39:05 2014
 #
 ##############################################################
 #
@@ -43,7 +43,7 @@ CSET component_name=dram
 CSET xml_input_file=./dram/user_design/mig.prj
 # END Parameters
 # BEGIN Extra information
-MISC pkg_timestamp=2012-10-13T03:35:42Z
+MISC pkg_timestamp=2012-12-18T05:23:34Z
 # END Extra information
 GENERATE
-# CRC:  b385594
+# CRC: c5c135b3
