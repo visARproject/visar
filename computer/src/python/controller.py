@@ -1,6 +1,9 @@
 # visAR interface controller:
 #   manages system information, calls updates
 
+import pygame
+from pygame.locals import *
+
 class Controller:
   def __init__(self, pose_source):
     self.updates = [] # update function references
@@ -8,6 +11,7 @@ class Controller:
     
   # get the information, push updates
   def do_update(self):
+    self.book.keys = pygame.key.get_pressed()
     for update in self.updates: 
       update(self.book) # call the updates
   
@@ -20,10 +24,11 @@ class Controller:
 class Controller_Book:
   def __init__(self, pose_source):
     self.pose_source = pose_source # position information
-    
+    self.keys = None
+
     # menu botton information, stores changes
     # '', 'up', 'down', 'forward', 'back', or 'hide all'
-    self.menu_status = '' 
+    self.menu_status = ''
     
   def get_pose(self):
     return pose_source.get_pose()
