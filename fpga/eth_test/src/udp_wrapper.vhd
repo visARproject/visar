@@ -80,7 +80,7 @@ begin
         end if;
     end process seq;
 
-    comb : process(state, mac_out, prepend_data, prepend_counter, data_in)
+    comb : process(state, mac_out, prepend_data, prepend_counter, data_in, mac_in)
     begin
         next_state <= state;
         next_prepend_counter <= 0; -- prevent latches from being inferred
