@@ -58,20 +58,30 @@ architecture RTL of toplevel is
     signal c3_clk0       : std_logic;
     signal c3_rst0       : std_logic;
     
-    signal c3_p0_in : ram_bidir_port_in;
+    signal c3_p0_in  : ram_bidir_port_in;
     signal c3_p0_out : ram_bidir_port_out;
     
-    signal c3_p1_in : ram_bidir_port_in;
+    signal c3_p1_in  : ram_bidir_port_in;
     signal c3_p1_out : ram_bidir_port_out;
     
-    signal c3_p2_in : ram_wr_port_in;
-    signal c3_p2_out : ram_wr_port_out;
+    signal c3_p2_in  : ram_rd_port_in;
+    signal c3_p2_out : ram_rd_port_out;
     
-    signal c3_p3_in : ram_rd_port_in;
+    signal c3_p3_in  : ram_rd_port_in;
     signal c3_p3_out : ram_rd_port_out;
     
-    signal uart_valid : std_logic;
-    signal uart_data : std_logic_vector(7 downto 0);
+    signal c3_p4_in  : ram_wr_port_in;
+    signal c3_p4_out : ram_wr_port_out;
+    
+    signal c3_p5_in  : ram_wr_port_in;
+    signal c3_p5_out : ram_wr_port_out;
+    
+    signal uart_tx_ready : std_logic;
+    signal uart_tx_data : std_logic_vector(7 downto 0);
+    signal uart_tx_write : std_logic;
+    
+    signal uart_rx_valid : std_logic;
+    signal uart_rx_data : std_logic_vector(7 downto 0);
 begin
     IBUFG_inst : IBUFG
         port map(
@@ -80,7 +90,7 @@ begin
         );
     
     c3_sys_clk <= clk_100MHz_buf;
-    c3_sys_rst_i <= not rst;
+    c3_sys_rst_i <= rst;
     
     u_dram : entity work.dram port map (
         c3_sys_clk          => c3_sys_clk,
@@ -106,6 +116,7 @@ begin
         c3_calib_done       => c3_calib_done,
         mcb3_rzq            => mcb3_rzq,
         mcb3_zio            => mcb3_zio,
+        
         c3_p0_cmd_clk       => c3_p0_in.cmd.clk,
         c3_p0_cmd_en        => c3_p0_in.cmd.en,
         c3_p0_cmd_instr     => c3_p0_in.cmd.instr,
@@ -130,6 +141,7 @@ begin
         c3_p0_rd_count      => c3_p0_out.rd.count,
         c3_p0_rd_overflow   => c3_p0_out.rd.overflow,
         c3_p0_rd_error      => c3_p0_out.rd.error,
+        
         c3_p1_cmd_clk       => c3_p1_in.cmd.clk,
         c3_p1_cmd_en        => c3_p1_in.cmd.en,
         c3_p1_cmd_instr     => c3_p1_in.cmd.instr,
@@ -154,6 +166,7 @@ begin
         c3_p1_rd_count      => c3_p1_out.rd.count,
         c3_p1_rd_overflow   => c3_p1_out.rd.overflow,
         c3_p1_rd_error      => c3_p1_out.rd.error,
+        
         c3_p2_cmd_clk       => c3_p2_in.cmd.clk,
         c3_p2_cmd_en        => c3_p2_in.cmd.en,
         c3_p2_cmd_instr     => c3_p2_in.cmd.instr,
@@ -161,15 +174,15 @@ begin
         c3_p2_cmd_byte_addr => c3_p2_in.cmd.byte_addr,
         c3_p2_cmd_empty     => c3_p2_out.cmd.empty,
         c3_p2_cmd_full      => c3_p2_out.cmd.full,
-        c3_p2_wr_clk        => c3_p2_in.wr.clk,
-        c3_p2_wr_en         => c3_p2_in.wr.en,
-        c3_p2_wr_mask       => c3_p2_in.wr.mask,
-        c3_p2_wr_data       => c3_p2_in.wr.data,
-        c3_p2_wr_full       => c3_p2_out.wr.full,
-        c3_p2_wr_empty      => c3_p2_out.wr.empty,
-        c3_p2_wr_count      => c3_p2_out.wr.count,
-        c3_p2_wr_underrun   => c3_p2_out.wr.underrun,
-        c3_p2_wr_error      => c3_p2_out.wr.error,
+        c3_p2_rd_clk        => c3_p2_in.rd.clk,
+        c3_p2_rd_en         => c3_p2_in.rd.en,
+        c3_p2_rd_data       => c3_p2_out.rd.data,
+        c3_p2_rd_full       => c3_p2_out.rd.full,
+        c3_p2_rd_empty      => c3_p2_out.rd.empty,
+        c3_p2_rd_count      => c3_p2_out.rd.count,
+        c3_p2_rd_overflow   => c3_p2_out.rd.overflow,
+        c3_p2_rd_error      => c3_p2_out.rd.error,
+        
         c3_p3_cmd_clk       => c3_p3_in.cmd.clk,
         c3_p3_cmd_en        => c3_p3_in.cmd.en,
         c3_p3_cmd_instr     => c3_p3_in.cmd.instr,
@@ -184,7 +197,42 @@ begin
         c3_p3_rd_empty      => c3_p3_out.rd.empty,
         c3_p3_rd_count      => c3_p3_out.rd.count,
         c3_p3_rd_overflow   => c3_p3_out.rd.overflow,
-        c3_p3_rd_error      => c3_p3_out.rd.error);
+        c3_p3_rd_error      => c3_p3_out.rd.error,
+        
+        c3_p4_cmd_clk       => c3_p4_in.cmd.clk,
+        c3_p4_cmd_en        => c3_p4_in.cmd.en,
+        c3_p4_cmd_instr     => c3_p4_in.cmd.instr,
+        c3_p4_cmd_bl        => c3_p4_in.cmd.bl,
+        c3_p4_cmd_byte_addr => c3_p4_in.cmd.byte_addr,
+        c3_p4_cmd_empty     => c3_p4_out.cmd.empty,
+        c3_p4_cmd_full      => c3_p4_out.cmd.full,
+        c3_p4_wr_clk        => c3_p4_in.wr.clk,
+        c3_p4_wr_en         => c3_p4_in.wr.en,
+        c3_p4_wr_mask       => c3_p4_in.wr.mask,
+        c3_p4_wr_data       => c3_p4_in.wr.data,
+        c3_p4_wr_full       => c3_p4_out.wr.full,
+        c3_p4_wr_empty      => c3_p4_out.wr.empty,
+        c3_p4_wr_count      => c3_p4_out.wr.count,
+        c3_p4_wr_underrun   => c3_p4_out.wr.underrun,
+        c3_p4_wr_error      => c3_p4_out.wr.error,
+        
+        
+        c3_p5_cmd_clk       => c3_p5_in.cmd.clk,
+        c3_p5_cmd_en        => c3_p5_in.cmd.en,
+        c3_p5_cmd_instr     => c3_p5_in.cmd.instr,
+        c3_p5_cmd_bl        => c3_p5_in.cmd.bl,
+        c3_p5_cmd_byte_addr => c3_p5_in.cmd.byte_addr,
+        c3_p5_cmd_empty     => c3_p5_out.cmd.empty,
+        c3_p5_cmd_full      => c3_p5_out.cmd.full,
+        c3_p5_wr_clk        => c3_p5_in.wr.clk,
+        c3_p5_wr_en         => c3_p5_in.wr.en,
+        c3_p5_wr_mask       => c3_p5_in.wr.mask,
+        c3_p5_wr_data       => c3_p5_in.wr.data,
+        c3_p5_wr_full       => c3_p5_out.wr.full,
+        c3_p5_wr_empty      => c3_p5_out.wr.empty,
+        c3_p5_wr_count      => c3_p5_out.wr.count,
+        c3_p5_wr_underrun   => c3_p5_out.wr.underrun,
+        c3_p5_wr_error      => c3_p5_out.wr.error);
 
     rst <= not rst_n;
     
@@ -194,7 +242,7 @@ begin
                  rx_tmdsb     => rx_tmdsb,
                  video_output => dvi_rx_video_out);
     
-    led(0) <= dvi_rx_video_out.sync.valid;
+    led(0) <= c3_calib_done;
     
     U_PIXEL_CLK_GEN : entity work.pixel_clk_gen
         port map(CLK_IN1  => clk_100MHz_buf,
@@ -238,24 +286,36 @@ begin
     
     U_UART : entity work.uart_transmitter
         generic map(
-            CLOCK_FREQUENCY => 100000000.0,
+            CLOCK_FREQUENCY => 132000000.0,
             BAUD_RATE => 4000000.0)
         port map (
-            clock => clk_100MHz_buf,
+            clock => clk_132MHz,
             reset => rst,
             tx    => uart_tx,
-            ready => open,
-            data  => uart_data,
-            write => uart_valid);
+            ready => uart_tx_ready,
+            data  => uart_tx_data,
+            write => uart_tx_write);
     
     U_UART2 : entity work.uart_receiver
         generic map(
-            CLOCK_FREQUENCY => 100000000.0,
+            CLOCK_FREQUENCY => 132000000.0,
             BAUD_RATE => 4000000.0)
         port map (
-            clock => clk_100MHz_buf,
+            clock => clk_132MHz,
             reset => rst,
             rx    => uart_rx,
-            valid => uart_valid,
-            data  => uart_data);
+            valid => uart_rx_valid,
+            data  => uart_rx_data);
+    
+    U_UART_RAM : entity work.uart_ram_interface
+        port map (
+            clock => clk_132MHz,
+            reset => rst,
+            ram_in => c3_p0_in,
+            ram_out => c3_p0_out,
+            uart_tx_ready => uart_tx_ready,
+            uart_tx_data => uart_tx_data,
+            uart_tx_write => uart_tx_write,
+            uart_rx_valid => uart_rx_valid,
+            uart_rx_data => uart_rx_data);
 end architecture RTL;

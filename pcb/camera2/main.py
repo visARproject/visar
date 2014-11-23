@@ -36,13 +36,6 @@ thermal
 
 IMU/barometer
     need to insert
-
-pins
-    12 free after LVDS connected
-        3 SPI
-        4 CS
-        1 LED
-        4 left
 '''
 
 digilent_vhdci = _71430._71430_0101('''

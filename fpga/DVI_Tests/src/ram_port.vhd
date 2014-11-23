@@ -1,9 +1,17 @@
-library IEEE;
-use IEEE.STD_LOGIC_1164.all;
+library ieee;
+use ieee.std_logic_1164.all;
 
 package ram_port is
     constant MASK_SIZE           : integer := 4;
-    constant DATA_PORT_SIZE      : integer := 32;    
+    constant DATA_PORT_SIZE      : integer := 32;
+    
+    subtype Command is std_logic_vector(2 downto 0);
+    constant WRITE_COMMAND           : Command := "000";
+    constant READ_COMMAND            : Command := "001";
+    constant WRITE_PRECHARGE_COMMAND : Command := "010";
+    constant READ_PRECHARGE_COMMAND  : Command := "011";
+    constant REFRESH                 : Command := "1XX";
+    
     
     type ram_port_cmd_in is record
         clk       : std_logic;
