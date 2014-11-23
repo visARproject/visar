@@ -25,6 +25,10 @@
 *
 ****************************************************************************************/
 
+`define x1Gb
+`define sg25E
+`define x16
+
     // Timing parameters based on Speed Grade
 
                                           // SYMBOL UNITS DESCRIPTION
