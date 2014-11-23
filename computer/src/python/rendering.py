@@ -20,7 +20,7 @@ class Renderer:
     self.draws = [] # List of drawable objects to be rendered each frame
     self.controller = controller # controller object for the visAR program 
     # initialize a fullscreen display
-    self.display_surface = pygame.display.set_mode((0,0),pygame.FULLSCREEN,0)
+    self.display_surface = pygame.display.set_mode((0,0),pygame.FULLSCREEN | pygame.OPENGL,0)
     #self.display_surface = pygame.display.set_mode((400,300)) #DEBUG
     if(debug): self.eye_size = (self.display_surface.get_width(), self.display_surface.get_height())
     else: self.eye_size = (self.display_surface.get_width()/2, self.display_surface.get_height())
@@ -77,17 +77,21 @@ class Renderer:
       # debug mode only shows one eye, with no distortion
       if(self.debug_mode):
         self.display_surface.blit(left_eye,(0,0))
-        pygame.display.update()
+        pygame.display.flip()
         self.clock.tick(FPS)
         continue
 
+      # convert to opengl formatted surfaces
+      left_eye = left_eye.convert(self.display_surface)
+      right_eye = right_eye.convert(self.display_surface)
+            
       # JAKE: DO OCULUS DISTORTION HERE
 
-      # combine the eyes
+      # combine the eyes (can't blit)
       self.display_surface.blit(left_eye,(0,0))
       self.display_surface.blit(right_eye,(self.eye_size[0],0))
 
-      pygame.display.update() # update the display
+      pygame.display.flip() # update the display
       self.clock.tick(FPS) # wait for next frame
 
   # function wrapper for mapping onto drawables
@@ -125,6 +129,24 @@ class Render_Surface:
     left_eye.blit(self.surface, (self.position[0]+shift_amt,self.position[1]))  # shift right
     right_eye.blit(self.surface, (self.position[0]-shift_amt,self.position[1])) # shift left
     return left_eye, right_eye
+    
+  # convert this into an opengl texture (not used yet, have to rewrite huge portions of code first)
+  def make_opengl_texture(self)
+    # convert to string buffer
+    textureData = pygame.image.tostring(self.surface, "RGB", 1)
+    width = self.surface.get_width()
+    height = self.surface.get_height()
+   
+    # bind buffer to OpenGL texture
+    texture = glGenTextures(1)
+    glBindTexture(GL_TEXTURE_2D, texture)
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR)
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR)
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, width, height, 0, GL_RGB,
+      GL_UNSIGNED_BYTE, textureData)
+ 
+    return texture
+
   
 
 # Drawable class is used by renderer to get surfaces each frame
