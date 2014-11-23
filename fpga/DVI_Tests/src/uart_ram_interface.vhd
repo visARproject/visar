@@ -104,7 +104,6 @@ begin
             next_state := READSTATE_IDLE;
         elsif state = READSTATE_IDLE then
             if ram_out.rd.empty = '0' then
-                ram_in.rd.en <= '1';
                 next_pos := 0;
                 next_state := READSTATE_GO;
             end if;
@@ -116,6 +115,7 @@ begin
                     next_pos := pos + 1;
                 else
                     next_state := READSTATE_IDLE;
+                ram_in.rd.en <= '1';
                 end if;
             end if;
         end if;
