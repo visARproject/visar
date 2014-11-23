@@ -131,7 +131,7 @@ class Render_Surface:
     return left_eye, right_eye
     
   # convert this into an opengl texture (not used yet, have to rewrite huge portions of code first)
-  def make_opengl_texture(self)
+  def make_opengl_texture(self):
     # convert to string buffer
     textureData = pygame.image.tostring(self.surface, "RGB", 1)
     width = self.surface.get_width()
