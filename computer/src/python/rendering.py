@@ -5,6 +5,7 @@
 import pygame
 from pygame.locals import *
 import numpy as np
+import cv
 
 FPS = 30 # run at 30FPS or so
 
@@ -20,7 +21,7 @@ class Renderer:
     self.draws = [] # List of drawable objects to be rendered each frame
     self.controller = controller # controller object for the visAR program 
     # initialize a fullscreen display
-    self.display_surface = pygame.display.set_mode((0,0),pygame.FULLSCREEN | pygame.OPENGL,0)
+    self.display_surface = pygame.display.set_mode((0,0),pygame.FULLSCREEN,0)
     #self.display_surface = pygame.display.set_mode((400,300)) #DEBUG
     if(debug): self.eye_size = (self.display_surface.get_width(), self.display_surface.get_height())
     else: self.eye_size = (self.display_surface.get_width()/2, self.display_surface.get_height())
@@ -81,17 +82,26 @@ class Renderer:
         self.clock.tick(FPS)
         continue
 
-      # convert to opengl formatted surfaces
-      left_eye = left_eye.convert(self.display_surface)
-      right_eye = right_eye.convert(self.display_surface)
-            
+      # Make the mat headers
+      left_mat = Render_Surface(left_eye).get_opencv_mat()
+      right_mat = Render_Surface(right_eye).get_opencv_mat()
+                  
       # JAKE: DO OCULUS DISTORTION HERE
+      
+      # retrieve the data from the mats
+      left_eye  = pygame.image.frombuffer(left_mat.tostring(), cv.GetSize(left_mat),"RGB")
+      right_eye  = pygame.image.frombuffer(right_mat.tostring(), cv.GetSize(right_mat),"RGB")  
+      
+      # resize images to output dimensions
+      left_eye = pygame.transform.scale(left_eye, self.eye_size)
+      right_eye = pygame.transform.scale(right_eye, self.eye_size)          
 
-      # combine the eyes (can't blit)
+      # clear the buffer, then combine the eyes
+      self.display_surface.fill((0,0,0))
       self.display_surface.blit(left_eye,(0,0))
       self.display_surface.blit(right_eye,(self.eye_size[0],0))
 
-      pygame.display.flip() # update the display
+      pygame.display.update() # update the display
       self.clock.tick(FPS) # wait for next frame
 
   # function wrapper for mapping onto drawables
@@ -144,9 +154,14 @@ class Render_Surface:
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR)
     glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, width, height, 0, GL_RGB,
       GL_UNSIGNED_BYTE, textureData)
- 
     return texture
-
+  
+  # convert surface to opencv matrix  
+  def get_opencv_mat(self):
+    surf_data = pygame.image.tostring(self.surface, "RGB") # get the data
+    mat = cv.CreateImageHeader(self.surface.get_size(), cv.IPL_DEPTH_8U, 3) # create Mat header
+    cv.SetData(mat,surf_data) # set the data
+    return mat # return Mat
   
 
 # Drawable class is used by renderer to get surfaces each frame
