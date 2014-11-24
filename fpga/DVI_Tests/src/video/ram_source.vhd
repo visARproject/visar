@@ -34,7 +34,7 @@ begin
         
         if h_cnt mod 32 = 0 and h_cnt < H_DISPLAY_END and v_cnt < V_DISPLAY_END then
             ram_in.cmd.en <= '1';
-            ram_in.cmd.instr <= READ_COMMAND;
+            ram_in.cmd.instr <= READ_PRECHARGE_COMMAND;
             ram_in.cmd.byte_addr <= std_logic_vector(to_unsigned(
                 (v_cnt * 2048 + h_cnt + 32) * 4
             , ram_in.cmd.byte_addr'length));
