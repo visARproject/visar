@@ -9,6 +9,7 @@
 !.gitignore
 !/MyHDL*/**
 !/doc/**
+!/scripts/**
 
 # since this overrides global settings, need to reignore some files
 *~
