@@ -44,7 +44,8 @@ architecture RTL of dvi_receiver is
     
     signal hsync, hsync_prev, vsync, vsync_prev : std_logic;
     
-    signal h_cnt, v_cnt : unsigned(11 downto 0);
+    signal h_cnt : HCountType;
+    signal v_cnt : VCountType;
     
     component decode 
     port(
@@ -120,8 +121,6 @@ begin
 			     CLKIN    => rxclk,
 			     RST      => extrst);
 			     
-	video_output.sync.valid <= pll_lckd;
-
 	pclkbufg : component BUFG
 		port map(O => pclk,
 			     I => pllclk1);		
@@ -205,45 +204,11 @@ begin
 			     sdout         => open,
 			     dout          => video_output.data.red);
 			     
-			     
-	video_output.sync.pixel_clk <= pclk;
-
-	-- Derive the frame reset from hsync and vsync
-	process(pclk)
-	begin		
-		if rising_edge(pclk) then
-            if h_cnt /= H_MAX - 1 then
-                h_cnt <= h_cnt + 1;
-            else
-                h_cnt <= to_unsigned(0, h_cnt'length);
-                if v_cnt /= V_MAX - 1 then
-                    v_cnt <= v_cnt + 1;
-                else
-                    v_cnt <= to_unsigned(0, v_cnt'length);
-                end if;
-            end if;
-			
-			-- Synchronization
-			hsync_prev <= hsync;	
-			vsync_prev <= vsync;
-			
-			if hsync_prev = '1' and hsync = '0' then
-				h_cnt <= to_unsigned(HSYNC_END + 1, h_cnt'length); 
-			end if;
-			
-			if vsync_prev = '0' and vsync = '1' then
-				v_cnt <= to_unsigned(VSYNC_END + 1, v_cnt'length);
-			end if;			
-		end if;			
-	end process;
-	
-	process(h_cnt, v_cnt)
-	begin
-        video_output.sync.frame_rst <= '0';
-        if h_cnt = H_MAX - 1 and v_cnt = V_MAX - 1 then
-            video_output.sync.frame_rst <= '1';
-        end if;
-    end process;
-	
-
+	u_sync : entity work.video_sync_recovery port map (
+		valid => pll_lckd,
+		pixel_clock => pclk,
+		hsync => hsync,
+		vsync => vsync,
+		
+		sync_out => video_output.sync);
 end architecture RTL;

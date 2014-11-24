@@ -3,21 +3,23 @@ use IEEE.STD_LOGIC_1164.all;
 
 package video_bus is
 
-	constant H_DISPLAY_END	 : integer := 1080;
-	constant HSYNC_BEGIN : integer := 1113;
-	constant HSYNC_END 	 : integer := 1123;
-	constant H_MAX 		 : positive := 1138;
-	
-	constant V_DISPLAY_END  : integer := 1920;
-	constant VSYNC_BEGIN : integer := 1921;
-	constant VSYNC_END 	 : integer := 1927;
-	constant V_MAX 		 : positive := 1933;
+    constant H_DISPLAY_END : integer := 1080;
+    constant HSYNC_BEGIN   : integer := 1113;
+    constant HSYNC_END     : integer := 1123;
+    constant H_MAX         : integer := 1138;
+    subtype HCountType is integer range 0 to H_MAX-1;
+    
+    constant V_DISPLAY_END : integer := 1920;
+    constant VSYNC_BEGIN   : integer := 1921;
+    constant VSYNC_END     : integer := 1927;
+    constant V_MAX         : integer := 1933;
+    subtype VCountType is integer range 0 to V_MAX-1;
 
     type video_sync is
     record
         pixel_clk : std_logic;
         frame_rst : std_logic; -- 1 for the last pixel of a frame
-        valid     : std_logic;
+        valid     : std_logic; -- completely asynchronous to pixel_clk
     end record;
 
     type video_data is

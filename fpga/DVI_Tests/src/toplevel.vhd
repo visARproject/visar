@@ -17,10 +17,10 @@ entity toplevel is
         rx_sda : inout std_logic;
         rx_scl : inout std_logic;
         led : out std_logic_vector(0 downto 0);
-        
+
         uart_tx : out std_logic;
         uart_rx : in std_logic;
-        
+
         mcb3_dram_dq     : inout  std_logic_vector(16-1 downto 0);
         mcb3_dram_a      : out std_logic_vector(13-1 downto 0);
         mcb3_dram_ba     : out std_logic_vector(3-1 downto 0);
@@ -43,71 +43,80 @@ end entity toplevel;
 
 
 architecture RTL of toplevel is
+    signal reset : std_logic;
     signal clk_100MHz_buf : std_logic;
-    
     signal clk_132MHz : std_logic;
-    signal pattern_gen_video_out : video_bus;
-    signal mux_video_out, dvi_rx_video_out : video_bus;
-    signal rst : std_logic;
-    signal combiner_video_out : video_bus;
-    signal combiner_video_under_in : video_data;
-    
-    signal c3_sys_clk : std_logic;
-    signal c3_sys_rst_i : std_logic;
+
+
     signal c3_calib_done : std_logic;
     signal c3_clk0       : std_logic;
     signal c3_rst0       : std_logic;
-    
+
     signal c3_p0_in  : ram_bidir_port_in;
     signal c3_p0_out : ram_bidir_port_out;
-    
+
     signal c3_p1_in  : ram_bidir_port_in;
     signal c3_p1_out : ram_bidir_port_out;
-    
+
     signal c3_p2_in  : ram_rd_port_in;
     signal c3_p2_out : ram_rd_port_out;
-    
+
     signal c3_p3_in  : ram_rd_port_in;
     signal c3_p3_out : ram_rd_port_out;
-    
+
     signal c3_p4_in  : ram_wr_port_in;
     signal c3_p4_out : ram_wr_port_out;
-    
+
     signal c3_p5_in  : ram_wr_port_in;
     signal c3_p5_out : ram_wr_port_out;
-    
+
+
+    signal dummy_video : video_bus;
+    signal received_video : video_bus;
+    signal overlay_video : video_bus;
+    signal base_video_data : video_data;
+    signal composite_video : video_bus;
+
+
     signal uart_tx_ready : std_logic;
     signal uart_tx_data : std_logic_vector(7 downto 0);
     signal uart_tx_write : std_logic;
-    
+
     signal uart_rx_valid : std_logic;
     signal uart_rx_data : std_logic_vector(7 downto 0);
 begin
+    reset <= not rst_n;
+
     IBUFG_inst : IBUFG
         port map(
             O => clk_100MHz_buf, -- Clock buffer output
             I => clk_100MHz      -- Clock buffer input (connect directly to top-level port)
         );
-    
-    c3_sys_clk <= clk_100MHz_buf;
-    c3_sys_rst_i <= rst;
-    
+
+    U_PIXEL_CLK_GEN : entity work.pixel_clk_gen
+        port map(CLK_IN1  => clk_100MHz_buf,
+                 CLK_OUT1 => clk_132MHz,
+                 RESET    => '0',
+                 LOCKED   => open);
+
+
+
     u_dram : entity work.dram port map (
-        c3_sys_clk          => c3_sys_clk,
-        c3_sys_rst_i        => c3_sys_rst_i,                        
-        mcb3_dram_dq        => mcb3_dram_dq,  
-        mcb3_dram_a         => mcb3_dram_a,  
+        c3_sys_clk          => clk_100MHz_buf,
+        c3_sys_rst_i        => reset,
+        mcb3_dram_dq        => mcb3_dram_dq,
+        mcb3_dram_a         => mcb3_dram_a,
         mcb3_dram_ba        => mcb3_dram_ba,
-        mcb3_dram_ras_n     => mcb3_dram_ras_n,                        
-        mcb3_dram_cas_n     => mcb3_dram_cas_n,                        
-        mcb3_dram_we_n      => mcb3_dram_we_n,                          
+        mcb3_dram_ras_n     => mcb3_dram_ras_n,
+        mcb3_dram_cas_n     => mcb3_dram_cas_n,
+        mcb3_dram_we_n      => mcb3_dram_we_n,
         mcb3_dram_odt       => mcb3_dram_odt,
-        mcb3_dram_cke       => mcb3_dram_cke,                          
-        mcb3_dram_ck        => mcb3_dram_ck,                          
-        mcb3_dram_ck_n      => mcb3_dram_ck_n,       
-        mcb3_dram_dqs       => mcb3_dram_dqs,                          
+        mcb3_dram_cke       => mcb3_dram_cke,
+        mcb3_dram_ck        => mcb3_dram_ck,
+        mcb3_dram_ck_n      => mcb3_dram_ck_n,
+        mcb3_dram_dqs       => mcb3_dram_dqs,
         mcb3_dram_dqs_n     => mcb3_dram_dqs_n,
-        mcb3_dram_udqs      => mcb3_dram_udqs,    -- for X16 parts           
+        mcb3_dram_udqs      => mcb3_dram_udqs,    -- for X16 parts
         mcb3_dram_udqs_n    => mcb3_dram_udqs_n,  -- for X16 parts
         mcb3_dram_udm       => mcb3_dram_udm,     -- for X16 parts
         mcb3_dram_dm        => mcb3_dram_dm,
@@ -116,7 +125,7 @@ begin
         c3_calib_done       => c3_calib_done,
         mcb3_rzq            => mcb3_rzq,
         mcb3_zio            => mcb3_zio,
-        
+
         c3_p0_cmd_clk       => c3_p0_in.cmd.clk,
         c3_p0_cmd_en        => c3_p0_in.cmd.en,
         c3_p0_cmd_instr     => c3_p0_in.cmd.instr,
@@ -141,7 +150,7 @@ begin
         c3_p0_rd_count      => c3_p0_out.rd.count,
         c3_p0_rd_overflow   => c3_p0_out.rd.overflow,
         c3_p0_rd_error      => c3_p0_out.rd.error,
-        
+
         c3_p1_cmd_clk       => c3_p1_in.cmd.clk,
         c3_p1_cmd_en        => c3_p1_in.cmd.en,
         c3_p1_cmd_instr     => c3_p1_in.cmd.instr,
@@ -166,7 +175,7 @@ begin
         c3_p1_rd_count      => c3_p1_out.rd.count,
         c3_p1_rd_overflow   => c3_p1_out.rd.overflow,
         c3_p1_rd_error      => c3_p1_out.rd.error,
-        
+
         c3_p2_cmd_clk       => c3_p2_in.cmd.clk,
         c3_p2_cmd_en        => c3_p2_in.cmd.en,
         c3_p2_cmd_instr     => c3_p2_in.cmd.instr,
@@ -182,7 +191,7 @@ begin
         c3_p2_rd_count      => c3_p2_out.rd.count,
         c3_p2_rd_overflow   => c3_p2_out.rd.overflow,
         c3_p2_rd_error      => c3_p2_out.rd.error,
-        
+
         c3_p3_cmd_clk       => c3_p3_in.cmd.clk,
         c3_p3_cmd_en        => c3_p3_in.cmd.en,
         c3_p3_cmd_instr     => c3_p3_in.cmd.instr,
@@ -198,7 +207,7 @@ begin
         c3_p3_rd_count      => c3_p3_out.rd.count,
         c3_p3_rd_overflow   => c3_p3_out.rd.overflow,
         c3_p3_rd_error      => c3_p3_out.rd.error,
-        
+
         c3_p4_cmd_clk       => c3_p4_in.cmd.clk,
         c3_p4_cmd_en        => c3_p4_in.cmd.en,
         c3_p4_cmd_instr     => c3_p4_in.cmd.instr,
@@ -215,8 +224,8 @@ begin
         c3_p4_wr_count      => c3_p4_out.wr.count,
         c3_p4_wr_underrun   => c3_p4_out.wr.underrun,
         c3_p4_wr_error      => c3_p4_out.wr.error,
-        
-        
+
+
         c3_p5_cmd_clk       => c3_p5_in.cmd.clk,
         c3_p5_cmd_en        => c3_p5_in.cmd.en,
         c3_p5_cmd_instr     => c3_p5_in.cmd.instr,
@@ -234,83 +243,81 @@ begin
         c3_p5_wr_underrun   => c3_p5_out.wr.underrun,
         c3_p5_wr_error      => c3_p5_out.wr.error);
 
-    rst <= not rst_n;
-    
+    led(0) <= c3_calib_done;
+
+
+    U_DUMMY_SYNC_GEN : entity work.video_sync_recovery port map (
+        valid => '1',
+        pixel_clock => clk_132MHz,
+        hsync => '0', -- without hsync or vsync, video_sync_recovery will run free
+        vsync => '0',
+        sync_out => dummy_video.sync);
+    U_DUMMY_PATTERN_GEN : entity work.video_pattern_generator port map (
+        sync => dummy_video.sync,
+        data_out => dummy_video.data);
+
     U_DVI_RX : entity work.dvi_receiver
-        port map(rst          => rst,
+        port map(rst          => reset,
                  rx_tmds      => rx_tmds,
                  rx_tmdsb     => rx_tmdsb,
-                 video_output => dvi_rx_video_out);
-    
-    led(0) <= c3_calib_done;
-    
-    U_PIXEL_CLK_GEN : entity work.pixel_clk_gen
-        port map(CLK_IN1  => clk_100MHz_buf,
-                 CLK_OUT1 => clk_132MHz,
-                 RESET    => '0',
-                 LOCKED   => open);
-    
-    U_PATTERN_GEN : entity work.video_pattern_generator
-        port map(
-                reset => rst,
-                clk_in => clk_132MHz,
-                video  => pattern_gen_video_out);
-                
-    combiner_video_under_in.blue <= x"FF";
-    combiner_video_under_in.red <= x"00";
-    combiner_video_under_in.green <= x"00";                
-
-    U_OVERLAY : entity work.video_overlay
-        port map(video_over  => pattern_gen_video_out.data,
-                 video_under => combiner_video_under_in,
-                 video_out   => combiner_video_out.data);
-                 
-    combiner_video_out.sync <= pattern_gen_video_out.sync;
- 
-    U_SRC_MUX : entity work.video_mux
-        port map(video0    => combiner_video_out,
-                 video1    => dvi_rx_video_out,
-                 sel       => dvi_rx_video_out.sync.valid,
-                 video_out => mux_video_out);        
-                 
-    U_DVI_TX : entity work.dvi_transmitter
-        port map(video_in => mux_video_out,
-                 tx_tmds  => tx_tmds,
-                 tx_tmdsb => tx_tmdsb);  
- 
+                 video_output => received_video);
     U_EDID : entity work.edid_wrapper
         port map(clk_132MHz => clk_132MHz,
-                 reset        => rst,
+                 reset      => reset,
                  scl        => rx_scl,
                  sda        => rx_sda);
-    
+
+    U_SRC_MUX : entity work.video_mux
+        port map(video0    => dummy_video,
+                 video1    => received_video,
+                 sel       => received_video.sync.valid,
+                 video_out => overlay_video);
+
+    -- XXX replace this with cameras
+    base_video_data.blue  <= x"80";
+    base_video_data.red   <= x"80";
+    base_video_data.green <= x"80";
+
+    composite_video.sync <= overlay_video.sync;
+    U_OVERLAY : entity work.video_overlay
+        port map(video_over  => overlay_video.data,
+                 video_under => base_video_data,
+                 video_out   => composite_video.data);
+
+    U_DVI_TX : entity work.dvi_transmitter
+        port map(video_in => composite_video,
+                 tx_tmds  => tx_tmds,
+                 tx_tmdsb => tx_tmdsb);
+
+
+
     U_UART : entity work.uart_transmitter
         generic map(
             CLOCK_FREQUENCY => 132000000.0,
             BAUD_RATE => 4000000.0)
         port map (
             clock => clk_132MHz,
-            reset => rst,
+            reset => reset,
             tx    => uart_tx,
             ready => uart_tx_ready,
             data  => uart_tx_data,
             write => uart_tx_write);
-    
+
     U_UART2 : entity work.uart_receiver
         generic map(
             CLOCK_FREQUENCY => 132000000.0,
             BAUD_RATE => 4000000.0)
         port map (
             clock => clk_132MHz,
-            reset => rst,
+            reset => reset,
             rx    => uart_rx,
             valid => uart_rx_valid,
             data  => uart_rx_data);
-    
+
     U_UART_RAM : entity work.uart_ram_interface
         port map (
             clock => clk_132MHz,
-            reset => rst,
+            reset => reset,
             ram_in => c3_p0_in,
             ram_out => c3_p0_out,
             uart_tx_ready => uart_tx_ready,
