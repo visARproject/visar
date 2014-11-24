@@ -273,10 +273,11 @@ begin
                  sel       => received_video.sync.valid,
                  video_out => overlay_video);
 
-    -- XXX replace this with cameras
-    base_video_data.blue  <= x"80";
-    base_video_data.red   <= x"80";
-    base_video_data.green <= x"80";
+    U_RAM_VID_SRC : entity work.video_ram_source port map (
+        sync => overlay_video.sync,
+        data_out => base_video_data,
+        ram_in => c3_p2_in,
+        ram_out => c3_p2_out);
 
     composite_video.sync <= overlay_video.sync;
     U_OVERLAY : entity work.video_overlay

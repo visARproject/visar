@@ -30,24 +30,26 @@ class RAMPoker(object):
     def write(self, addr, data):
         self._run(struct.pack('<BIQ' if wide else '<BII', 1, addr, data))
 
-x = RAMPoker()
+if __name__ == '__main__':
+    x = RAMPoker()
 
-while True:
-    p = random.randrange(2**32)
-    v = random.randrange(2**64 if wide else 2**32)
-    print '{0:032b}'.format(p)
-    print ('{0:064b}' if wide else '{0:032b}').format(v)
-    x.write(p, v)
-    r = x.read(p)
-    print ('{0:064b}' if wide else '{0:032b}').format(r)
-    print ('{0:064b}' if wide else '{0:032b}').format(r^v)
-    print ('{0:064b}' if wide else '{0:032b}').format(2**32-1)
-    if r == v:
-        print '{0:032b}'.format(p), 'good'
-        for i in xrange(31, -1, -1):
-            if x.read(p^(2**i)) == v:
-                print 'mir', i
-    else:
-        print '{0:032b}'.format(p), 'bad', hex(v)
-        acxza
-    print
+
+    while True:
+        p = random.randrange(2**32)
+        v = random.randrange(2**64 if wide else 2**32)
+        print '{0:032b}'.format(p)
+        print ('{0:064b}' if wide else '{0:032b}').format(v)
+        x.write(p, v)
+        r = x.read(p)
+        print ('{0:064b}' if wide else '{0:032b}').format(r)
+        print ('{0:064b}' if wide else '{0:032b}').format(r^v)
+        print ('{0:064b}' if wide else '{0:032b}').format(2**32-1)
+        if r == v:
+            print '{0:032b}'.format(p), 'good'
+            for i in xrange(31, -1, -1):
+                if x.read(p^(2**i)) == v:
+                    print 'mir', i
+        else:
+            print '{0:032b}'.format(p), 'bad', hex(v)
+            acxza
+        print
