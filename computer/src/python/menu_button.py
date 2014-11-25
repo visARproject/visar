@@ -109,7 +109,7 @@ class Menu(rendering.Drawable):
       button_height = surface_size[1] * .05
 
       text_height = button_height * .9
-      text_width = button_width * .9
+      text_width = button_width * .6
       
       gap = surface_size[0] * .01
       align = surface_size[1] * .05
@@ -144,19 +144,6 @@ class Menu(rendering.Drawable):
     self.active.setActive()
 
 class Button:
-  #def __init__(self, name = "0", size = (2, 1)):
-    # self.opName = name  
-    # name = name.replace(" ", "_")
-    # self.name = "images/" + name + "_Button.png"
-
-    # if (name != ""):
-    #   self.surface = pygame.image.load(self.name)
-    
-    # self.width = size[0]
-    # self.height = size[1]
-    # self.parent = None
-    # self.children = []
-
   def __init__(self, name = ""):
     self.name = name
     self.width = 2
@@ -177,26 +164,35 @@ class Button:
   def getChildren(self):
     return self.children
 
+  def hasChildren(self):
+    if (len(self.children) > 0):
+      return True
+    return False
+
   def getName(self):
     return self.name
 
   def getText(self, width, height):
     font = pygame.font.Font(None, 100)
-    if len(self.children) > 0:
-      self.text = font.render(self.name+">", True, (1, 1, 1))
+    if(self.hasChildren()):
+      self.text = font.render(self.name + " =>", True, (1, 1, 1))
     else:
       self.text = font.render(self.name, True, (1, 1, 1))
     self.text = pygame.transform.scale(self.text, (int(width) * self.width, int(height) * self.height))
     return self.text
 
   def getSurface(self, width, height):
-    #self.surface = pygame.image.load(self.name)
-    self.surface = pygame.Surface((int(width) * self.width, int(height) * self.height))
+    surface = pygame.Surface((int(width) * self.width, int(height) * self.height))
     if self.isActive():
-      self.surface.fill((0, 138, 254))
+      surface.fill((0, 138, 254))
     else:
-      self.surface.fill((0, 35, 63))
-    return self.surface
+      surface.fill((0, 35, 63))
+    return surface
+
+  def getMoreBox(self, width, height):
+    moreBox = pygame.Surface((int(width) * self.width, int(height) * self.height))
+    moreBox.fill((1, 1, 1))
+    return moreBox
 
   def setActive(self):
     self.name = self.name.replace(".png", "_Selected.png")
