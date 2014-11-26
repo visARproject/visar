@@ -16,7 +16,7 @@ TIMESPEC "TS_ramra" = FROM "bramra" TO "fddbgrp" TS_PCLK;
 
 VCCAUX = 3.3;
 
-NET "rst_n" LOC = T15;
+NET "rst_n" LOC = T15 | IOSTANDARD = "LVCMOS33";
 NET "clk_100MHz" LOC = L15 | IOSTANDARD = "LVCMOS33" | PERIOD = 100 MHz HIGH 50%;
 
 NET "tx_tmds(0)"  	LOC = "D8" | IOSTANDARD = TMDS_33 ; # Blue
@@ -44,3 +44,40 @@ NET "led<0>" LOC = "U18"; # Bank = 1, Pin name = IO_L52N_M1DQ15, 	   Sch name = 
 
 NET "uart_tx" LOC = "B16" | IOSTANDARD = LVCMOS33;
 NET "uart_rx" LOC = "A16" | IOSTANDARD = LVCMOS33;
+
+
+NET "camera_a_inout_data[7]" LOC = R11 | IOSTANDARD = LVCMOS33 | IN_TERM = UNTUNED_SPLIT_50;
+NET "camera_a_inout_data[6]" LOC = M11 | IOSTANDARD = LVCMOS33 | IN_TERM = UNTUNED_SPLIT_50;
+NET "camera_a_inout_data[5]" LOC = U13 | IOSTANDARD = LVCMOS33 | IN_TERM = UNTUNED_SPLIT_50;
+NET "camera_a_inout_data[4]" LOC = U15 | IOSTANDARD = LVCMOS33 | IN_TERM = UNTUNED_SPLIT_50;
+NET "camera_a_inout_data[3]" LOC = U16 | IOSTANDARD = LVCMOS33 | IN_TERM = UNTUNED_SPLIT_50;
+NET "camera_a_inout_data[2]" LOC = V15 | IOSTANDARD = LVCMOS33 | IN_TERM = UNTUNED_SPLIT_50;
+NET "camera_a_inout_data[1]" LOC = U11 | IOSTANDARD = LVCMOS33 | IN_TERM = UNTUNED_SPLIT_50;
+NET "camera_a_inout_data[0]" LOC = M10 | IOSTANDARD = LVCMOS33 | IN_TERM = UNTUNED_SPLIT_50;
+NET "camera_a_inout_fv"      LOC = T12 | IOSTANDARD = LVCMOS33 | IN_TERM = UNTUNED_SPLIT_50;
+NET "camera_a_inout_lv"      LOC = N10 | IOSTANDARD = LVCMOS33 | IN_TERM = UNTUNED_SPLIT_50;
+NET "camera_a_inout_pclk"    LOC = R10 | IOSTANDARD = LVCMOS33 | IN_TERM = UNTUNED_SPLIT_50;
+NET "camera_a_inout_sda"     LOC = P11 | IOSTANDARD = I2C;
+NET "camera_a_inout_scl"     LOC = V12 | IOSTANDARD = I2C;
+NET "camera_a_out_pwdn"      LOC = T11 | IOSTANDARD = LVCMOS33;
+NET "camera_a_out_mclk"      LOC = N11 | IOSTANDARD = LVCMOS33;
+NET "camera_a_out_rst"       LOC = V13 | IOSTANDARD = LVCMOS33 | DRIVE = 24;
+
+NET "camera_x_vdd_en" LOC = V16 | IOSTANDARD = LVCMOS33;
+
+NET "camera_b_inout_data[7]" LOC = T6 | IOSTANDARD = LVCMOS33 | IN_TERM = UNTUNED_SPLIT_50;
+NET "camera_b_inout_data[6]" LOC = N7 | IOSTANDARD = LVCMOS33 | IN_TERM = UNTUNED_SPLIT_50;
+NET "camera_b_inout_data[5]" LOC = U7 | IOSTANDARD = LVCMOS33 | IN_TERM = UNTUNED_SPLIT_50;
+NET "camera_b_inout_data[4]" LOC = U8 | IOSTANDARD = LVCMOS33 | IN_TERM = UNTUNED_SPLIT_50;
+NET "camera_b_inout_data[3]" LOC = M8 | IOSTANDARD = LVCMOS33 | IN_TERM = UNTUNED_SPLIT_50;
+NET "camera_b_inout_data[2]" LOC = R8 | IOSTANDARD = LVCMOS33 | IN_TERM = UNTUNED_SPLIT_50;
+NET "camera_b_inout_data[1]" LOC = V5 | IOSTANDARD = LVCMOS33 | IN_TERM = UNTUNED_SPLIT_50;
+NET "camera_b_inout_data[0]" LOC = U5 | IOSTANDARD = LVCMOS33 | IN_TERM = UNTUNED_SPLIT_50;
+NET "camera_b_inout_fv"      LOC = R7 | IOSTANDARD = LVCMOS33 | IN_TERM = UNTUNED_SPLIT_50;
+NET "camera_b_inout_lv"      LOC = N6 | IOSTANDARD = LVCMOS33 | IN_TERM = UNTUNED_SPLIT_50;
+NET "camera_b_inout_pclk"    LOC = U10 | IOSTANDARD = LVCMOS33 | IN_TERM = UNTUNED_SPLIT_50;
+NET "camera_b_inout_sda"     LOC = V6 | IOSTANDARD = I2C;
+NET "camera_b_inout_scl"     LOC = P8 | IOSTANDARD = I2C;
+NET "camera_b_out_pwdn"      LOC = T8 | IOSTANDARD = LVCMOS33;
+NET "camera_b_out_mclk"      LOC = V8 | IOSTANDARD = LVCMOS33;
+NET "camera_b_out_rst"       LOC = N8 | IOSTANDARD = LVCMOS33;

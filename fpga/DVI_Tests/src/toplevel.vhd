@@ -2,25 +2,40 @@ library ieee;
 use ieee.std_logic_1164.all;
 use work.video_bus.all;
 use work.ram_port.all;
+use work.camera.all;
 
 library unisim;
 use unisim.vcomponents.all;
 
+library digilent;
+use digilent.all;
+
 entity toplevel is
     port (
+        -- Clock, Reset
         clk_100MHz : in std_logic;
         rst_n : in std_logic;
-        rx_tmds : in std_logic_vector(3 downto 0);
-        rx_tmdsb : in std_logic_vector(3 downto 0);
+        
+        -- DVI Interface
         tx_tmds : out std_logic_vector(3 downto 0);
         tx_tmdsb : out std_logic_vector(3 downto 0);
+        rx_tmds : in std_logic_vector(3 downto 0);
+        rx_tmdsb : in std_logic_vector(3 downto 0);
         rx_sda : inout std_logic;
         rx_scl : inout std_logic;
         led : out std_logic_vector(0 downto 0);
 
+        -- Camera A and B interface
+        camera_a_out    : out   camera_out;
+        camera_a_inout  : inout camera_inout;
+        camera_b_out    : out   camera_out;
+        camera_b_inout  : inout camera_inout;
+        camera_x_vdd_en : out   std_logic;
+
         uart_tx : out std_logic;
         uart_rx : in std_logic;
 
+        -- DDR2 Interface
         mcb3_dram_dq     : inout  std_logic_vector(16-1 downto 0);
         mcb3_dram_a      : out std_logic_vector(13-1 downto 0);
         mcb3_dram_ba     : out std_logic_vector(3-1 downto 0);
@@ -46,8 +61,11 @@ architecture RTL of toplevel is
     signal reset : std_logic;
     signal clk_100MHz_buf : std_logic;
     signal clk_132MHz : std_logic;
+    signal clk_24MHz     : std_logic;   -- TODO: Modify U_PIXEL_CLK_GEN to include 24MHz outputs
+    signal clk_24MHz_180 : std_logic;
 
 
+    -- DDR2 Signals
     signal c3_calib_done : std_logic;
     signal c3_clk0       : std_logic;
     signal c3_rst0       : std_logic;
@@ -84,6 +102,22 @@ architecture RTL of toplevel is
 
     signal uart_rx_valid : std_logic;
     signal uart_rx_data : std_logic_vector(7 downto 0);
+    
+    -- DDR2 Camera A Write Port Signals
+    signal camera_a_frame_rst, camera_a_sync_frame_reset : std_logic;
+    signal camera_a_fv_synced_S : std_logic;
+    signal camera_a_frame_write_rst : std_logic;
+    signal c3_calib_done_sync_a : std_logic;
+    -- Camera Signals
+
+    signal camera_a_data, camera_b_data             : std_logic_vector(7 downto 0);
+    signal camera_a_pclk_out, camera_b_pclk_out     : std_logic;
+    signal camera_a_data_valid, camera_b_data_valid : std_logic;
+    signal camera_a_data_in_S, camera_b_data_in_S   : std_logic_vector(7 downto 0);
+    signal camera_a_pclk_in_S, camera_b_pclk_in_S   : std_logic;
+    signal camera_a_fv_in_S, camera_b_fv_in_S       : std_logic;
+    signal camera_a_lv_in_S, camera_b_lv_in_S       : std_logic;
+    signal camera_a_vdd_en, camera_b_vdd_en         : std_logic;
 begin
     reset <= not rst_n;
 
@@ -99,7 +133,182 @@ begin
                  RESET    => '0',
                  LOCKED   => open);
 
+    --------------------------
+    -- Camera A interface
+    --------------------------
+    U_CAMERA_A : entity work.CamCtl
+        port map(D_O     => camera_a_data, -- 8 bit data coming out of the cameras
+                 PCLK_O  => camera_a_pclk_out, -- Pixel clk coming 
+                 DV_O    => camera_a_data_valid,
+                 RST_I   => rst_n,
+                 CLK     => clk_24MHz,
+                 CLK_180 => clk_24MHz_180,
+                 SDA     => camera_a_inout.sda,
+                 SCL     => camera_a_inout.scl,
+                 D_I     => camera_a_data_in_S,
+                 PCLK_I  => camera_a_pclk_in_S,
+                 MCLK_O  => camera_a_out.mclk,
+                 LV_I    => camera_a_lv_in_S,
+                 FV_I    => camera_a_fv_in_S,
+                 RST_O   => camera_a_out.rst,
+                 PWDN_O  => camera_a_out.pwdn,
+                 VDDEN_O => camera_a_vdd_en);
 
+    -- Workaround for IN_TERM bug AR#     40818
+    -- Effectively, for any inout used, you have to use these
+    --    IOBUFs to turn the inout into an input
+    U_IOBUF_CAMERA_A_DATA : for i in 7 downto 0 generate
+        U_IOBUF_CAMERA_A_DATA : IOBUF
+            generic map(
+                DRIVE      => 12,
+                IOSTANDARD => "DEFAULT",
+                SLEW       => "SLOW")
+            port map(
+                O  => camera_a_data_in_S(i), -- Buffer output
+                IO => camera_a_inout.data(i), -- Buffer inout port (connect directly to top-level port)
+                I  => '0',              -- Buffer input
+                T  => '1'               -- 3-state enable input, high=input, low=output
+            );
+    end generate;
+    U_IOBUF_CAMERA_A_PCLK : IOBUF
+        generic map(
+            DRIVE      => 12,
+            IOSTANDARD => "DEFAULT",
+            SLEW       => "SLOW")
+        port map(
+            O  => camera_a_pclk_in_S,   -- Buffer output
+            IO => camera_a_inout.pclk,  -- Buffer inout port (connect directly to top-level port)
+            I  => '0',                  -- Buffer input
+            T  => '1'                   -- 3-state enable input, high=input, low=output
+        );
+    U_IOBUF_CAMERA_A_FV : IOBUF
+        generic map(
+            DRIVE      => 12,
+            IOSTANDARD => "DEFAULT",
+            SLEW       => "SLOW")
+        port map(
+            O  => camera_a_fv_in_S,     -- Buffer output
+            IO => camera_a_inout.fv,    -- Buffer inout port (connect directly to top-level port)
+            I  => '0',                  -- Buffer input
+            T  => '1'                   -- 3-state enable input, high=input, low=output
+        );
+    U_IOBUF_CAMERA_A_LV : IOBUF
+        generic map(
+            DRIVE      => 12,
+            IOSTANDARD => "DEFAULT",
+            SLEW       => "SLOW")
+        port map(
+            O  => camera_a_lv_in_S,     -- Buffer output
+            IO => camera_a_inout.lv,    -- Buffer inout port (connect directly to top-level port)
+            I  => '0',                  -- Buffer input
+            T  => '1'                   -- 3-state enable input, high=input, low=output
+        );
+    
+    
+--------------------------
+-- Camera B interface
+--------------------------
+    U_CAMERA_B : entity work.CamCtl
+        port map(D_O     => camera_b_data,
+                 PCLK_O  => camera_b_pclk_out,
+                 DV_O    => camera_b_data_valid,
+                 RST_I   => rst_n,
+                 CLK     => clk_24MHz,
+                 CLK_180 => clk_24MHz_180,
+                 SDA     => camera_b_inout.sda,
+                 SCL     => camera_b_inout.scl,
+                 D_I     => camera_b_data_in_S,
+                 PCLK_I  => camera_b_pclk_in_S,
+                 MCLK_O  => camera_b_out.mclk,
+                 LV_I    => camera_b_lv_in_S,
+                 FV_I    => camera_b_fv_in_S,
+                 RST_O   => camera_b_out.rst,
+                 PWDN_O  => camera_b_out.pwdn,
+                 VDDEN_O => camera_b_vdd_en);
+
+    -- Workaround for IN_TERM bug AR#     40818
+    -- Effectively, for any inout used, you have to use these
+    --    IOBUFs to turn the inout into an input
+    U_IOBUF_CAMERA_B_DATA : for i in 7 downto 0 generate
+        U_IOBUF_CAMERA_B_DATA : IOBUF
+            generic map(
+                DRIVE      => 12,
+                IOSTANDARD => "DEFAULT",
+                SLEW       => "SLOW")
+            port map(
+                O  => camera_b_data_in_S(i), -- Buffer output
+                IO => camera_b_inout.data(i), -- Buffer inout port (connect directly to top-level port)
+                I  => '0',              -- Buffer input
+                T  => '1'               -- 3-state enable input, high=input, low=output
+            );
+    end generate;
+    U_IOBUF_CAMERA_B_PCLK : IOBUF
+        generic map(
+            DRIVE      => 12,
+            IOSTANDARD => "DEFAULT",
+            SLEW       => "SLOW")
+        port map(
+            O  => camera_b_pclk_in_S,   -- Buffer output
+            IO => camera_b_inout.pclk,  -- Buffer inout port (connect directly to top-level port)
+            I  => '0',                  -- Buffer input
+            T  => '1'                   -- 3-state enable input, high=input, low=output
+        );
+    U_IOBUF_CAMERA_B_FV : IOBUF
+        generic map(
+            DRIVE      => 12,
+            IOSTANDARD => "DEFAULT",
+            SLEW       => "SLOW")
+        port map(
+            O  => camera_b_fv_in_S,     -- Buffer output
+            IO => camera_b_inout.fv,    -- Buffer inout port (connect directly to top-level port)
+            I  => '0',                  -- Buffer input
+            T  => '1'                   -- 3-state enable input, high=input, low=output
+        );
+    U_IOBUF_CAMERA_B_LV : IOBUF
+        generic map(
+            DRIVE      => 12,
+            IOSTANDARD => "DEFAULT",
+            SLEW       => "SLOW")
+        port map(
+            O  => camera_b_lv_in_S,     -- Buffer output
+            IO => camera_b_inout.lv,    -- Buffer inout port (connect directly to top-level port)
+            I  => '0',                  -- Buffer input
+            T  => '1'                   -- 3-state enable input, high=input, low=output
+        );
+
+    camera_x_vdd_en <= camera_a_vdd_en and camera_b_vdd_en;
+    
+    --------------------------
+    -- Camera A DDR2 Write Port
+    --------------------------
+    
+    -- First, create a synchronized (to the 24MHz clk) version of the frame valid signal
+    U_INPUTSYNC_CAMERA_A : entity digilent.InputSync
+        port map(D_I   => camera_a_fv_in_S,
+                 D_O   => camera_a_fv_synced_S,
+                 CLK_I => clk_24MHz);
+    
+    -- Create a camera frame write reset signal
+    camera_a_frame_write_rst <= not reset and not camera_a_fv_synced_S;
+    
+    -- Camera A frame reset
+    camera_a_frame_rst <= camera_a_frame_write_rst and not c3_calib_done;   
+    
+    -- Create synchronous camera frame reset and DDR2 calibration signals to the 24MHz Clock Domain
+    U_LOCAL_RST_CAMERA_A1 : entity digilent.LocalRst
+        port map(RST_I  => camera_a_frame_rst,
+                 CLK_I  => clk_24MHz,
+                 SRST_O => camera_a_sync_frame_reset);
+                 
+    U_LOCAL_RST_CAMERA_A2 : entity digilent.LocalRst
+        port map(RST_I  => c3_calib_done,
+                 CLK_I  => clk_24MHz,
+                 SRST_O => c3_calib_done_sync_a);
+
+
+    --------------------------
+    -- DDR2 Interface
+    --------------------------
 
     u_dram : entity work.dram port map (
         c3_sys_clk          => clk_100MHz_buf,
