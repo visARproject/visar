@@ -134,7 +134,8 @@ class Menu(rendering.Drawable):
           check = True
 
         surface.blit(self.current[x].getSurface(button_width, button_height), (align, y))
-        surface.blit(self.current[x].getText(text_width, text_height), (align + text_left_margin, y + text_top_margin))
+        surface.blit(self.current[x].getText(text_width, text_height),
+         (align + text_left_margin, y + text_top_margin))
 
     return rendering.Render_Surface(surface)
 
@@ -175,7 +176,7 @@ class Button:
   def getText(self, width, height):
     font = pygame.font.Font(None, 100)
     if(self.hasChildren()):
-      self.text = font.render(self.name + " =>", True, (1, 1, 1))
+      self.text = font.render(self.name + " >", True, (1, 1, 1))
     else:
       self.text = font.render(self.name, True, (1, 1, 1))
     self.text = pygame.transform.scale(self.text, (int(width) * self.width, int(height) * self.height))

@@ -6,6 +6,7 @@ import user_pose
 import controller
 import menu_button
 import sys
+import arrows
 
 def visar():
   debug_mode = False;
@@ -19,6 +20,10 @@ def visar():
   visar_controller = controller.Controller(pose_source) # initialize controller
   renderer = rendering.Renderer(visar_controller,debug_mode) # initialize renderer
   
+  # arrows
+  arrows_ = arrows.Arrows()
+  renderer.add_module(arrows_)
+
   # menu buttons 
   menu = menu_button.Menu()
   renderer.add_module(menu)
