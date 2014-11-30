@@ -1,7 +1,7 @@
 ##############################################################
 #
-# Xilinx Core Generator version 14.7
-# Date: Thu Oct 30 03:56:54 2014
+# Xilinx Core Generator version 14.4
+# Date: Sun Nov 30 06:41:32 2014
 #
 ##############################################################
 #
@@ -41,11 +41,11 @@ SELECT Clocking_Wizard xilinx.com:ip:clk_wiz:3.6
 # BEGIN Parameters
 CSET calc_done=DONE
 CSET clk_in_sel_port=CLK_IN_SEL
-CSET clk_out1_port=CLK_OUT1
+CSET clk_out1_port=CLK_OUT_132MHz
 CSET clk_out1_use_fine_ps_gui=false
-CSET clk_out2_port=CLK_OUT2
+CSET clk_out2_port=CLK_OUT_24MHz
 CSET clk_out2_use_fine_ps_gui=false
-CSET clk_out3_port=CLK_OUT3
+CSET clk_out3_port=CLK_OUT_24MHz_180
 CSET clk_out3_use_fine_ps_gui=false
 CSET clk_out4_port=CLK_OUT4
 CSET clk_out4_use_fine_ps_gui=false
@@ -74,14 +74,14 @@ CSET clkout1_requested_out_freq=132
 CSET clkout1_requested_phase=0.000
 CSET clkout2_drives=BUFG
 CSET clkout2_requested_duty_cycle=50.000
-CSET clkout2_requested_out_freq=100.000
+CSET clkout2_requested_out_freq=24
 CSET clkout2_requested_phase=0.000
-CSET clkout2_used=false
+CSET clkout2_used=true
 CSET clkout3_drives=BUFG
 CSET clkout3_requested_duty_cycle=50.000
-CSET clkout3_requested_out_freq=100.000
-CSET clkout3_requested_phase=0.000
-CSET clkout3_used=false
+CSET clkout3_requested_out_freq=24
+CSET clkout3_requested_phase=180
+CSET clkout3_used=true
 CSET clkout4_drives=BUFG
 CSET clkout4_requested_duty_cycle=50.000
 CSET clkout4_requested_out_freq=100.000
@@ -106,7 +106,7 @@ CSET clock_mgr_type=AUTO
 CSET component_name=pixel_clk_gen
 CSET daddr_port=DADDR
 CSET dclk_port=DCLK
-CSET dcm_clk_feedback=1X
+CSET dcm_clk_feedback=NONE
 CSET dcm_clk_out1_port=CLK0
 CSET dcm_clk_out2_port=CLK0
 CSET dcm_clk_out3_port=CLK0
@@ -129,7 +129,7 @@ CSET dcm_clkgen_spread_spectrum=NONE
 CSET dcm_clkgen_startup_wait=false
 CSET dcm_clkin_divide_by_2=false
 CSET dcm_clkin_period=10.000
-CSET dcm_clkout_phase_shift=NONE
+CSET dcm_clkout_phase_shift=VARIABLE
 CSET dcm_deskew_adjust=SYSTEM_SYNCHRONOUS
 CSET dcm_notes=None
 CSET dcm_phase_shift=0
@@ -189,7 +189,7 @@ CSET mmcm_notes=None
 CSET mmcm_ref_jitter1=0.010
 CSET mmcm_ref_jitter2=0.010
 CSET mmcm_startup_wait=false
-CSET num_out_clks=1
+CSET num_out_clks=3
 CSET override_dcm=false
 CSET override_dcm_clkgen=false
 CSET override_mmcm=false
@@ -197,18 +197,18 @@ CSET override_pll=false
 CSET platform=lin64
 CSET pll_bandwidth=OPTIMIZED
 CSET pll_clk_feedback=CLKFBOUT
-CSET pll_clkfbout_mult=33
+CSET pll_clkfbout_mult=53
 CSET pll_clkfbout_phase=0.000
 CSET pll_clkin_period=10.000
-CSET pll_clkout0_divide=5
+CSET pll_clkout0_divide=8
 CSET pll_clkout0_duty_cycle=0.500
 CSET pll_clkout0_phase=0.000
-CSET pll_clkout1_divide=1
+CSET pll_clkout1_divide=44
 CSET pll_clkout1_duty_cycle=0.500
 CSET pll_clkout1_phase=0.000
-CSET pll_clkout2_divide=1
+CSET pll_clkout2_divide=44
 CSET pll_clkout2_duty_cycle=0.500
-CSET pll_clkout2_phase=0.000
+CSET pll_clkout2_phase=180.000
 CSET pll_clkout3_divide=1
 CSET pll_clkout3_duty_cycle=0.500
 CSET pll_clkout3_phase=0.000
@@ -218,15 +218,15 @@ CSET pll_clkout4_phase=0.000
 CSET pll_clkout5_divide=1
 CSET pll_clkout5_duty_cycle=0.500
 CSET pll_clkout5_phase=0.000
-CSET pll_compensation=SYSTEM_SYNCHRONOUS
+CSET pll_compensation=INTERNAL
 CSET pll_divclk_divide=5
 CSET pll_notes=None
 CSET pll_ref_jitter=0.010
 CSET power_down_port=POWER_DOWN
 CSET prim_in_freq=100.000
 CSET prim_in_jitter=0.010
-CSET prim_source=Single_ended_clock_capable_pin
-CSET primary_port=CLK_IN1
+CSET prim_source=No_buffer
+CSET primary_port=CLK_IN_100MHz
 CSET primitive=MMCM
 CSET primtype_sel=PLL_BASE
 CSET psclk_port=PSCLK
@@ -255,7 +255,7 @@ CSET use_locked=true
 CSET use_max_i_jitter=false
 CSET use_min_o_jitter=false
 CSET use_min_power=false
-CSET use_phase_alignment=true
+CSET use_phase_alignment=false
 CSET use_power_down=false
 CSET use_reset=true
 CSET use_spread_spectrum=false
@@ -266,4 +266,4 @@ CSET use_status=false
 MISC pkg_timestamp=2012-05-10T12:44:55Z
 # END Extra information
 GENERATE
-# CRC: 665ee314
+# CRC: 9a0b0460

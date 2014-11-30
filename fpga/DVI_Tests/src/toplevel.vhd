@@ -110,12 +110,13 @@ begin
             I => clk_100MHz      -- Clock buffer input (connect directly to top-level port)
         );
 
-    U_PIXEL_CLK_GEN : entity work.pixel_clk_gen
-        port map(CLK_IN1  => clk_100MHz_buf,
-                 CLK_OUT1 => clk_132MHz,
-                 RESET    => '0',
-                 LOCKED   => open);
-    
+    U_PIXEL_CLK_GEN : entity work.pixel_clk_gen port map (
+        CLK_IN_100MHz     => clk_100MHz_buf,
+        CLK_OUT_132MHz    => clk_132MHz,
+        CLK_OUT_24MHz     => clk_24MHz,
+        CLK_OUT_24MHz_180 => clk_24MHz_180,
+        RESET             => '0',
+        LOCKED            => open);
     
 
     U_CAMERA_A_WRAPPER : entity work.camera_wrapper port map (
