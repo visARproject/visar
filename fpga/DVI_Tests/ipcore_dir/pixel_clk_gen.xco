@@ -1,7 +1,7 @@
 ##############################################################
 #
 # Xilinx Core Generator version 14.4
-# Date: Sun Nov 30 06:41:32 2014
+# Date: Sun Nov 30 23:44:56 2014
 #
 ##############################################################
 #
@@ -81,7 +81,7 @@ CSET clkout3_drives=BUFG
 CSET clkout3_requested_duty_cycle=50.000
 CSET clkout3_requested_out_freq=24
 CSET clkout3_requested_phase=180
-CSET clkout3_used=true
+CSET clkout3_used=false
 CSET clkout4_drives=BUFG
 CSET clkout4_requested_duty_cycle=50.000
 CSET clkout4_requested_out_freq=100.000
@@ -189,7 +189,7 @@ CSET mmcm_notes=None
 CSET mmcm_ref_jitter1=0.010
 CSET mmcm_ref_jitter2=0.010
 CSET mmcm_startup_wait=false
-CSET num_out_clks=3
+CSET num_out_clks=2
 CSET override_dcm=false
 CSET override_dcm_clkgen=false
 CSET override_mmcm=false
@@ -266,4 +266,4 @@ CSET use_status=false
 MISC pkg_timestamp=2012-05-10T12:44:55Z
 # END Extra information
 GENERATE
-# CRC: 9a0b0460
+# CRC: ab9c16fc

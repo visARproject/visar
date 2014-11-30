@@ -49,7 +49,6 @@ entity CamCtl is
         DV_O    : out   STD_LOGIC;
         RST_I   : in    STD_LOGIC;
         CLK     : in    STD_LOGIC;      --24 MHz
-        CLK_180 : in    STD_LOGIC;
 
         ----------------------------------------------------------------------------------
         -- Camera signals
@@ -221,7 +220,7 @@ begin
         port map(
             Q  => MCLK_O,               -- 1-bit output data
             C0 => CLK,                  -- 1-bit clock input
-            C1 => CLK_180,              -- 1-bit clock input
+            C1 => not CLK,              -- 1-bit clock input
             CE => '1',                  -- 1-bit clock enable input
             D0 => '0',                  -- 1-bit data input (associated with C0)
             D1 => '1',                  -- 1-bit data input (associated with C1)

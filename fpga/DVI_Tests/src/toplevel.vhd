@@ -57,11 +57,10 @@ end entity toplevel;
 
 
 architecture RTL of toplevel is
-    signal reset : std_logic;
+    signal reset          : std_logic;
     signal clk_100MHz_buf : std_logic;
-    signal clk_132MHz : std_logic;
-    signal clk_24MHz     : std_logic;   -- TODO: Modify U_PIXEL_CLK_GEN to include 24MHz outputs
-    signal clk_24MHz_180 : std_logic;
+    signal clk_132MHz     : std_logic;
+    signal clk_24MHz      : std_logic;
 
     signal camera_a_vdd_en, camera_b_vdd_en : std_logic;
     signal camera_a_output, camera_b_output : camera_output;
@@ -116,14 +115,12 @@ begin
         CLK_IN_100MHz     => clk_100MHz_buf,
         CLK_OUT_132MHz    => clk_132MHz,
         CLK_OUT_24MHz     => clk_24MHz,
-        CLK_OUT_24MHz_180 => clk_24MHz_180,
         RESET             => '0',
         LOCKED            => open);
     
 
     U_CAMERA_A_WRAPPER : entity work.camera_wrapper port map (
         clock_24MHz     => clk_24MHz,
-        clock_24MHz_180 => clk_24MHz_180,
         reset           => reset,
         
         camera_out => camera_a_out,
@@ -134,7 +131,6 @@ begin
     
     U_CAMERA_B_WRAPPER : entity work.camera_wrapper port map (
         clock_24MHz     => clk_24MHz,
-        clock_24MHz_180 => clk_24MHz_180,
         reset           => reset,
         
         camera_out => camera_b_out,

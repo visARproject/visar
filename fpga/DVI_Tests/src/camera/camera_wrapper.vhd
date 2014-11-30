@@ -13,7 +13,6 @@ use work.camera.all;
 entity camera_wrapper is
     port (
         clock_24MHz     : in std_logic;
-        clock_24MHz_180 : in std_logic;
         reset           : in std_logic;
         
         camera_out    : out   camera_out;
@@ -45,7 +44,6 @@ begin
                  DV_O    => output.data_valid,
                  RST_I   => reset,
                  CLK     => clock_24MHz,
-                 CLK_180 => clock_24MHz_180,
                  SDA     => camera_inout.sda,
                  SCL     => camera_inout.scl,
                  D_I     => camera_data_in_S,
