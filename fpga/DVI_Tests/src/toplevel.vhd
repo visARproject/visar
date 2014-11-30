@@ -1,11 +1,13 @@
 library ieee;
 use ieee.std_logic_1164.all;
-use work.video_bus.all;
-use work.ram_port.all;
-use work.camera.all;
+use ieee.numeric_std.all;
 
 library unisim;
 use unisim.vcomponents.all;
+
+use work.video_bus.all;
+use work.ram_port.all;
+use work.camera.all;
 
 entity toplevel is
     port (
@@ -143,6 +145,65 @@ begin
 
     camera_x_vdd_en <= camera_a_vdd_en and camera_b_vdd_en;
 
+    process (camera_a_output) is
+        variable state, next_state : integer range 0 to 3;
+        variable state2, next_state2 : integer range 0 to 31;
+        variable write_pos, next_write_pos : integer range 0 to CAMERA_WIDTH*CAMERA_HEIGHT-1;
+        variable data, next_data : std_logic_vector(31 downto 0);
+    begin
+        c3_p4_in.cmd.clk <= camera_a_output.clock;
+        c3_p4_in.cmd.en <= '0';
+        c3_p4_in.cmd.instr <= (others => '-');
+        c3_p4_in.cmd.bl <= (others => '-');
+        c3_p4_in.cmd.byte_addr <= (others => '-');
+        
+        c3_p4_in.wr.clk <= camera_a_output.clock;
+        c3_p4_in.wr.en <= '0';
+        c3_p4_in.wr.mask <= (others => '-');
+        c3_p4_in.wr.data <= (others => '-');
+        
+        next_state := state;
+        next_state2 := state2;
+        next_write_pos := write_pos;
+        next_data := data;
+        
+        if camera_a_output.frame_valid = '0' then
+            next_state := 0;
+            next_state2 := 0;
+            next_write_pos := 0;
+        elsif camera_a_output.data_valid = '1' then
+            next_data(8*state+7 downto 8*state) := camera_a_output.data;
+            if state /= 3 then
+                next_state := state + 1;
+            else
+                next_state := 0;
+                
+                c3_p4_in.wr.en <= '1';
+                c3_p4_in.wr.mask <= (others => '0');
+                c3_p4_in.wr.data <= next_data;
+                
+                if state2 /= 31 then
+                    next_state2 := state2 + 1;
+                else
+                    next_state2 := 0;
+                    
+                    c3_p4_in.cmd.en <= '1';
+                    c3_p4_in.cmd.instr <= WRITE_PRECHARGE_COMMAND;
+                    c3_p4_in.cmd.bl <= std_logic_vector(to_unsigned(32-1, c3_p4_in.cmd.bl'length));
+                    c3_p4_in.cmd.byte_addr <= std_logic_vector(to_unsigned(write_pos, c3_p4_in.cmd.byte_addr'length));
+                    
+                    next_write_pos := write_pos + 32 * 4;
+                end if;
+            end if;
+        end if;
+        
+        if rising_edge(camera_a_output.clock) then
+            state := next_state;
+            state2 := next_state2;
+            write_pos := next_write_pos;
+            data := next_data;
+        end if;
+    end process;
 
     --------------------------
     -- DDR2 Interface

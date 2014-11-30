@@ -25,4 +25,12 @@ package camera is
         frame_valid : std_logic;
     end record;
 
+    constant CAMERA_WIDTH : integer := 1600;
+    constant CAMERA_HEIGHT : integer := 1200;
+    
+    type CameraCoordinate is record
+        x : integer range 0 to 2*CAMERA_WIDTH-1;
+        y : integer range 0 to CAMERA_HEIGHT-1;
+    end record;
+    
 end package;

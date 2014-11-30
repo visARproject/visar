@@ -28,6 +28,12 @@ architecture arc of camera_wrapper is
     signal camera_pclk_in_S : std_logic;
     signal camera_fv_in_S   : std_logic;
     signal camera_lv_in_S   : std_logic;
+    
+    signal dummy_t : std_logic;
+
+    attribute S : string;
+    --attribute S of camera_inout : signal is "TRUE";
+    attribute S of dummy_t : signal is "TRUE";
 begin
 
     --------------------------
@@ -37,7 +43,7 @@ begin
         port map(D_O     => output.data, -- 8 bit data coming out of the cameras
                  PCLK_O  => output.clock, -- Pixel clk coming 
                  DV_O    => output.data_valid,
-                 RST_I   => not reset,
+                 RST_I   => reset,
                  CLK     => clock_24MHz,
                  CLK_180 => clock_24MHz_180,
                  SDA     => camera_inout.sda,
@@ -64,7 +70,7 @@ begin
                 O  => camera_data_in_S(i), -- Buffer output
                 IO => camera_inout.data(i), -- Buffer inout port (connect directly to top-level port)
                 I  => '0',              -- Buffer input
-                T  => '1'               -- 3-state enable input, high=input, low=output
+                T  => dummy_t               -- 3-state enable input, high=input, low=output
             );
     end generate;
     U_IOBUF_CAMERA_PCLK : IOBUF
@@ -76,7 +82,7 @@ begin
             O  => camera_pclk_in_S,   -- Buffer output
             IO => camera_inout.pclk,  -- Buffer inout port (connect directly to top-level port)
             I  => '0',                  -- Buffer input
-            T  => '1'                   -- 3-state enable input, high=input, low=output
+            T  => dummy_t                   -- 3-state enable input, high=input, low=output
         );
     U_IOBUF_CAMERA_FV : IOBUF
         generic map(
@@ -87,7 +93,7 @@ begin
             O  => camera_fv_in_S,     -- Buffer output
             IO => camera_inout.fv,    -- Buffer inout port (connect directly to top-level port)
             I  => '0',                  -- Buffer input
-            T  => '1'                   -- 3-state enable input, high=input, low=output
+            T  => dummy_t                   -- 3-state enable input, high=input, low=output
         );
     U_IOBUF_CAMERA_LV : IOBUF
         generic map(
@@ -98,13 +104,10 @@ begin
             O  => camera_lv_in_S,     -- Buffer output
             IO => camera_inout.lv,    -- Buffer inout port (connect directly to top-level port)
             I  => '0',                  -- Buffer input
-            T  => '1'                   -- 3-state enable input, high=input, low=output
+            T  => dummy_t                   -- 3-state enable input, high=input, low=output
         );
+    dummy_t <= '1';
     --------------------------
     
-    
-    U_INPUTSYNC_CAMERA : entity digilent.InputSync
-        port map(D_I   => camera_fv_in_S,
-                 D_O   => output.frame_valid,
-                 CLK_I => clock_24MHz);
+    output.frame_valid <= camera_fv_in_S;
 end architecture;
