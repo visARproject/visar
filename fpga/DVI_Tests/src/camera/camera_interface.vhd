@@ -16,5 +16,13 @@ package camera is
         fv   : std_logic;
         data : std_logic_vector(7 downto 0);
     end record camera_inout;
+    
+    
+    type camera_output is record
+        clock       : std_logic;
+        data        : std_logic_vector(7 downto 0);
+        data_valid  : std_logic;
+        frame_valid : std_logic;
+    end record;
 
 end package;
