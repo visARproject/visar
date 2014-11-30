@@ -6,6 +6,8 @@ use work.ram_port.all;
 use work.video_bus.all;
 
 entity video_counter is
+    generic (
+        DELAY : integer := 0);
     port (
         sync : in video_sync;
         
@@ -32,8 +34,8 @@ begin
             end if;
             
             if sync.frame_rst = '1' then
-                h_cnt_int <= 0;
-                v_cnt_int <= 0;
+                h_cnt_int <= ((-DELAY) mod (H_MAX*V_MAX)) mod H_MAX;
+                v_cnt_int <= ((-DELAY) mod (H_MAX*V_MAX))  /  H_MAX;
             end if;
         end if;
     end process;

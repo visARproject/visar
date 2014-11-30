@@ -25,8 +25,7 @@ begin
     process(clock, reset, uart_rx_valid, uart_rx_data)
         type StateType is (IDLE, READ, EXEC);
         variable state, next_state : StateType;
-        subtype PosType is integer range 0 to 8;
-        variable pos, next_pos : PosType;
+        variable pos, next_pos : integer range 0 to 8;
         variable command, next_command : std_logic_vector(71 downto 0);
     begin
         ram_in.cmd.clk <= clock;
@@ -69,9 +68,9 @@ begin
         elsif state = EXEC then
             ram_in.cmd.en <= '1';
             if command(7 downto 0) = x"00" then -- read
-                ram_in.cmd.instr <= READ_COMMAND;
+                ram_in.cmd.instr <= READ_PRECHARGE_COMMAND;
             else
-                ram_in.cmd.instr <= WRITE_COMMAND;
+                ram_in.cmd.instr <= WRITE_PRECHARGE_COMMAND;
             end if;
             ram_in.cmd.byte_addr <= command(37 downto 8);
             ram_in.cmd.bl <= std_logic_vector(to_unsigned(0, ram_in.cmd.bl'length));
@@ -88,8 +87,7 @@ begin
     process(clock, reset, ram_out, uart_tx_ready)
         type ReadStateType is (READSTATE_IDLE, READSTATE_GO);
         variable state, next_state : ReadStateType;
-        subtype PosType is integer range 0 to DATA_PORT_SIZE/8-1;
-        variable pos, next_pos : PosType;
+        variable pos, next_pos : integer range 0 to DATA_PORT_SIZE/8-1;
     begin
         ram_in.rd.clk <= clock;
         
