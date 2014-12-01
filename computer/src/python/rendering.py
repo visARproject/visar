@@ -25,6 +25,7 @@ class Renderer:
     #self.display_surface = pygame.display.set_mode((400,300)) #DEBUG
     if(debug): self.eye_size = (self.display_surface.get_width(), self.display_surface.get_height())
     else: self.eye_size = (self.display_surface.get_width()/2, self.display_surface.get_height())
+    if (controller): controller.book.eye_size = self.eye_size
     self.eye_surface = pygame.Surface(self.eye_size) # eye surface template
     self.eye_surface.fill((0,0,0)) # fill with zero
     self.clock = pygame.time.Clock() # timer for fpsing

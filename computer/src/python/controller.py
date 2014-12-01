@@ -43,6 +43,7 @@ class Controller_Book:
   def __init__(self, pose_source):
     self.pose_source = pose_source # position information
     self.keys = pygame.key.get_pressed()
+    self.eye_size = (0, 0)
     self.events = []
     self.count = 0
     self.exiting = False # tell threads to exit
