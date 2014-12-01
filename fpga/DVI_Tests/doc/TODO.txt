@@ -1,0 +1,10 @@
+naive way of representing distortion map in RAM is very large - would make delaying it in FPGA impossible and reading it twice exceeds RAM bandwidth
+    .: need to implement some sort of compression before anything else can happen
+
+do we care about chromatic abburation right now? sure
+
+let's start by not storing errors
+
+(x, y) is (12, 11) bits if images are stacked sideways
+
+every 2^n+1 pixels need (12+11)*6 bits

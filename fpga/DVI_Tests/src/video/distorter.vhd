@@ -8,6 +8,7 @@ use unisim.vcomponents.all;
 use work.ram_port.all;
 use work.video_bus.all;
 use work.distorter_pkg.all;
+use work.camera.all;
 
 entity video_distorter is
     port (
@@ -17,7 +18,9 @@ entity video_distorter is
         ram1_in  : out ram_rd_port_in;
         ram1_out : in  ram_rd_port_out;
         ram2_in  : out ram_rd_port_in;
-        ram2_out : in  ram_rd_port_out);
+        ram2_out : in  ram_rd_port_out;
+        ram3_in  : out ram_rd_port_in;
+        ram3_out : in  ram_rd_port_out);
 end entity;
 
 architecture arc of video_distorter is
@@ -84,32 +87,32 @@ begin
             end loop;
         end loop;
         
-        ram_in.cmd.clk <= sync.pixel_clk;
+        ram1_in.cmd.clk <= sync.pixel_clk;
         
-        ram_in.cmd.en <= '0';
-        ram_in.cmd.instr <= (others => '-');
-        ram_in.cmd.byte_addr <= (others => '-');
-        ram_in.cmd.bl <= (others => '-');
+        ram1_in.cmd.en <= '0';
+        ram1_in.cmd.instr <= (others => '-');
+        ram1_in.cmd.byte_addr <= (others => '-');
+        ram1_in.cmd.bl <= (others => '-');
         
         if h_cnt mod 32 = 0 and h_cnt < H_DISPLAY_END and v_cnt < V_DISPLAY_END then
-            ram_in.cmd.en <= '1';
-            ram_in.cmd.instr <= READ_PRECHARGE_COMMAND;
-            ram_in.cmd.byte_addr <= std_logic_vector(to_unsigned(
+            ram1_in.cmd.en <= '1';
+            ram1_in.cmd.instr <= READ_PRECHARGE_COMMAND;
+            ram1_in.cmd.byte_addr <= std_logic_vector(to_unsigned(
                 (v_cnt * 2048 + h_cnt + 32) * 4
-            , ram_in.cmd.byte_addr'length));
-            ram_in.cmd.bl <= std_logic_vector(to_unsigned(32 - 1, ram_in.cmd.bl'length));
+            , ram1_in.cmd.byte_addr'length));
+            ram1_in.cmd.bl <= std_logic_vector(to_unsigned(32 - 1, ram1_in.cmd.bl'length));
         end if;
     end process;
     
-    process (sync, ram_out, h_cnt, v_cnt) is
+    process (sync, ram1_out, h_cnt, v_cnt) is
     begin
-        --ram_out.rd.data( 7 downto  0);
+        --ram1_out.rd.data( 7 downto  0);
         
-        ram_in.rd.clk <= sync.pixel_clk;
+        ram1_in.rd.clk <= sync.pixel_clk;
         
-        ram_in.rd.en <= '0';
+        ram1_in.rd.en <= '0';
         if h_cnt >= 32 and v_cnt < V_DISPLAY_END + 1 then -- (try to) read extra to make sure FIFO is emptied
-            ram_in.rd.en <= '1';
+            ram1_in.rd.en <= '1';
         end if;
     end process;
     
@@ -118,8 +121,8 @@ begin
     process (sync.pixel_clk, bram_portb_outs) is
         variable centerx, centery : integer;
         variable dx, dy : integer range -4 to 3;
-        variable pxx : integer range 0 to 1600-1;
-        variable pxy : integer range 0 to 1200-1;
+        variable pxx : integer range 0 to CAMERA_WIDTH-1;
+        variable pxy : integer range 0 to CAMERA_HEIGHT-1;
         type SampleArray is array (7 downto 0, 7 downto 0) of integer range 0 to 511;
         variable samples : SampleArray;
     begin

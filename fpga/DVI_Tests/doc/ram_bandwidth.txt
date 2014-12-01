@@ -1,0 +1,10 @@
+RAM bandwidth budget
+
+Total: 12.8e9 bit/s
+
+Write:
+Cameras: 80e6*8*2/12.8e9 = 10% (might later change to 10 bit/pixel)
+
+Read:
+Distortion map (assuming 32 bit/pixel): 136.5e6*32/12.8e9 = 34%
+Image data: ???

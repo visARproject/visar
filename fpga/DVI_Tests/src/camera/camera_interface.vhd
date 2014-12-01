@@ -29,7 +29,7 @@ package camera is
     constant CAMERA_HEIGHT : integer := 1200;
     
     type CameraCoordinate is record
-        x : integer range 0 to 2*CAMERA_WIDTH-1;
+        x : integer range 0 to 2*CAMERA_WIDTH-1; -- stacked left-right because distorter buffer moves left-right
         y : integer range 0 to CAMERA_HEIGHT-1;
     end record;
     
