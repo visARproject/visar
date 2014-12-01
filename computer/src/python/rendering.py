@@ -51,9 +51,9 @@ class Renderer:
         # combine the images for each eye
         if(type(module) is list): # module returned list
           for surface in module: # draw each surface
-            if(surface.is_3d): # only draw 3D objects here
+            if(surface and surface.is_3d): # only draw 3D objects here
               surface.draw_eye_surfaces(left_eye, right_eye, self.depth_factor)
-        elif(module.is_3d):  # single surface, draw if 3D
+        elif(module and module.is_3d):  # single surface, draw if 3D
           module.draw_eye_surfaces(left_eye, right_eye, self.depth_factor)
         
       # draw 2d surfaces second
@@ -61,9 +61,9 @@ class Renderer:
         # combine the images for each eye
         if(type(module) is list): # module returned list
           for surface in module: # draw each surface
-            if(not surface.is_3d): # only draw 3D objects here
+            if(surface and not surface.is_3d): # only draw 3D objects here
               surface.draw_eye_surfaces(left_eye, right_eye, self.depth_factor)
-        elif(not module.is_3d):  # single surface, draw if 3D
+        elif(module and not module.is_3d):  # single surface, draw if 3D
           module.draw_eye_surfaces(left_eye, right_eye, self.depth_factor)
       
       # debug mode only shows one eye, with no distortion
