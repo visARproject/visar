@@ -37,6 +37,14 @@ begin
         h_cnt => h_cnt,
         v_cnt => v_cnt);
     
+    U_MAP_DECODER : entity work.video_distorter_map_decoder port map (
+        ram_in => ram3_in,
+        ram_out => ram3_out,
+        
+        clock => sync.pixel_clk,
+        reset => map_decoder_reset,
+        en    => map_decoder_en);
+    
     GEN_BRAM1: for x in 0 to 7 generate
         GEN_BRAM2: for y in 0 to 7 generate
             BRAM : RAMB16BWER
