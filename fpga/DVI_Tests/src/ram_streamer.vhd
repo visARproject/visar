@@ -2,11 +2,11 @@ library ieee;
 use ieee.std_logic_1164.all;
 use ieee.numeric_std.all;
 
-use work.camera_pkg.all;
+use work.ram_port.all;
 
-entity video_distorter_map_decoder is
+entity ram_streamer is
     generic (
-        MEMORY_LOCATION : integer, -- needs to be 4-byte aligned
+        MEMORY_LOCATION : integer; -- needs to be 4-byte aligned
         WORDS           : natural);
     port (
         ram_in  : out ram_rd_port_in;
@@ -14,14 +14,15 @@ entity video_distorter_map_decoder is
         
         clock  : in  std_logic;
         reset  : in  std_logic; -- must be asserted for "a while"
-        en     : in  std_logic; -- acts like a normal FIFO - en is needed for first read; must not be asserted for "a while" after reset
+        en     : in  std_logic; -- acts like a normal FIFO - en is needed for first read; must not be asserted for "a while" after reset or an earlier en
         output : out std_logic_vector(32*WORDS-1 downto 0));
 end entity;
 
-architecture arc of video_distorter_map_decoder is
+architecture arc of ram_streamer is
     constant READ_BURST_LENGTH_WORDS : integer := 32;
 begin
-    process (ram_in, clock, en) is
+    process (ram_out, clock, en) is
+        variable output_int, next_output_int : std_logic_vector(32*WORDS-1 downto 0);
         variable current, next_current : std_logic_vector(32*WORDS-1 downto 0);
         variable current_loaded, next_current_loaded : std_logic;
         variable current_load_pos, next_current_load_pos : integer range 0 to WORDS-1;
@@ -37,39 +38,44 @@ begin
         ram_in.rd.clk <= clock;
         ram_in.rd.en <= '0';
         
-        output <= (others => '-');
+        output <= output_int;
         
-        -- XXX need others here
+        
+        next_output_int := output_int;
+        next_current := current;
+        next_current_loaded := current_loaded;
+        next_current_load_pos := current_load_pos;
         next_fifo_count := fifo_count;
+        next_mem_pos := mem_pos;
         
         if reset = '1' then
             next_current_loaded := '0';
-            next_next_loaded := '0';
+            next_current_load_pos := 0;
             next_fifo_count := 0;
-            next_pos := SIZE-1;
             next_mem_pos := memory_location;
             
-            ram_in.rd.en <= '1';
+            ram_in.rd.en <= '1'; -- empty read FIFO
         else
-            output <= current;
             if en = '1' then
+                next_output_int := current;
                 next_current_loaded := '0';
             end if;
             
             -- keep current loaded
-            if next_current_loaded = '0' and ram_in.rd.empty = '0' then
-                next_current(current_load_pos*32+31 downto current_load_pos*32) := ram_in.rd.data;
+            if next_current_loaded = '0' and ram_out.rd.empty = '0' then
+                next_current(current_load_pos*32+31 downto current_load_pos*32) := ram_out.rd.data;
                 ram_in.rd.en <= '1';
                 next_fifo_count := fifo_count - 1;
-                if current_load_pos /= 4 then
+                if current_load_pos /= WORDS-1 then
                     next_current_load_pos := current_load_pos + 1;
                 else
+                    next_current_load_pos := 0;
                     next_current_loaded := '1';
                 end if;
             end if;
             
             -- keep RAM read FIFO filled
-            if next_fifo_count <= RAM_FIFO_LENGTH - READ_BURST_LENGTH then
+            if next_fifo_count <= RAM_FIFO_LENGTH - READ_BURST_LENGTH_WORDS then
                 ram_in.cmd.en <= '1';
                 ram_in.cmd.instr <= READ_PRECHARGE_COMMAND;
                 ram_in.cmd.byte_addr <= std_logic_vector(to_unsigned(mem_pos, ram_in.cmd.byte_addr'length));
@@ -81,8 +87,12 @@ begin
         end if;
         
         if rising_edge(clock) then
-            -- XXX need others here
+            output_int := next_output_int;
+            current := next_current;
+            current_loaded := next_current_loaded;
+            current_load_pos := next_current_load_pos;
             fifo_count := next_fifo_count;
+            mem_pos := next_mem_pos;
         end if;
     end process;
 end architecture;
