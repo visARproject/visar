@@ -24,18 +24,44 @@ entity video_distorter is
 end entity;
 
 architecture arc of video_distorter is
+    signal h_cnt_1future : HCountType;
+    signal v_cnt_1future : VCountType;
+    
     signal h_cnt : HCountType;
     signal v_cnt : VCountType;
+    
+    signal map_decoder_reset, map_decoder_en: std_logic;
+    signal current_lookup : CameraTripleCoordinate;
     
     type InArray is array (7 downto 0, 7 downto 0) of bram_port_in;
     signal bram_porta_ins, bram_portb_ins : InArray;
     type OutArray is array (7 downto 0, 7 downto 0) of bram_port_out;
     signal bram_porta_outs, bram_portb_outs : OutArray;
 begin
+    u_counter2 : entity work.video_counter
+        generic map(
+            DELAY => -1)
+        port map (
+            sync => sync,
+            h_cnt => h_cnt_1future,
+            v_cnt => v_cnt_1future);
+    
     u_counter : entity work.video_counter port map (
         sync => sync,
         h_cnt => h_cnt,
         v_cnt => v_cnt);
+    
+    process (h_cnt, v_cnt) is
+    begin
+        map_decoder_reset <= '0';
+        map_decoder_en <= '0';
+        if v_cnt = V_DISPLAY_END then
+            map_decoder_reset <= '1';
+        end if;
+        if v_cnt_1future < V_DISPLAY_END and h_cnt_1future < H_DISPLAY_END then
+            map_decoder_en <= '1';
+        end if;
+    end process;
     
     U_MAP_DECODER : entity work.video_distorter_map_decoder
         generic map (
@@ -44,9 +70,10 @@ begin
             ram_in => ram3_in,
             ram_out => ram3_out,
             
-            clock => sync.pixel_clk,
-            reset => map_decoder_reset,
-            en    => map_decoder_en);
+            clock  => sync.pixel_clk,
+            reset  => map_decoder_reset,
+            en     => map_decoder_en,
+            output => current_lookup);
     
     GEN_BRAM1: for x in 0 to 7 generate
         GEN_BRAM2: for y in 0 to 7 generate
@@ -130,22 +157,21 @@ begin
     -- Actual distorter
     
     process (sync.pixel_clk, bram_portb_outs) is
-        variable centerx, centery : integer;
+        variable center : CameraCoordinate;
         variable dx, dy : integer range -4 to 3;
         variable pxx : integer range 0 to CAMERA_WIDTH-1;
         variable pxy : integer range 0 to CAMERA_HEIGHT-1;
         type SampleArray is array (7 downto 0, 7 downto 0) of integer range 0 to 511;
         variable samples : SampleArray;
     begin
-        centerx := 640;
-        centery := 480;
+        center := current_lookup.green;
         
         for memx in 0 to 7 loop
             for memy in 0 to 7 loop
-                dx := (memx - centerx + 4) mod 8 - 4; -- solving for dx in (centerx + dx) mod 8 = x with dx constrained to [-4, 3]
-                dy := (memy - centery + 4) mod 8 - 4;
-                pxx := centerx + dx;
-                pxy := centerx + dy;
+                dx := (memx - center.x + 4) mod 8 - 4; -- solving for dx in (center.x + dx) mod 8 = x with dx constrained to [-4, 3]
+                dy := (memy - center.y + 4) mod 8 - 4;
+                pxx := center.x + dx;
+                pxy := center.x + dy;
                 bram_portb_ins(memx, memy).addr(13 downto 3) <= std_logic_vector(to_unsigned(
                     pxx/8 + 160*((pxy/8)-(pxy/8)*171/2048*12) -- equivalent to pxx/8 + 160*(pxy/8 mod 12)
                 , bram_portb_ins(memx, memy).addr(13 downto 3)'length));
@@ -163,6 +189,8 @@ begin
                     bram_portb_outs(memx, memy).dop(0 downto 0)));
             end loop;
         end loop;
+        
+        -- samples is delayed 2 clocks relative to address calculation
         
         data_out.red   <= std_logic_vector(to_unsigned(samples(0, 0), data_out.red'length));
         data_out.green <= std_logic_vector(to_unsigned(samples(0, 1), data_out.green'length));

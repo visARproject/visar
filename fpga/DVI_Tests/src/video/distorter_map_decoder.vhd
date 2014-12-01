@@ -49,7 +49,7 @@ begin
             en => ram_streamer_en,
             output => ram_streamer_output);
     
-    process (clock, en, ram_streamer_output) is
+    process (clock, reset, en, ram_streamer_output) is
         variable first : CameraTripleCoordinate;
         variable last  : CameraTripleCoordinate;
         variable output_int, next_output_int : CameraTripleCoordinate;
