@@ -2,7 +2,8 @@ library ieee;
 use ieee.std_logic_1164.all;
 use ieee.numeric_std.all;
 
-use work.camera_pkg.all;
+use work.camera.all;
+use work.ram_port.all;
 
 entity video_distorter_map_decoder is
     generic (
@@ -27,7 +28,7 @@ architecture arc of video_distorter_map_decoder is
         y : integer range 0 to CAMERA_HEIGHT*N-1;
     end record;
     
-    type CameraTripleCoordinate is record
+    type CameraTripleInterpolationCoordinate is record
         red   : CameraInterpolationCoordinate;
         green : CameraInterpolationCoordinate;
         blue  : CameraInterpolationCoordinate;
@@ -56,7 +57,7 @@ begin
     begin
         ram_streamer_en <= '0';
         
-        output := output_int;
+        output <= output_int;
         
         -- XXX need others here
         next_pos := pos;
