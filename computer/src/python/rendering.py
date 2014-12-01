@@ -167,4 +167,7 @@ class Drawable:
   # set the render surfaces, no thread locking  
   # call this method with updated surfaces
   def set_draw_target(self, render):
-    self.draw_target = render.copy() # setting reference is atomic
+  if type(render) is list:
+    self.draw_target = []
+      for rend in render: self.draw_target.append(rend.copy())
+  else: self.draw_target = render.copy() # setting reference is atomic
