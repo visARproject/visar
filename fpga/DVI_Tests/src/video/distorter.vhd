@@ -11,6 +11,11 @@ use work.distorter_pkg.all;
 use work.camera.all;
 
 entity video_distorter is
+    generic (
+        LEFT_CAMERA_MEMORY_LOCATION : integer;
+        RIGHT_CAMERA_MEMORY_LOCATION : integer;
+        PREFETCHER_TABLE_MEMORY_LOCATION : integer;
+        MAP_MEMORY_LOCATION : integer);
     port (
         sync     : in  video_sync;
         data_out : out video_data;
@@ -70,14 +75,19 @@ begin
         end generate;
     end generate;
     
-    U_PREFETCHER : entity work.video_distorter_prefetcher port map (
-        sync => sync,
-        bram_ins => bram_porta_ins,
-        bram_outs => bram_porta_outs,
-        ram1_in => ram1_in,
-        ram1_out => ram1_out,
-        ram2_in => ram2_in,
-        ram2_out => ram2_out);
+    U_PREFETCHER : entity work.video_distorter_prefetcher
+        generic map (
+            LEFT_CAMERA_MEMORY_LOCATION => LEFT_CAMERA_MEMORY_LOCATION,
+            RIGHT_CAMERA_MEMORY_LOCATION => RIGHT_CAMERA_MEMORY_LOCATION,
+            TABLE_MEMORY_LOCATION => PREFETCHER_TABLE_MEMORY_LOCATION)
+        port map (
+            sync => sync,
+            bram_ins => bram_porta_ins,
+            bram_outs => bram_porta_outs,
+            ram1_in => ram1_in,
+            ram1_out => ram1_out,
+            ram2_in => ram2_in,
+            ram2_out => ram2_out);
     
     
     -- Actual distorter

@@ -11,6 +11,10 @@ use work.distorter_pkg.all;
 use work.camera.all;
 
 entity video_distorter_prefetcher is
+    generic (
+        LEFT_CAMERA_MEMORY_LOCATION : integer;
+        RIGHT_CAMERA_MEMORY_LOCATION : integer;
+        TABLE_MEMORY_LOCATION : integer);
     port (
         sync : in  video_sync;
         
@@ -26,11 +30,31 @@ end entity;
 architecture arc of video_distorter_prefetcher is
     signal h_cnt : HCountType;
     signal v_cnt : VCountType;
+    
+    signal table_decoder_reset, table_decoder_en : std_logic;
+    signal command : PrefetcherCommand;
+    
+    constant BUF_SIZE : positive := 16;
+    type CoordinateBuf is array (0 to BUF_SIZE-1) of CameraCoordinate;
+    signal pos_buf : CoordinateBuf;
+    signal pos_buf_read_pos, pos_buf_write_pos : integer range 0 to BUF_SIZE-1;
 begin
     u_counter : entity work.video_counter port map (
         sync => sync,
         h_cnt => h_cnt,
         v_cnt => v_cnt);
+    
+    U_TABLE_DECODER : entity work.video_distorter_prefetcher_table_decoder
+        generic map (
+            MEMORY_LOCATION => TABLE_MEMORY_LOCATION)
+        port map (
+            ram_in => ram2_in,
+            ram_out => ram2_out,
+            
+            clock  => sync.pixel_clk,
+            reset  => table_decoder_reset,
+            en     => table_decoder_en,
+            output => command);
     
     process (sync, h_cnt, v_cnt) is
     begin

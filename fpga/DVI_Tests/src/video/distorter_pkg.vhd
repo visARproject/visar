@@ -1,6 +1,8 @@
 library ieee;
 use ieee.std_logic_1164.all;
 
+use work.camera.all;
+
 package distorter_pkg is
 
     type bram_port_in is
@@ -23,6 +25,12 @@ package distorter_pkg is
     
     type BRAMInArray is array (7 downto 0, 7 downto 0) of bram_port_in;
     type BRAMOutArray is array (7 downto 0, 7 downto 0) of bram_port_out;
+    
+    type PrefetcherCommand is
+    record
+        delay : integer range 0 to 2**9-1;
+        pos : CameraCoordinate;
+    end record;
     
 end distorter_pkg;
 
