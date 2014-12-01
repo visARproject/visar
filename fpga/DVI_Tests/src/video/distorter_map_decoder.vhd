@@ -20,7 +20,7 @@ end entity;
 architecture arc of video_distorter_map_decoder is
     constant N : integer := 2**5;
     constant SIZE : integer := N+1;
-    constant CHUNK_WORDS : integer :+ 5;
+    constant CHUNK_WORDS : integer := 5;
     
     type CameraInterpolationCoordinate is record
         x : integer range 0 to 2*CAMERA_WIDTH*N-1; -- stacked left-right because distorter buffer moves left-right
@@ -38,8 +38,8 @@ architecture arc of video_distorter_map_decoder is
 begin
     U_RAM_STREAMER : entity work.ram_streamer
         generic map (
-            MEMORY_LOCATION := memory_location,
-            WORDS := CHUNK_WORDS)
+            MEMORY_LOCATION => memory_location,
+            WORDS => CHUNK_WORDS)
         port map (
             ram_in => ram_in,
             ram_out => ram_out,
@@ -48,15 +48,19 @@ begin
             en => ram_streamer_en,
             output => ram_streamer_output);
     
-    process (clock, en) is
+    process (clock, en, ram_streamer_output) is
         variable first : CameraTripleCoordinate;
         variable last  : CameraTripleCoordinate;
+        variable output_int, next_output_int : CameraTripleCoordinate;
         variable pos, next_pos : integer range 0 to SIZE-1;
     begin
         ram_streamer_en <= '0';
         
+        output := output_int;
+        
         -- XXX need others here
         next_pos := pos;
+        next_output_int := output_int;
         
         if reset = '1' then
             next_pos := SIZE-1;
@@ -79,7 +83,7 @@ begin
                     last .blue .x := to_integer(unsigned(ram_streamer_output(127-1 downto 115)));
                     last .blue .y := to_integer(unsigned(ram_streamer_output(138-1 downto 127)));
                     
-                    output <= first;
+                    next_output_int := first;
                     
                     ram_streamer_en <= '1';
                 end if;
@@ -88,6 +92,7 @@ begin
         
         if rising_edge(clock) then
             -- XXX need others here
+            output_int := next_output_int;
             pos := next_pos;
         end if;
     end process;

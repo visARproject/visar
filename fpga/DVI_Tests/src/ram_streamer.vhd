@@ -14,15 +14,14 @@ entity ram_streamer is
         
         clock  : in  std_logic;
         reset  : in  std_logic; -- must be asserted for "a while"
-        en     : in  std_logic; -- acts like a normal FIFO - en is needed for first read; must not be asserted for "a while" after reset or an earlier en
+        en     : in  std_logic; -- like a first-word-fallthrough FIFO; must not be asserted for "a while" after reset or an earlier en
         output : out std_logic_vector(32*WORDS-1 downto 0));
 end entity;
 
 architecture arc of ram_streamer is
     constant READ_BURST_LENGTH_WORDS : integer := 32;
 begin
-    process (ram_out, clock, en) is
-        variable output_int, next_output_int : std_logic_vector(32*WORDS-1 downto 0);
+    process (ram_out, clock, reset, en) is
         variable current, next_current : std_logic_vector(32*WORDS-1 downto 0);
         variable current_loaded, next_current_loaded : std_logic;
         variable current_load_pos, next_current_load_pos : integer range 0 to WORDS-1;
@@ -38,10 +37,9 @@ begin
         ram_in.rd.clk <= clock;
         ram_in.rd.en <= '0';
         
-        output <= output_int;
+        output <= current;
         
         
-        next_output_int := output_int;
         next_current := current;
         next_current_loaded := current_loaded;
         next_current_load_pos := current_load_pos;
@@ -57,7 +55,6 @@ begin
             ram_in.rd.en <= '1'; -- empty read FIFO
         else
             if en = '1' then
-                next_output_int := current;
                 next_current_loaded := '0';
             end if;
             
@@ -87,7 +84,6 @@ begin
         end if;
         
         if rising_edge(clock) then
-            output_int := next_output_int;
             current := next_current;
             current_loaded := next_current_loaded;
             current_load_pos := next_current_load_pos;
