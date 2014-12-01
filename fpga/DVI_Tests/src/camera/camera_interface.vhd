@@ -33,4 +33,10 @@ package camera is
         y : integer range 0 to CAMERA_HEIGHT-1;
     end record;
     
+    type CameraTripleCoordinate is record
+        red   : CameraCoordinate;
+        green : CameraCoordinate;
+        blue  : CameraCoordinate;
+    end record;
+    
 end package;
