@@ -33,27 +33,17 @@ class Renderer:
     self.depth_factor = (FOCAL_LENGTH * EYE_DISTANCE) / (2.0 * np.tan(FOV_RADIANS/2.0)) * self.eye_size[0]
 
   # method contains a loop running at 30hz
-  def do_loop(self):
+  def do_loop(self, kill_flag):
     pygame.display.set_caption('visAR')
     done = False
-    while not done: # main game loop
-      # check exit conditions
-      if pygame.key.get_pressed()[K_ESCAPE]: done = True
-      for event in pygame.event.get():
-        if event.type == QUIT: done = True
-      if(done): 
-        pygame.quit()
-        break
-      
-      # call controller update
-      if(self.controller is not None): self.controller.do_update()
-
+    while not kill_flag.is_set(): # main game loop      
       # create new surfaces (one per eye)
       left_eye = self.eye_surface.copy()
       right_eye = self.eye_surface.copy()
       
-      # get and combine each modules's drawn output      
-      renders = map(self.draw_map,self.draws) # call the draws
+      # get and combine each modules's drawn output
+      draw_map = lambda x: x.get_draw_target() # get the surface
+      renders = map(draw_map, self.draws) # call the draws
       
       # draw 3d surfaces first
       for module in renders:
@@ -89,25 +79,20 @@ class Renderer:
       # JAKE: DO OCULUS DISTORTION HERE
       
       # retrieve the data from the mats
-      left_eye  = pygame.image.frombuffer(left_mat.tostring(), cv.GetSize(left_mat),"RGB")
-      right_eye  = pygame.image.frombuffer(right_mat.tostring(), cv.GetSize(right_mat),"RGB")  
+      left_eye = pygame.image.frombuffer(left_mat.tostring(), cv.GetSize(left_mat),"RGB")
+      right_eye = pygame.image.frombuffer(right_mat.tostring(), cv.GetSize(right_mat),"RGB")  
       
       # resize images to output dimensions
       left_eye = pygame.transform.scale(left_eye, self.eye_size)
       right_eye = pygame.transform.scale(right_eye, self.eye_size)          
 
-      # clear the buffer, then combine the eyes
+      # clear the display buffer, then combine the eyes
       self.display_surface.fill((0,0,0))
       self.display_surface.blit(left_eye,(0,0))
       self.display_surface.blit(right_eye,(self.eye_size[0],0))
 
       pygame.display.update() # update the display
       self.clock.tick(FPS) # wait for next frame
-
-  # function wrapper for mapping onto drawables
-  def draw_map(self, drawable):
-    img = drawable.draw(self.eye_size) # call the module's draw
-    return img
            
   # add a drawable object to the list     
   def add_module(self, module):
@@ -133,6 +118,11 @@ class Render_Surface:
     # bound the minimum depth, don't let things inside hud
     if(depth < HUD_DEPTH): self.depth = HUD_DEPTH
       
+  def copy(self): # deep-copy the render surface
+    new_render = Render_Surface(self.surface.copy(), self.position, self.depth)
+    new_render.is_3d = self.is_3d # 3d-ness must be set
+    return new_render # return the copy
+      
   # return the surface for both eyes (debating resizing here vs. in method)
   def draw_eye_surfaces(self, left_eye, right_eye, depth_factor):
     shift_amt = int(depth_factor / (self.depth*self.depth) / 2.0) # get the shift amount
@@ -140,7 +130,7 @@ class Render_Surface:
     right_eye.blit(self.surface, (self.position[0]-shift_amt,self.position[1])) # shift left
     return left_eye, right_eye
     
-  # convert this into an opengl texture (not used yet, have to rewrite huge portions of code first)
+  # convert this into an opengl texture (not used, have to rewrite huge portions of code)
   def make_opengl_texture(self):
     # convert to string buffer
     textureData = pygame.image.tostring(self.surface, "RGB", 1)
@@ -166,13 +156,14 @@ class Render_Surface:
 
 # Drawable class is used by renderer to get surfaces each frame
 class Drawable:
-  # def __init__(self): # currently unused, might add things later
+  def __init__(self): # setup the lock object and draw_target surface
+    self.draw_target = None
 
-  # draw method must be overloaded for each drawable
-  #   should return either a Render_Surface or a list of them
-  def draw(self, screen_size):
-    return None
-
-
-
-
+  # return the render surfaces, no thread locking
+  def get_draw_target(self): 
+    return self.draw_target
+            
+  # set the render surfaces, no thread locking  
+  # call this method with updated surfaces
+  def set_draw_target(self, render):
+    self.draw_target = render.copy() # setting reference is atomic

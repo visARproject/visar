@@ -1,7 +1,4 @@
-# communication module (server), client specifies format, get/send audio
-
-import pygame
-from pygame.locals import *
+# communication module (client/server), get/send audio
 import SocketServer
 import socket
 import pyaudio
@@ -73,56 +70,60 @@ def send_sound(stream, sock, bytes, kill_flag):
   kill_flag.set() # client disconnected, set flag
 
    
-def start_server():
-  server = SocketServer.TCPServer(('',PORT), audio_server)
-  server.serve_forever()
-  
-def start_client():
-  # setup the connection
-  hostname = raw_input("Enter server address: ")
-  sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM) # get a socket
-  sock.connect((hostname,PORT)) # connect to host
-  
-  # configure the settings
-  sock.send('B') # biderictional communication
-  rate = SAMPLE_RATE # store the sample rate
-  sock.send(chr(rate >> 8)) # send 1st byte of sample rate
-  sock.send(chr(rate & 0xFF)) # send 2nd byte of sample rate
-  sock.send(chr(1)) # send the number of channels (1=mono)
-  sock.send(chr(1)) # send the samle width (16-bit is 1)
+class Audio_Manager:
+  def start_server():
+    server = SocketServer.TCPServer(('',PORT), audio_server)
+    server.serve_forever()
+    
+  def start_client():
+    # setup the connection
+    hostname = raw_input("Enter server address: ")
+    sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM) # get a socket
+    sock.connect((hostname,PORT)) # connect to host
+    
+    # configure the settings
+    sock.send('B') # biderictional communication
+    rate = SAMPLE_RATE # store the sample rate
+    sock.send(chr(rate >> 8)) # send 1st byte of sample rate
+    sock.send(chr(rate & 0xFF)) # send 2nd byte of sample rate
+    sock.send(chr(1)) # send the number of channels (1=mono)
+    sock.send(chr(1)) # send the samle width (16-bit is 1)
 
-  # start sending data
-  # setup the playback stream/thread
-  p = pyaudio.PyAudio()
-  speaker_stream = p.open(format = pyaudio.paInt16,
-            channels = 1,
-            rate = SAMPLE_RATE,
-            output = True)          
-  bytes = CHUNK * 1 * 1 # num frames * channels * width
-  kill_flag = threading.Event()
-  in_thread = threading.Thread(target=get_sound, args=(speaker_stream,sock,bytes,kill_flag))
-  in_thread.start()
+    # start sending data
+    # setup the playback stream/thread
+    p = pyaudio.PyAudio()
+    speaker_stream = p.open(format = pyaudio.paInt16,
+              channels = 1,
+              rate = SAMPLE_RATE,
+              output = True)          
+    bytes = CHUNK * 1 * 1 # num frames * channels * width
+    kill_flag = threading.Event()
+    in_thread = threading.Thread(target=get_sound, args=(speaker_stream,sock,bytes,kill_flag))
+    in_thread.start()
+      
+    # setup mic stream/thread
+    mic_stream = p.open(format = pyaudio.paInt16,
+                       channels = 1,
+                       rate = SAMPLE_RATE,
+                       input = True)
+    out_thread = threading.Thread(target=send_sound, args=(mic_stream,sock,bytes,kill_flag))
+    out_thread.start()
+      
+    while not kill_flag.is_set():
+      time.sleep(0.1)
+      
+    kill_flag.set() # signal threads to die
+    sock.close() # close the socket
+    mic_stream.close()  # close the mic stream
+    speaker_stream.close() # close the speaker stream
+    p.terminate() # kill pyaudio
     
-  # setup mic stream/thread
-  mic_stream = p.open(format = pyaudio.paInt16,
-                     channels = 1,
-                     rate = SAMPLE_RATE,
-                     input = True)
-  out_thread = threading.Thread(target=send_sound, args=(mic_stream,sock,bytes,kill_flag))
-  out_thread.start()
     
-  while not kill_flag.is_set():
-    time.sleep(0.1)
     
-  kill_flag.set() # signal threads to die
-  sock.close() # close the socket
-  mic_stream.close()  # close the mic stream
-  speaker_stream.close() # close the speaker stream
-  p.terminate() # kill pyaudio
-  
 if __name__ == '__main__':
   server = raw_input("Start as Server or Client (S/C):") == 'S'
+  manager = Audio_Manager(server)
   if(server): start_server()
   else: start_client()
-  
+    
   

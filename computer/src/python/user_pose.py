@@ -27,7 +27,7 @@ class FPS_Pose:
     
     # create movement vector (to be rotated later)
     temp_position = np.array([0,0,0,0],dtype=float)
-    keys = pygame.key.get_pressed() # get all pressed keys
+    keys = book.keys # get all pressed keys
     if(keys[K_LEFT]):  temp_position[0] += FPS_Pose.LIN_VELOCITY
     if(keys[K_RIGHT]): temp_position[0] -= FPS_Pose.LIN_VELOCITY
     if(keys[K_UP]):    temp_position[2] += FPS_Pose.LIN_VELOCITY
