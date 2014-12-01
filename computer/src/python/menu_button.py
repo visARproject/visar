@@ -6,6 +6,7 @@ import rendering
 
 class Menu(rendering.Drawable):
   def __init__(self):
+    rendering.Drawable.__init__(self)
     
     #Temporary list of buttons
     #List of tuples (Button:button, String:parent_name)
@@ -57,6 +58,8 @@ class Menu(rendering.Drawable):
     #Current selection of keyboard keys
     keys = book.keys
 
+    surface_size = book.eye_size
+
     #Go if the current set of keys and the previous set of keys are different
     #i.e. go if pressed (once)
     if (keys != self.lastKeys):
@@ -101,10 +104,14 @@ class Menu(rendering.Drawable):
 
     self.lastKeys = keys
 
+    self.set_draw_target(self.draw(surface_size))
+
   def draw(self, surface_size):
     surface = pygame.Surface(surface_size)
 
     if(self.see):
+      listOfRender = []
+
       button_width = surface_size[0] * .05
       button_height = surface_size[1] * .05
 
@@ -136,8 +143,9 @@ class Menu(rendering.Drawable):
         surface.blit(self.current[x].getSurface(button_width, button_height), (align, y))
         surface.blit(self.current[x].getText(text_width, text_height),
          (align + text_left_margin, y + text_top_margin))
+        listOfRender.append(rendering.Render_Surface(surface))
 
-    return rendering.Render_Surface(surface)
+    return listOfRender
 
   def newActive(self, button):
     self.active.setInactive()

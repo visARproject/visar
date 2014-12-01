@@ -33,6 +33,7 @@ def visar():
   # add pose source to update stack
   visar_controller.add_update(pose_source.update)
   visar_controller.add_update(menu.update)
+  visar_controller.add_update(arrows_.update)
   
   # start the controller (new thread)
   visar_controller.do_loop()
