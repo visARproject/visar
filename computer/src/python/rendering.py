@@ -169,5 +169,5 @@ class Drawable:
   def set_draw_target(self, render):
     if type(render) is list:
       self.draw_target = []
-        for rend in render: self.draw_target.append(rend.copy())
+      for rend in render: self.draw_target.append(rend.copy())
     else: self.draw_target = render.copy() # setting reference is atomic
