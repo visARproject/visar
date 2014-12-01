@@ -24,6 +24,10 @@ entity video_distorter is
 end entity;
 
 architecture arc of video_distorter is
+    signal bram_porta_ins, bram_portb_ins : BRAMInArray;
+    signal bram_porta_outs, bram_portb_outs : BRAMOutArray;
+    
+    
     signal h_cnt_1future : HCountType;
     signal v_cnt_1future : VCountType;
     
@@ -32,12 +36,52 @@ architecture arc of video_distorter is
     
     signal map_decoder_reset, map_decoder_en: std_logic;
     signal current_lookup : CameraTripleCoordinate;
-    
-    type InArray is array (7 downto 0, 7 downto 0) of bram_port_in;
-    signal bram_porta_ins, bram_portb_ins : InArray;
-    type OutArray is array (7 downto 0, 7 downto 0) of bram_port_out;
-    signal bram_porta_outs, bram_portb_outs : OutArray;
 begin
+    GEN_BRAM1: for x in 0 to 7 generate
+        GEN_BRAM2: for y in 0 to 7 generate
+            BRAM : RAMB16BWER
+                generic map (
+                    DATA_WIDTH_A => 9,
+                    DATA_WIDTH_B => 9,
+                    DOA_REG      => 1,
+                    DOB_REG      => 1)
+                port map (
+                    ADDRA  => bram_porta_ins(x, y).addr,
+                    ADDRB  => bram_portb_ins(x, y).addr,
+                    DIA    => bram_porta_ins(x, y).di,
+                    DIB    => bram_portb_ins(x, y).di,
+                    DIPA   => bram_porta_ins(x, y).dip,
+                    DIPB   => bram_portb_ins(x, y).dip,
+                    WEA    => bram_porta_ins(x, y).we,
+                    WEB    => bram_portb_ins(x, y).we,
+                    CLKA   => bram_porta_ins(x, y).clk,
+                    CLKB   => bram_portb_ins(x, y).clk,
+                    ENA    => bram_porta_ins(x, y).en,
+                    ENB    => bram_portb_ins(x, y).en,
+                    REGCEA => bram_porta_ins(x, y).regce,
+                    REGCEB => bram_portb_ins(x, y).regce,
+                    RSTA   => bram_porta_ins(x, y).rst,
+                    RSTB   => bram_portb_ins(x, y).rst,
+
+                    DOA  => bram_porta_outs(x, y).do,
+                    DOB  => bram_portb_outs(x, y).do,
+                    DOPA => bram_porta_outs(x, y).dop,
+                    DOPB => bram_portb_outs(x, y).dop);
+        end generate;
+    end generate;
+    
+    U_PREFETCHER : entity work.video_distorter_prefetcher port map (
+        sync => sync,
+        bram_ins => bram_porta_ins,
+        bram_outs => bram_porta_outs,
+        ram1_in => ram1_in,
+        ram1_out => ram1_out,
+        ram2_in => ram2_in,
+        ram2_out => ram2_out);
+    
+    
+    -- Actual distorter
+    
     u_counter2 : entity work.video_counter
         generic map(
             DELAY => -1)
@@ -75,86 +119,6 @@ begin
             en     => map_decoder_en,
             output => current_lookup);
     
-    GEN_BRAM1: for x in 0 to 7 generate
-        GEN_BRAM2: for y in 0 to 7 generate
-            BRAM : RAMB16BWER
-                generic map (
-                    DATA_WIDTH_A => 9,
-                    DATA_WIDTH_B => 9,
-                    DOA_REG      => 1,
-                    DOB_REG      => 1)
-                port map (
-                    ADDRA  => bram_porta_ins(x, y).addr,
-                    ADDRB  => bram_portb_ins(x, y).addr,
-                    DIA    => bram_porta_ins(x, y).di,
-                    DIB    => bram_portb_ins(x, y).di,
-                    DIPA   => bram_porta_ins(x, y).dip,
-                    DIPB   => bram_portb_ins(x, y).dip,
-                    WEA    => bram_porta_ins(x, y).we,
-                    WEB    => bram_portb_ins(x, y).we,
-                    CLKA   => bram_porta_ins(x, y).clk,
-                    CLKB   => bram_portb_ins(x, y).clk,
-                    ENA    => bram_porta_ins(x, y).en,
-                    ENB    => bram_portb_ins(x, y).en,
-                    REGCEA => bram_porta_ins(x, y).regce,
-                    REGCEB => bram_portb_ins(x, y).regce,
-                    RSTA   => bram_porta_ins(x, y).rst,
-                    RSTB   => bram_portb_ins(x, y).rst,
-
-                    DOA  => bram_porta_outs(x, y).do,
-                    DOB  => bram_portb_outs(x, y).do,
-                    DOPA => bram_porta_outs(x, y).dop,
-                    DOPB => bram_portb_outs(x, y).dop);
-        end generate;
-    end generate;
-    
-    -- Prefetcher
-    
-    process (sync, h_cnt, v_cnt) is
-    begin
-        for x in 0 to 7 loop
-            for y in 0 to 7 loop
-                bram_porta_ins(x, y).addr <= (others => '-');
-                bram_porta_ins(x, y).di <= (others => '-');
-                bram_porta_ins(x, y).dip <= (others => '-');
-                bram_porta_ins(x, y).we <= (others => '-');
-                bram_porta_ins(x, y).clk <= sync.pixel_clk;
-                bram_porta_ins(x, y).en <= '0';
-                bram_porta_ins(x, y).regce <= '0';
-                bram_porta_ins(x, y).rst <= '0';
-            end loop;
-        end loop;
-        
-        ram1_in.cmd.clk <= sync.pixel_clk;
-        
-        ram1_in.cmd.en <= '0';
-        ram1_in.cmd.instr <= (others => '-');
-        ram1_in.cmd.byte_addr <= (others => '-');
-        ram1_in.cmd.bl <= (others => '-');
-        
-        if h_cnt mod 32 = 0 and h_cnt < H_DISPLAY_END and v_cnt < V_DISPLAY_END then
-            ram1_in.cmd.en <= '1';
-            ram1_in.cmd.instr <= READ_PRECHARGE_COMMAND;
-            ram1_in.cmd.byte_addr <= std_logic_vector(to_unsigned(
-                (v_cnt * 2048 + h_cnt + 32) * 4
-            , ram1_in.cmd.byte_addr'length));
-            ram1_in.cmd.bl <= std_logic_vector(to_unsigned(32 - 1, ram1_in.cmd.bl'length));
-        end if;
-    end process;
-    
-    process (sync, ram1_out, h_cnt, v_cnt) is
-    begin
-        --ram1_out.rd.data( 7 downto  0);
-        
-        ram1_in.rd.clk <= sync.pixel_clk;
-        
-        ram1_in.rd.en <= '0';
-        if h_cnt >= 32 and v_cnt < V_DISPLAY_END + 1 then -- (try to) read extra to make sure FIFO is emptied
-            ram1_in.rd.en <= '1';
-        end if;
-    end process;
-    
-    -- Actual distorter
     
     process (sync.pixel_clk, bram_portb_outs) is
         variable center : CameraCoordinate;

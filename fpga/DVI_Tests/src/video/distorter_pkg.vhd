@@ -21,6 +21,9 @@ package distorter_pkg is
         dop : std_logic_vector(3 downto 0);
     end record;
     
+    type BRAMInArray is array (7 downto 0, 7 downto 0) of bram_port_in;
+    type BRAMOutArray is array (7 downto 0, 7 downto 0) of bram_port_out;
+    
 end distorter_pkg;
 
 package body distorter_pkg is
