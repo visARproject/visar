@@ -5,6 +5,8 @@ package ram_port is
     constant MASK_SIZE           : integer := 4;
     constant DATA_PORT_SIZE      : integer := 32;
     
+    constant RAM_FIFO_LENGTH : integer := 64;
+    
     subtype Command is std_logic_vector(2 downto 0);
     constant WRITE_COMMAND           : Command := "000";
     constant READ_COMMAND            : Command := "001";
