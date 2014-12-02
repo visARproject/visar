@@ -9,6 +9,7 @@ import audio
 import sys
 import arrows
 import pygame
+import pyaudio
 
 def visar():
   debug_mode = False;
@@ -48,7 +49,8 @@ def visar():
   renderer.do_loop(visar_controller.kill_flag)
   
   # cleanup
-  pygame.quit()
+  audio_controller.cleanup()
+  pygame.quit() # shutdown pygame
   
 # make file executable
 if __name__ == '__main__':

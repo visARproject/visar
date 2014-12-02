@@ -45,7 +45,7 @@ class Controller:
 
 # Controller book stores state information, add things as nessecarry
 class Controller_Book:
-  def __init__(self, pose_source, name=''):
+  def __init__(self, pose_source, name='anonymous'):
     self.pose_source = pose_source # position information
     self.keys = pygame.key.get_pressed()
     self.last_keys = None
@@ -74,6 +74,7 @@ class Controller_Book:
     # audio connection (uses t, connects to predefined ip)
     if self.keys[K_t] and not self.last_keys[K_t]: # watch for keypress
       if not self.audio_manager.connection.connected: # connect voicechat
+        #self.audio_manager.connect('192.168.1.16') # connect to val
         self.audio_manager.connect('127.0.0.1') # connect to localhost
       else: # disconnect voicechat
         self.audio_manager.disconnect()
@@ -81,3 +82,4 @@ class Controller_Book:
     
   def get_pose(self):
     return pose_source.get_pose()
+    
