@@ -21,8 +21,8 @@ class Renderer:
     self.draws = [] # List of drawable objects to be rendered each frame
     self.controller = controller # controller object for the visAR program 
     # initialize a fullscreen display
-    #self.display_surface = pygame.display.set_mode((0,0),pygame.FULLSCREEN,0)
-    self.display_surface = pygame.display.set_mode((400,300)) #DEBUG
+    self.display_surface = pygame.display.set_mode((0,0),pygame.FULLSCREEN,0)
+    #self.display_surface = pygame.display.set_mode((400,300)) #DEBUG
     if(debug): self.eye_size = (self.display_surface.get_width(), self.display_surface.get_height())
     else: self.eye_size = (self.display_surface.get_width()/2, self.display_surface.get_height())
     if (controller): controller.book.eye_size = self.eye_size
