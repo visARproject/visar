@@ -147,7 +147,7 @@ begin
                 pxx := center.x + dx;
                 pxy := center.x + dy;
                 bram_portb_ins(memx, memy).addr(13 downto 3) <= std_logic_vector(to_unsigned(
-                    pxx/8 + 160*((pxy/8)-(pxy/8)*171/2048*12) -- equivalent to pxx/8 + 160*(pxy/8 mod 12)
+                    pxx/8 + 256*((pxy/8) mod 8)
                 , bram_portb_ins(memx, memy).addr(13 downto 3)'length));
                 bram_portb_ins(memx, memy).addr(2 downto 0) <= (others => '-');
                 bram_portb_ins(memx, memy).di <= (others => '-');

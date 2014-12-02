@@ -26,10 +26,12 @@ package distorter_pkg is
     type BRAMInArray is array (7 downto 0, 7 downto 0) of bram_port_in;
     type BRAMOutArray is array (7 downto 0, 7 downto 0) of bram_port_out;
     
+    subtype DistorterDelay is integer range 0 to 2**9-1;
+    
     type PrefetcherCommand is
     record
-        delay : integer range 0 to 2**9-1;
-        pos : CameraCoordinate;
+        delay : DistorterDelay;
+        pos   : CameraCoordinate;
     end record;
     
 end distorter_pkg;

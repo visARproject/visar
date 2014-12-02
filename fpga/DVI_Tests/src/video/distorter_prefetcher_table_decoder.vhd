@@ -15,7 +15,7 @@ entity video_distorter_prefetcher_table_decoder is
         
         clock  : in  std_logic;
         reset  : in  std_logic; -- must be asserted for "a while"
-        en     : in  std_logic; -- acts like a normal FIFO - en is needed for first read; must not be asserted for "a while" after reset
+        en     : in  std_logic; -- acts like a first-word-fallthrough FIFO; must not be asserted for "a while" after reset
         output : out PrefetcherCommand);
 end entity;
 
@@ -38,26 +38,11 @@ begin
             output => ram_streamer_output);
     
     process (clock, reset, en, ram_streamer_output) is
-        variable output_int, next_output_int : PrefetcherCommand;
     begin
-        output <= output_int;
+        ram_streamer_en <= en;
         
-        ram_streamer_en <= '0';
-        
-        next_output_int := output_int;
-        
-        if reset = '1' then
-        else
-            if en = '1' then
-                next_output_int.pos.x := to_integer(unsigned(ram_streamer_output(12-1 downto  0)));
-                next_output_int.pos.y := to_integer(unsigned(ram_streamer_output(23-1 downto 12)));
-                next_output_int.delay := to_integer(unsigned(ram_streamer_output(32-1 downto 23)));
-                ram_streamer_en <= '1';
-            end if;
-        end if;
-        
-        if rising_edge(clock) then
-            output_int := next_output_int;
-        end if;
+        output.pos.x <= to_integer(unsigned(ram_streamer_output(12-1 downto  0)));
+        output.pos.y <= to_integer(unsigned(ram_streamer_output(23-1 downto 12)));
+        output.delay <= to_integer(unsigned(ram_streamer_output(32-1 downto 23)));
     end process;
 end architecture;
