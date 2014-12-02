@@ -122,24 +122,24 @@ class Menu(rendering.Drawable):
       elif (keys[K_e]):
         self.see = True
 
-      self.set_draw_target(self.draw(self.surface_size))
+      self.set_draw_target(self.draw())
 
     self.lastKeys = keys
 
-  def draw(self, surface_size):
-    surface = pygame.Surface(surface_size)
+  def draw(self):
+    surface = pygame.Surface(self.surface_size)
 
     if(self.see):
       list_of_render = []
 
-      button_width = surface_size[0] * .05
-      button_height = surface_size[1] * .05
+      button_width = self.surface_size[0] * .05
+      button_height = self.surface_size[1] * .05
 
       text_height = button_height * .9
       text_width = button_width * .9
       
-      gap = surface_size[0] * .01
-      align = surface_size[1] * .05
+      gap = self.surface_size[0] * .01
+      align = self.surface_size[1] * .05
 
       text_left_margin = button_width * .1
       text_top_margin = button_height * .05
@@ -147,7 +147,7 @@ class Menu(rendering.Drawable):
       total_width = button_width
       total_height = (len(self.current) - 1) * (gap + button_height) + (2 * button_height)
 
-      top = int(surface_size[1] / 2) - int(total_height / 2)
+      top = int(self.surface_size[1] / 2) - int(total_height / 2)
 
       check = False
       
@@ -181,7 +181,7 @@ class Button:
     self.children = []
     pygame.font.init()
     self.check = True
-    self.font = pygame.font.Font(None, 100)
+    self.font = pygame.font.Font("./font.ttf", 100)
     self.active = False
 
   def set_child(self, child):
