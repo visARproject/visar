@@ -21,8 +21,8 @@ class Renderer:
     self.draws = [] # List of drawable objects to be rendered each frame
     self.controller = controller # controller object for the visAR program 
     # initialize a fullscreen display
-    self.display_surface = pygame.display.set_mode((0,0),pygame.FULLSCREEN,0)
-    #self.display_surface = pygame.display.set_mode((400,300)) #DEBUG
+    #self.display_surface = pygame.display.set_mode((0,0),pygame.FULLSCREEN,0)
+    self.display_surface = pygame.display.set_mode((400,300)) #DEBUG
     if(debug): self.eye_size = (self.display_surface.get_width(), self.display_surface.get_height())
     else: self.eye_size = (self.display_surface.get_width()/2, self.display_surface.get_height())
     if (controller): controller.book.eye_size = self.eye_size
@@ -38,7 +38,7 @@ class Renderer:
     pygame.display.set_caption('visAR')
     done = False
     while not kill_flag.is_set(): # main game loop      
-      #self.controller.update_loop(True) # run single update
+      self.controller.update_loop(True) # run single update
       print self.clock.get_fps()
     
       # create new surfaces (one per eye)
@@ -77,18 +77,18 @@ class Renderer:
         continue
 
       # Make the mat headers
-      left_mat = Render_Surface(left_eye).get_opencv_mat()
-      right_mat = Render_Surface(right_eye).get_opencv_mat()
+      #left_mat = Render_Surface(left_eye).get_opencv_mat()
+      #right_mat = Render_Surface(right_eye).get_opencv_mat()
                   
       # JAKE: DO OCULUS DISTORTION HERE
       
       # retrieve the data from the mats
-      left_eye = pygame.image.frombuffer(left_mat.tostring(), cv.GetSize(left_mat),"RGB")
-      right_eye = pygame.image.frombuffer(right_mat.tostring(), cv.GetSize(right_mat),"RGB")  
+      #left_eye = pygame.image.frombuffer(left_mat.tostring(), cv.GetSize(left_mat),"RGB")
+      #right_eye = pygame.image.frombuffer(right_mat.tostring(), cv.GetSize(right_mat),"RGB")  
       
       # resize images to output dimensions
-      left_eye = pygame.transform.scale(left_eye, self.eye_size)
-      right_eye = pygame.transform.scale(right_eye, self.eye_size)          
+      #left_eye = pygame.transform.scale(left_eye, self.eye_size)
+      #right_eye = pygame.transform.scale(right_eye, self.eye_size)          
 
       # clear the display buffer, then combine the eyes
       self.display_surface.fill((0,0,0))

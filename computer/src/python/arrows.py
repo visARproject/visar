@@ -87,7 +87,7 @@ class Arrows(rendering.Drawable):
       surface.blit(x.getSurface(surface_size), (int(pos_x), int(pos_y)))
       listOfRender.append(rendering.Render_Surface(surface))
 
-      x.resetDir()
+      #x.resetDir()
 
     return listOfRender
 
@@ -154,7 +154,7 @@ class Arrow:
     width *= self.width
     height *= self.height
 
-    self.surface = pygame.transform.scale(self.surface, 
+    '''self.surface = pygame.transform.scale(self.surface, 
       (int(width), int(height)))
 
     if (self.dir == 'l'):
@@ -171,5 +171,5 @@ class Arrow:
       self.surface = self.rot_center(self.surface, -225)
     elif (self.dir == 'br'):
       self.surface = self.rot_center(self.surface, -315)
-
+'''
     return self.surface
