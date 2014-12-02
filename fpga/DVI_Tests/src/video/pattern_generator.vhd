@@ -23,14 +23,8 @@ begin
 
     process (h_cnt, v_cnt) is
     begin
-        if ((h_cnt / 16) mod 2) = 0 and ((v_cnt / 16) mod 2) = 0 then
-            data_out.red   <= x"FF";
-            data_out.green <= x"FF";
-            data_out.blue  <= x"FF";
-        else
-            data_out.red   <= x"00";
-            data_out.green <= x"00";
-            data_out.blue  <= x"00";
-        end if;
+        data_out.red   <= x"00";
+        data_out.green <= x"00";
+        data_out.blue  <= x"00";
     end process;
 end Behavioral;

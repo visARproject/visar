@@ -113,14 +113,14 @@ begin
         if v_cnt = V_DISPLAY_END then
             map_decoder_reset <= '1';
         end if;
-        if v_cnt_1future < V_DISPLAY_END and h_cnt_1future < H_DISPLAY_END then
+        if v_cnt_1future < V_DISPLAY_END and h_cnt_1future < 1089 then
             map_decoder_en <= '1';
         end if;
     end process;
     
     U_MAP_DECODER : entity work.video_distorter_map_decoder
         generic map (
-            MEMORY_LOCATION => 64*1024*1024)
+            MEMORY_LOCATION => MAP_MEMORY_LOCATION)
         port map (
             ram_in => ram3_in,
             ram_out => ram3_out,
@@ -132,21 +132,22 @@ begin
     
     
     process (sync.pixel_clk, bram_portb_outs, current_lookup) is
-        variable center : CameraCoordinate;
+        variable center, center1, center2, center3 : CameraCoordinate;
         variable dx, dy : integer range -4 to 3;
-        variable pxx : integer range 0 to CAMERA_WIDTH-1;
-        variable pxy : integer range 0 to CAMERA_HEIGHT-1;
+        variable pxx : integer range 0 to CAMERA_HEIGHT-1;
+        variable pxy : integer range 0 to 2*CAMERA_WIDTH-1;
         type SampleArray is array (7 downto 0, 7 downto 0) of integer range 0 to 255;
         variable samples : SampleArray;
     begin
         center := current_lookup.green;
         
+        -- XXX x/y need to be flipped to match
         for memx in 0 to 7 loop
             for memy in 0 to 7 loop
-                dx := (memx - center.x + 4) mod 8 - 4; -- solving for dx in (center.x + dx) mod 8 = x with dx constrained to [-4, 3]
-                dy := (memy - center.y + 4) mod 8 - 4;
-                pxx := center.x + dx;
-                pxy := center.y + dy;
+                dx := (memx - center.y + 4) mod 8 - 4; -- solving for dx in (center.x + dx) mod 8 = x with dx constrained to [-4, 3]
+                dy := (memy - center.x + 4) mod 8 - 4;
+                pxx := center.y + dx;
+                pxy := center.x + dy;
                 bram_portb_ins(memx, memy).addr(13 downto 3) <= std_logic_vector(to_unsigned(
                     pxx/8 + 256*((pxy/8) mod 8)
                 , bram_portb_ins(memx, memy).addr(13 downto 3)'length));
@@ -165,12 +166,21 @@ begin
             end loop;
         end loop;
         
-        -- samples is delayed 2 clocks relative to address calculation
+        -- samples is delayed 3 clocks relative to address calculation
         
         if rising_edge(sync.pixel_clk) then
-            data_out.red   <= std_logic_vector(to_unsigned(samples(center.x mod 8, center.y mod 8), data_out.red'length));
-            data_out.green <= std_logic_vector(to_unsigned(samples(center.x mod 8, center.y mod 8), data_out.green'length));
-            data_out.blue  <= std_logic_vector(to_unsigned(samples(center.x mod 8, center.y mod 8), data_out.blue'length));
+            if center3.x = 0 or center3.y = 0 then
+                data_out.red <= x"FF";
+                data_out.green <= x"00";
+                data_out.blue <= x"00";
+            else
+                data_out.red   <= std_logic_vector(to_unsigned(samples(center3.y mod 8, center3.x mod 8), data_out.red'length));
+                data_out.green <= std_logic_vector(to_unsigned(samples(center3.y mod 8, center3.x mod 8), data_out.green'length));
+                data_out.blue  <= std_logic_vector(to_unsigned(samples(center3.y mod 8, center3.x mod 8), data_out.blue'length));
+            end if;
+            center3 := center2;
+            center2 := center1;
+            center1 := center;
         end if;
     end process;
 end architecture;
