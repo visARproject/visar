@@ -45,13 +45,16 @@ class Controller:
 
 # Controller book stores state information, add things as nessecarry
 class Controller_Book:
-  def __init__(self, pose_source):
+  def __init__(self, pose_source, name='anonymous'):
     self.pose_source = pose_source # position information
     self.keys = pygame.key.get_pressed()
+    self.last_keys = None
     self.eye_size = (0, 0)
     self.events = []
     self.count = 0
     self.exiting = False # tell threads to exit
+    self.name = name # set a name/id thing
+    self.audio_manager = None
 
     # menu botton information, stores changes
     # '', 'up', 'down', 'forward', 'back', or 'hide all'
@@ -59,6 +62,7 @@ class Controller_Book:
     
   # update the book's stored data (keys/events)
   def update(self):
+    self.last_keys = self.keys
     self.keys = pygame.key.get_pressed()
     self.events = pygame.event.get()
     self.arrow_locations = [(0, 0, "red"), (.5, 0, "blue"), (1, 0, "green"),
@@ -70,5 +74,15 @@ class Controller_Book:
     for event in self.events:
       if event.type == QUIT: self.exiting = True
     
+    # audio connection (uses t, connects to predefined ip)
+    if self.keys[K_t] and not self.last_keys[K_t]: # watch for keypress
+      if not self.audio_manager.connection.connected: # connect voicechat
+        self.audio_manager.connect('192.168.1.12') # connect to somebody
+        #self.audio_manager.connect('127.0.0.1') # connect to localhost
+      else: # disconnect voicechat
+        self.audio_manager.disconnect()
+    
+    
   def get_pose(self):
     return pose_source.get_pose()
+    

@@ -1,3 +1,4 @@
+# Use prebuilt deocde library to play test file over socket
 import socket
 import decoder
 
@@ -12,6 +13,10 @@ def send_sound():
   sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM) # get a socket
   sock.connect((hostname,9001)) # connect to remote host
   sock.send('S') # indicate that we wish to send data only
+  sock.send('\n') # send newline to indicate lack of name
+  while not '\n' == sock.recv(1):
+    a = 1
+
   rate = f_in.getframerate() # store the sample rate
   sock.send(chr(rate >> 8)) # send 1st byte of sample rate
   sock.send(chr(rate & 0xFF)) # send 2nd byte of sample rate
