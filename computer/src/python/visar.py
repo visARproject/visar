@@ -36,7 +36,7 @@ def visar():
   visar_controller.add_update(arrows_.update)
   
   # start the controller (new thread)
-  # visar_controller.do_loop() #temporarily disabled
+  visar_controller.do_loop() #temporarily disabled
   
   # run the renderer (same thread)
   renderer.do_loop(visar_controller.kill_flag)

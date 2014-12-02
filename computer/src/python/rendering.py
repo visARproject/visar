@@ -38,7 +38,8 @@ class Renderer:
     pygame.display.set_caption('visAR')
     done = False
     while not kill_flag.is_set(): # main game loop      
-      self.controller.update_loop(True) # run single update
+      #self.controller.update_loop(True) # run single update
+      print self.clock.get_fps()
     
       # create new surfaces (one per eye)
       left_eye = self.eye_surface.copy()
