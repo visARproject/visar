@@ -20,7 +20,7 @@ begin
     process (camera_output) is
         variable state, next_state : integer range 0 to 3;
         variable state2, next_state2 : integer range 0 to 31;
-        variable write_pos, next_write_pos : integer range BUFFER_ADDRESS to BUFFER_ADDRESS + CAMERA_WIDTH*CAMERA_HEIGHT-1;
+        variable write_pos, next_write_pos : integer range BUFFER_ADDRESS to BUFFER_ADDRESS + CAMERA_STEP*CAMERA_HEIGHT-1;
         variable data, next_data : std_logic_vector(31 downto 0);
     begin
         ram_in.cmd.clk <= camera_output.clock;

@@ -130,7 +130,7 @@ begin
             output => current_lookup);
     
     
-    process (sync.pixel_clk, bram_portb_outs) is
+    process (sync.pixel_clk, bram_portb_outs, current_lookup) is
         variable center : CameraCoordinate;
         variable dx, dy : integer range -4 to 3;
         variable pxx : integer range 0 to CAMERA_WIDTH-1;
@@ -166,8 +166,8 @@ begin
         
         -- samples is delayed 2 clocks relative to address calculation
         
-        data_out.red   <= std_logic_vector(to_unsigned(samples(center.x mod 8, center.y mod 8), data_out.red'length));
-        data_out.green <= std_logic_vector(to_unsigned(samples(center.x mod 8, center.y mod 8), data_out.green'length));
-        data_out.blue  <= std_logic_vector(to_unsigned(samples(center.x mod 8, center.y mod 8), data_out.blue'length));
+        data_out.red   <= std_logic_vector(to_unsigned(samples(0, 0), data_out.red'length));
+        data_out.green <= std_logic_vector(to_unsigned(samples(0, 0), data_out.green'length));
+        data_out.blue  <= std_logic_vector(to_unsigned(samples(0, 0), data_out.blue'length));
     end process;
 end architecture;
