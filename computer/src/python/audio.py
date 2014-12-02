@@ -11,7 +11,6 @@ PORT = 9001 # application port number (likely to change)
   
 # get sound gets audio from socket and plays over speakers   
 def get_sound(stream, sock, bytes, kill_flag):
-  stream.start_stream() # start stream for reading
   sock.settimeout(2) # set a timeout
   try: data = sock.recv(bytes) # get initial packet
   except: data = '' # skip the loop if it failed
@@ -22,11 +21,10 @@ def get_sound(stream, sock, bytes, kill_flag):
     if(kill_flag.is_set()): break  # thread is kill
   kill_flag.set() # client disconnected, set flag
   stream.stop_stream() # stop streaming
-  #stream.close() # cleanup
+  stream.close() # cleanup
     
 # send sound gets audio from mic and sends over socket   
 def send_sound(stream, sock, bytes, kill_flag):
-  stream.start_stream()
   data = stream.read(bytes) # get inital data
   while data != '': # go while we're getting data
     try: sock.send(data) # send the data over socket
@@ -35,7 +33,7 @@ def send_sound(stream, sock, bytes, kill_flag):
     if(kill_flag.is_set()): break  # thread is kill
   kill_flag.set() # client disconnected, set flag
   stream.stop_stream() #cleanup
-  #stream.close()
+  stream.close()
 
 # manage the connection status information
 class Connection_Status:
@@ -62,19 +60,7 @@ class Audio_Manager:
       self.shutdown = threading.Event()
     if(kill_flag): self.kill_flag = kill_flag
     else: self.kill_flag = threading.Event()
-
-    # setup the pyaudio info, use static values (aww)
     self.p = pyaudio.PyAudio()
-    self.speaker_stream = self.p.open(format = pyaudio.paInt16,
-                channels = 1,
-                rate = SAMPLE_RATE,
-                output = True)          
-    self.mic_stream = self.p.open(format = pyaudio.paInt16,
-                channels = 1,
-                rate = SAMPLE_RATE,
-                input = True)
-    self.bytes = CHUNK * 1 * 1 # chunk*channesl*width
-      
     # create and configure a server socket
     try:
       self.server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -106,20 +92,13 @@ class Audio_Manager:
   def disconnect(self):
     self.kill_flag.set() # signal thread to die
     self.connection.disconnect() # update status
-    
-  # cleanup pyaudido (streams will timeout)
-  def cleanup(self):
-    time.sleep(2) # let streams timeout
-    self.speaker_stream.close()
-    self.mic_stream.close()
-    self.p.terminate()
 
   def start_server(self):
     try: sock, addr = self.server.accept()
     except: return # retry loop on timeout (check for kills)
   
     # get data about communcation direction
-    if(sock.recv(1) == 'B'): output = False
+    if(sock.recv(1) == 'S'): output = False
     else: output = True
     
     # get the client's name, then send ours
@@ -134,14 +113,29 @@ class Audio_Manager:
     sock.send('\n') # send newline to indicate end
     
     print 'connected to ' + name
-        
+    
+    # get information about client audio format
+    rate = ord(sock.recv(1)) << 8 # get the samle rate, byte 1
+    rate = rate | ord(sock.recv(1)) # get byte 2 of sample rate
+    channels = ord(sock.recv(1)) # get the number of channels
+    width = ord(sock.recv(1)) # get the samle width
+    
     # setup the playback stream/thread
-    in_thread = threading.Thread(target=get_sound, args=(self.speaker_stream,sock,self.bytes,self.kill_flag))
+    speaker_stream = self.p.open(format = pyaudio.paInt16,
+              channels = channels,
+              rate = rate,
+              output = True)          
+    bytes = CHUNK * channels * width              
+    in_thread = threading.Thread(target=get_sound, args=(speaker_stream,sock,bytes,self.kill_flag))
     in_thread.start()
     
     # setup mic stream/thread
     if(output):
-      out_thread = threading.Thread(target=send_sound, args=(self.mic_stream,sock,self.bytes,self.kill_flag))
+      mic_stream = self.p.open(format = pyaudio.paInt16,
+                         channels = channels,
+                         rate = rate,
+                         input = True)
+      out_thread = threading.Thread(target=send_sound, args=(mic_stream,sock,bytes,self.kill_flag))
       out_thread.start()
     
     while not (self.kill_flag.is_set() or self.shutdown.is_set()):
@@ -161,12 +155,17 @@ class Audio_Manager:
     t = threading.Thread(target=self.start_server_loop)
     t.start()
     
+  # cleanup pyaudido (streams will timeout)
+  def cleanup(self):
+    time.sleep(2)
+    self.p.terminate()  
+    
   def start_client(self, hostname):
     # setup the connection
     sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM) # get a socket
     sock.connect((hostname,PORT)) # connect to host
     
-    sock.send('S') # indicate biderictional communication
+    sock.send('B') # indicate biderictional communication
     
     # get the client's name, then send ours
     name = ''
@@ -181,10 +180,29 @@ class Audio_Manager:
 
     print 'connected to ' + name
     
-    #in_thread = threading.Thread(target=get_sound, args=(self.speaker_stream,sock,self.bytes,self.kill_flag))
-    #in_thread.start()
+    # configure the settings
+    rate = SAMPLE_RATE # store the sample rate
+    sock.send(chr(rate >> 8)) # send 1st byte of sample rate
+    sock.send(chr(rate & 0xFF)) # send 2nd byte of sample rate
+    sock.send(chr(1)) # send the number of channels (1=mono)
+    sock.send(chr(1)) # send the samle width (16-bit is 1)
+
+    # start sending data
+    # setup the playback stream/thread
+    speaker_stream = self.p.open(format = pyaudio.paInt16,
+              channels = 1,
+              rate = SAMPLE_RATE,
+              output = True)          
+    bytes = CHUNK * 1 * 1 # num frames * channels * width
+    in_thread = threading.Thread(target=get_sound, args=(speaker_stream,sock,bytes,self.kill_flag))
+    in_thread.start()
       
-    out_thread = threading.Thread(target=send_sound, args=(self.mic_stream,sock,self.bytes,self.kill_flag))
+    # setup mic stream/thread
+    mic_stream = self.p.open(format = pyaudio.paInt16,
+                       channels = 1,
+                       rate = SAMPLE_RATE,
+                       input = True)
+    out_thread = threading.Thread(target=send_sound, args=(mic_stream,sock,bytes,self.kill_flag))
     out_thread.start()
       
     while not (self.kill_flag.is_set() or self.shutdown.is_set()):
