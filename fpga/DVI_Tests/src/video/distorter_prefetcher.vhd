@@ -81,6 +81,8 @@ begin
         ram1_in.cmd.byte_addr <= (others => '-');
         ram1_in.cmd.bl <= (others => '-');
         
+        table_decoder_en <= '0';
+        
         if reset = '1' then
             next_pos_buf_write_pos := 0;
             next_delay_counter := 2**9-1; -- initial delay to give time for first command to appear
@@ -108,6 +110,8 @@ begin
                     , ram1_in.cmd.byte_addr'length));
                 end if;
                 ram1_in.cmd.bl <= std_logic_vector(to_unsigned(BURST_SIZE_WORDS - 1, ram1_in.cmd.bl'length));
+                
+                table_decoder_en <= '1';
                 
                 if rising_edge(sync.pixel_clk) then
                     pos_buf(pos_buf_write_pos) <= table_decoder_command.pos;

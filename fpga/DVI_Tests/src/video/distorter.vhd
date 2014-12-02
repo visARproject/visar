@@ -105,7 +105,7 @@ begin
         h_cnt => h_cnt,
         v_cnt => v_cnt);
     
-    process (h_cnt, v_cnt) is
+    process (h_cnt_1future, v_cnt_1future) is
     begin
         map_decoder_reset <= '0';
         map_decoder_en <= '0';
@@ -166,8 +166,8 @@ begin
         
         -- samples is delayed 2 clocks relative to address calculation
         
-        data_out.red   <= std_logic_vector(to_unsigned(samples(0, 0), data_out.red'length));
-        data_out.green <= std_logic_vector(to_unsigned(samples(0, 1), data_out.green'length));
-        data_out.blue  <= std_logic_vector(to_unsigned(samples(1, 1), data_out.blue'length));
+        data_out.red   <= std_logic_vector(to_unsigned(samples(center.x mod 8, center.y mod 8), data_out.red'length));
+        data_out.green <= std_logic_vector(to_unsigned(samples(center.x mod 8, center.y mod 8), data_out.green'length));
+        data_out.blue  <= std_logic_vector(to_unsigned(samples(center.x mod 8, center.y mod 8), data_out.blue'length));
     end process;
 end architecture;
