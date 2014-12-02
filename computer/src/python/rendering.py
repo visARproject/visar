@@ -38,8 +38,8 @@ class Renderer:
     pygame.display.set_caption('visAR')
     done = False
     while not kill_flag.is_set(): # main game loop      
-      #self.controller.update_loop(True) # run single update
-      print self.clock.get_fps()
+      self.controller.update_loop(True) # run single update
+      #!!!print self.clock.get_fps()
     
       # create new surfaces (one per eye)
       left_eye = self.eye_surface.copy()
@@ -73,18 +73,18 @@ class Renderer:
       if(self.debug_mode):
         self.display_surface.blit(left_eye,(0,0))
         pygame.display.flip()
-        self.clock.tick(FPS)
+        #!!!self.clock.tick(FPS)
         continue
 
       # Make the mat headers
-      left_mat = Render_Surface(left_eye).get_opencv_mat()
-      right_mat = Render_Surface(right_eye).get_opencv_mat()
+      # left_mat = Render_Surface(left_eye).get_opencv_mat()
+      # right_mat = Render_Surface(right_eye).get_opencv_mat()
                   
       # JAKE: DO OCULUS DISTORTION HERE
       
       # retrieve the data from the mats
-      left_eye = pygame.image.frombuffer(left_mat.tostring(), cv.GetSize(left_mat),"RGB")
-      right_eye = pygame.image.frombuffer(right_mat.tostring(), cv.GetSize(right_mat),"RGB")  
+      # left_eye = pygame.image.frombuffer(left_mat.tostring(), cv.GetSize(left_mat),"RGB")
+      # right_eye = pygame.image.frombuffer(right_mat.tostring(), cv.GetSize(right_mat),"RGB")  
       
       # resize images to output dimensions
       left_eye = pygame.transform.scale(left_eye, self.eye_size)

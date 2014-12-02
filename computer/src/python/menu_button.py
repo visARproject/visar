@@ -10,40 +10,47 @@ class Menu(rendering.Drawable):
     
     #Temporary list of buttons
     #List of tuples (Button:button, String:parent_name)
-    listOfButtons = []
+    self.list_of_buttons = []
 
     #DO NOT REMOVE, use "" as parent for top tier
-    listOfButtons.append((Button(""), None)) 
+    self.list_of_buttons.append((Button(""), None)) 
 
     #Begin list of buttons here
-    listOfButtons.append((Button("Call"), ""))
-    listOfButtons.append((Button("Options"), ""))
-    listOfButtons.append((Button("Hide All"), ""))
-    listOfButtons.append((Button("Menu Button 1"), "Options"))
-    listOfButtons.append((Button("Menu Button 2"), "Options"))
-    listOfButtons.append((Button("Menu Button 3"), "Options"))
-    listOfButtons.append((Button("Menu Button 4"), "Options"))
-    listOfButtons.append((Button("Menu Button 1"), "Menu Button 1"))
-    listOfButtons.append((Button("Menu Button 2"), "Menu Button 1"))
+    self.list_of_buttons.append((Button("Call"), ""))
+    self.list_of_buttons.append((Button("Options"), ""))
+    self.list_of_buttons.append((Button("Hide All"), ""))
+    self.list_of_buttons.append((Button("Menu Button 1"), "Options"))
+    self.list_of_buttons.append((Button("Menu Button 2"), "Options"))
+    self.list_of_buttons.append((Button("Menu Button 3"), "Options"))
+    self.list_of_buttons.append((Button("Menu Button 4"), "Options"))
+    self.list_of_buttons.append((Button("Menu Button 1"), "Menu Button 1"))
+    self.list_of_buttons.append((Button("Menu Button 2"), "Menu Button 1"))
 
     #Assigns parents and children using information from list
-    for x in range(0, len(listOfButtons)):
-      if(listOfButtons[x][1] != None):
+    for x in range(0, len(self.list_of_buttons)):
+      if(self.list_of_buttons[x][1] != None):
         for y in range(0, x):
-          if(listOfButtons[y][0].getName() == listOfButtons[x][1]):
-            listOfButtons[y][0].setChild(listOfButtons[x][0])
-            listOfButtons[x][0].setParent(listOfButtons[y][0])
+          if(self.list_of_buttons[y][0].name == self.list_of_buttons[x][1]):
+            self.list_of_buttons[y][0].set_child(self.list_of_buttons[x][0])
+            self.list_of_buttons[x][0].parent = self.list_of_buttons[y][0]
             break
 
+    self.longest_word_length = 0
+
     #Assign current tier as children of ""
-    for x in listOfButtons:
-      if (x[0].getParent() == None):
-        self.current = x[0].getChildren()
-        break
+    for x in self.list_of_buttons:
+      if (x[0].parent == None):
+        self.current = x[0].children
+      if len(x[0].children) > 0:
+        if len(x[0].name) + 2 > self.longest_word_length:
+          self.longest_word_length = len(x[0].name) + 2
+      else:
+        if len(x[0].name) > self.longest_word_length:
+          self.longest_word_length = len(x[0].name)
 
     #Assign active button as first button in current list
     self.active = self.current[0]
-    self.active.setActive()
+    self.active.active = True
 
     #Used as a check for keyboard changes
     self.lastKeys = None
@@ -54,11 +61,24 @@ class Menu(rendering.Drawable):
     #Used for keeping track of active buttons while going through options
     self.listOfActives = []
 
+    self.check = True
+    self.surface_size = (0, 0)
+
   def update(self, book):
+    if self.check == True:
+      self.check = False
+      self.surface_size = book.eye_size
+      for x in self.list_of_buttons:
+        x[0].setup(self.surface_size, self.longest_word_length)
+
+    if self.surface_size != book.eye_size:
+      self.surface_size = book.eye_size
+      for x in self.list_of_buttons:
+        x[0].setup(self.surface_size, self.longest_word_length)
+        self.set_draw_target(self.draw(surface_size))
+
     #Current selection of keyboard keys
     keys = book.keys
-
-    surface_size = book.eye_size
 
     #Go if the current set of keys and the previous set of keys are different
     #i.e. go if pressed (once)
@@ -67,34 +87,34 @@ class Menu(rendering.Drawable):
       #'Select' active button
       if (keys[K_a]):
         #Go if not top tier
-        if (self.active.getParent().getParent() != None):
-          grandparent = self.active.getParent().getParent()
-          self.current = grandparent.getChildren()
-          self.newActive(self.listOfActives.pop())
+        if (self.active.parent.parent != None):
+          grandparent = self.active.parent.parent
+          self.current = grandparent.children
+          self.new_active(self.listOfActives.pop())
       #Go if 'd' is pressed
       #Go back a level
       elif (keys[K_d]):
         #Go if a child exists for the active button
-        if (len(self.active.getChildren()) > 0):
-          self.current = self.active.getChildren()
+        if (len(self.active.children) > 0):
+          self.current = self.active.children
           self.listOfActives.append(self.active)
-          self.newActive(self.current[0])
+          self.new_active(self.current[0])
       #Go if 'w' is pressed
       #Go up in the list
       elif (keys[K_w]):
         i = self.current.index(self.active)
         if i == 0:
-          self.newActive(self.current[len(self.current) - 1])
+          self.new_active(self.current[len(self.current) - 1])
         else:
-          self.newActive(self.current[i - 1])
+          self.new_active(self.current[i - 1])
       #Go if 's' is pressed
       #Go down in the list
       elif (keys[K_s]):
         i = self.current.index(self.active)
         if i == len(self.current) - 1:
-          self.newActive(self.current[0])
+          self.new_active(self.current[0])
         else:
-          self.newActive(self.current[i + 1])
+          self.new_active(self.current[i + 1])
       #Go if 'q' is pressed
       elif (keys[K_q]):
         self.see = False
@@ -102,21 +122,21 @@ class Menu(rendering.Drawable):
       elif (keys[K_e]):
         self.see = True
 
-    self.lastKeys = keys
+      self.set_draw_target(self.draw(self.surface_size))
 
-    self.set_draw_target(self.draw(surface_size))
+    self.lastKeys = keys
 
   def draw(self, surface_size):
     surface = pygame.Surface(surface_size)
 
     if(self.see):
-      listOfRender = []
+      list_of_render = []
 
       button_width = surface_size[0] * .05
       button_height = surface_size[1] * .05
 
       text_height = button_height * .9
-      text_width = button_width * .6
+      text_width = button_width * .9
       
       gap = surface_size[0] * .01
       align = surface_size[1] * .05
@@ -132,89 +152,85 @@ class Menu(rendering.Drawable):
       check = False
       
       for x in range(0, len(self.current)):
-        y = top + x*(gap + button_height)
+        y = top + (x * (gap + button_height))
 
-        if check:
+        if check == True:
           y += button_height
 
-        if self.current[x].isActive():
+        if self.current[x].active == True:
           check = True
 
-        surface.blit(self.current[x].getSurface(button_width, button_height), (align, y))
-        surface.blit(self.current[x].getText(text_width, text_height),
-         (align + text_left_margin, y + text_top_margin))
-        listOfRender.append(rendering.Render_Surface(surface))
+        surface.blit(self.current[x].get_surface(), (align, y))
+        surface.blit(self.current[x].get_text(), (align + text_left_margin, y + text_top_margin))
+        list_of_render.append(rendering.Render_Surface(surface))
 
-    return listOfRender
+    return list_of_render
 
-  def newActive(self, button):
-    self.active.setInactive()
+  def new_active(self, button):
+    self.active.active = False
     self.active = button
-    self.active.setActive()
+    self.active.active = True
 
 class Button:
   def __init__(self, name = ""):
     self.name = name
+    self.arrow_kids = ""
     self.width = 2
     self.height = 1
     self.parent = None
     self.children = []
     pygame.font.init()
-  
-  def setParent(self, parent):
-    self.parent = parent
+    self.check = True
+    self.font = pygame.font.Font(None, 100)
+    self.active = False
 
-  def getParent(self):
-    return self.parent
-
-  def setChild(self, child):
+  def set_child(self, child):
     self.children.append(child)
+    if self.check == True:
+      self.check = False
+      self.arrow_kids = " >"
 
-  def getChildren(self):
-    return self.children
+  def setup(self, surface_size, word_length):
+    button_width = surface_size[0] * .05
+    button_height = surface_size[1] * .05
 
-  def hasChildren(self):
-    if (len(self.children) > 0):
-      return True
-    return False
+    self.surface_inactive = pygame.Surface((int(button_width) * self.width \
+    , int(button_height) * self.height))
+    self.surface_active = pygame.Surface((int(button_width) * self.width * 2 \
+    , int(button_height) * self.height * 2))
+    self.surface_active.fill((0, 138, 254))
+    self.surface_inactive.fill((0, 35, 63))
 
-  def getName(self):
-    return self.name
+    text_height = button_height * .9
+    text_width = button_width * .9
 
-  def getText(self, width, height):
-    font = pygame.font.Font(None, 100)
-    if(self.hasChildren()):
-      self.text = font.render(self.name + " >", True, (1, 1, 1))
+    spaces = ""
+
+    if self.arrow_kids == "":
+      i = word_length - len(self.name)
+      while i > 0:
+        spaces += " "
+        i -= 1
     else:
-      self.text = font.render(self.name, True, (1, 1, 1))
-    self.text = pygame.transform.scale(self.text, (int(width) * self.width, int(height) * self.height))
-    return self.text
+      i = word_length - len(self.name) - 2
+      while i > 0:
+        spaces += " "
+        i -= 1
 
-  def getSurface(self, width, height):
-    surface = pygame.Surface((int(width) * self.width, int(height) * self.height))
-    if self.isActive():
-      surface.fill((0, 138, 254))
+    self.text = self.font.render(self.name + self.arrow_kids + spaces, True, (1, 1, 1))
+    self.text_inactive = pygame.transform.scale(self.text, (int(text_width) * self.width \
+    , int(text_height) * self.height))
+    self.text_active = pygame.transform.scale(self.text, (int(text_width) * self.width * 2 \
+    , int(text_height) * self.height * 2))
+  
+  def get_text(self):
+    if self.active == True:
+      return self.text_active
     else:
-      surface.fill((0, 35, 63))
-    return surface
+      return self.text_inactive
 
-  def getMoreBox(self, width, height):
-    moreBox = pygame.Surface((int(width) * self.width, int(height) * self.height))
-    moreBox.fill((1, 1, 1))
-    return moreBox
-
-  def setActive(self):
-    self.name = self.name.replace(".png", "_Selected.png")
-    self.width *= 2
-    self.height *= 2
-
-  def setInactive(self):
-    self.name = self.name.replace("_Selected.png", ".png")
-    self.width /= 2
-    self.height /= 2
-
-  def isActive(self):
-    if self.height > 1:
-      return True
+  def get_surface(self):
+    if self.active == True:
+      return self.surface_active
     else:
-      return False
+      return self.surface_inactive

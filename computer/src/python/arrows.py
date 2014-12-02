@@ -1,138 +1,44 @@
 import pygame
 from pygame.locals import *
 import rendering
+import math
 
 class Arrows(rendering.Drawable):
   def __init__(self):
     rendering.Drawable.__init__(self)
-    self.listOfArrows = []
 
-    locations = [(0, 0, "red"), (1, 0, "blue"), 
-      (1, 1, "yellow"), (0, 1, "green"), (.5, 0, "red"),
-      (1, .5, "blue"), (.5, 1, "yellow"), (0, .5, "green"),
-      (.5, .5, "red")]
+    arrows = []
+    list_of_red_arrows = self.get_arrows("Red")
+    list_of_green_arrows = self.get_arrows("Green")
+    list_of_blue_arrows = self.get_arrows("Blue")
+    list_of_yellow_arrows = self.get_arrows("Yellow")
 
-    locations = [(0, 0, "red"), (.5, 0, "blue"), (1, 0, "green"),
-      (1, .5, "red"), (1, 1, "blue"), (.5, 1, "green"),
-      (0, 1, "red"), (0, .5, "blue"), (.5, .5, "yellow")]
+    self.list_of_arrows = []
+    self.list_of_arrows.append(["Red", list_of_red_arrows])
+    self.list_of_arrows.append(["Green", list_of_green_arrows])
+    self.list_of_arrows.append(["Blue", list_of_blue_arrows])
+    self.list_of_arrows.append(["Yellow", list_of_yellow_arrows])
 
-    self.arrows = []
+    self.check = True
+    self.surface_size = (0, 0)
+    self.image_size = 0.05
 
-    for x in locations:
-      self.arrows.append(Arrow(x))
-
-  def update(self, book):
-    surface_size = book.eye_size
-
-    self.far_left = 0.05 * surface_size[0]
-    self.far_right = surface_size[0] - self.far_left
-    self.far_top = 0.05 * surface_size[1]
-    self.far_bottom = surface_size[1] - self.far_top
-
-    self.set_draw_target(self.draw(surface_size))
-
-  def draw(self, surface_size):
-    surface = pygame.Surface(surface_size)
-    listOfRender = []  
-    
-    for x in self.arrows:
-      size = x.getSize()
-      surface_width = surface_size[0]
-      surface_height = surface_size[1]
-
-      pos_x = float(surface_width * x.getLocation()[0])
-      pos_y = float(surface_height * x.getLocation()[1])
-
-      width = 0
-      height = 0
-
-      if surface_width < surface_height:
-        width = float(size[0] * surface_width / 2)
-        height = float(size[1] * surface_width)
-      elif surface_width > surface_height:
-        width = float(size[0] * surface_height / 2)
-        height = float(size[1] * surface_height)
-
-      pos_x -= width / 2
-      pos_y -= height
-
-      if pos_y <= self.far_top and pos_x <= self.far_left:
-        x.setDir('ul')
-        pos_y = self.far_top
-        pos_x = self.far_left
-      elif pos_y <= self.far_top and pos_x >= self.far_right:
-        x.setDir('ur')
-        pos_y = self.far_top
-        pos_x = self.far_right - width
-      elif pos_y >= self.far_bottom and pos_x <= self.far_left:
-        x.setDir('bl')
-        pos_y = self.far_bottom - height
-        pos_x = self.far_left
-      elif pos_y >= self.far_bottom and pos_x >= self.far_right:
-        x.setDir('br')
-        pos_y = self.far_bottom - height
-        pos_x = self.far_right - width
-      elif pos_y <= self.far_top:
-        x.setDir('u')
-        pos_y = self.far_top
-      elif pos_y >= self.far_bottom:
-        pos_y = self.far_bottom - height
-      elif pos_x <= self.far_left:
-        x.setDir('l')
-        pos_x = self.far_left
-      elif pos_x >= self.far_right:
-        x.setDir('r')
-        pos_x = self.far_right - width
-
-      surface.blit(x.getSurface(surface_size), (int(pos_x), int(pos_y)))
-      listOfRender.append(rendering.Render_Surface(surface))
-
-      x.resetDir()
-
-    return listOfRender
-
-class Arrow:
-  def __init__(self, information):
-    x = information[0]
-    y = information[1]
-    color = information[2].capitalize()
-
-    self.location = (x, y)
-
-    self.surface = pygame.image.load("images/" + color 
+  def get_arrows(self, color):
+    color = color.lower()
+    color = color.capitalize()
+    surface = pygame.image.load("images/" + color 
       + "_Arrow.png")
+    list_of_arrows = []
+    list_of_arrows.append(['b', surface])
+    list_of_arrows.append(['bl', self.rot_center(surface, -45)])
+    list_of_arrows.append(['l', self.rot_center(surface, -90)])
+    list_of_arrows.append(['ul', self.rot_center(surface, -135)])
+    list_of_arrows.append(['u', self.rot_center(surface, -180)])
+    list_of_arrows.append(['ur', self.rot_center(surface, -225)])
+    list_of_arrows.append(['r', self.rot_center(surface, -270)])
+    list_of_arrows.append(['br', self.rot_center(surface, -315)])
 
-    self.width = .05
-    self.height = .05
-
-    self.dir = 'd'
-
-  def getLocation(self):
-    return self.location
-
-  def getSize(self):
-    return (self.width, self.height)
-
-  def setDir(self, dir):
-    self.dir = dir
-
-  def resetDir(self):
-    if (self.dir == 'l'):
-      self.surface = self.rot_center(self.surface, 90)
-    elif (self.dir == 'u'):
-      self.surface = self.rot_center(self.surface, 180)
-    elif (self.dir == 'r'):
-      self.surface = self.rot_center(self.surface, 270)
-    elif (self.dir == 'bl'):
-      self.surface = self.rot_center(self.surface, 45)
-    elif (self.dir == 'ul'):
-      self.surface = self.rot_center(self.surface, 135)
-    elif (self.dir == 'ur'):
-      self.surface = self.rot_center(self.surface, 225)
-    elif (self.dir == 'br'):
-      self.surface = self.rot_center(self.surface, 315)
-
-    self.dir = 'd'
+    return list_of_arrows
 
   def rot_center(self, image, angle):
     orig_rect = image.get_rect()
@@ -142,34 +48,182 @@ class Arrow:
     rot_image = rot_image.subsurface(rot_rect).copy()
     return rot_image
 
-  def getSurface(self, surface_size):
+  def get_actual_image_size(self):
+    if self.surface_size[0] >= self.surface_size[1]:
+      return int(self.surface_size[1] * self.image_size)
+    else:
+      return int(self.surface_size[0] * self.image_size)
+
+  def set_size(self):
+    for x in self.list_of_arrows:
+      for y in x[1]:
+        size = self.get_actual_image_size()
+        y[1] = pygame.transform.scale(y[1], (size, size))
+
+  def update(self, book):
+    if self.check == True:
+      self.check = False
+
+      self.surface_size = book.eye_size
+
+      self.far_left = 0.05 * self.surface_size[0]
+      self.far_right = self.surface_size[0] - self.far_left
+      self.far_top = 0.05 * self.surface_size[1]
+      self.far_bottom = self.surface_size[1] - self.far_top
+
+      temp = book.arrow_locations
+
+      self.set_size()
+      self.arrows = []
+
+      for x in temp:
+        self.arrows.append(Arrow(x, self.list_of_arrows))
+
+      self.set_draw_target(self.draw())
+
+    else:
+      if self.surface_size != book.eye_size:
+        self.surface_size = book.eye_size
+
+        self.far_left = 0.05 * self.surface_size[0]
+        self.far_right = self.surface_size[0] - self.far_left
+        self.far_top = 0.05 * self.surface_size[1]
+        self.far_bottom = self.surface_size[1] - self.far_top
+
+        self.set_size()
+        self.set_draw_target(self.draw())
+      temp = book.arrow_locations
+
+      if len(temp) != len(self.arrows):
+        self.arrows = []
+        for x in temp:
+          self.arrows.append(Arrow(x, self.list_of_arrows))
+
+        self.set_draw_target(self.draw())
+      else:
+        a = True
+        for x in range(0, len(temp)):
+          location = self.arrows[x].location
+          if (location[0] != temp[x][0]) \
+          or (location[1] != temp[x][1]):
+            a = False
+            break
+        if a == False:
+          self.arrows = []
+          for x in temp:
+            self.arrows.append(Arrow(x, self.list_of_arrows))
+
+          self.set_draw_target(self.draw())
+
+  def draw(self):
+    surface = pygame.Surface(self.surface_size)
+    list_of_render = []  
+    
+    for x in self.arrows:
+      pos_x = float(self.surface_size[0] * x.location[0])
+      pos_y = float(self.surface_size[1] * x.location[1])
+      size = self.get_actual_image_size()
+      
+      pos_x -= size / 2
+      pos_y -= size
+
+      if pos_y <= self.far_top and pos_x <= self.far_left:
+        x.set_dir('ul')
+        pos_y = self.far_top
+        pos_x = self.far_left
+      elif pos_y <= self.far_top and pos_x >= self.far_right:
+        x.set_dir('ur')
+        pos_y = self.far_top
+        pos_x = self.far_right - size
+      elif pos_y >= self.far_bottom and pos_x <= self.far_left:
+        x.set_dir('bl')
+        pos_y = self.far_bottom - size
+        pos_x = self.far_left
+      elif pos_y >= self.far_bottom and pos_x >= self.far_right:
+        x.set_dir('br')
+        pos_y = self.far_bottom - size
+        pos_x = self.far_right - size
+      elif pos_y <= self.far_top:
+        x.set_dir('u')
+        pos_y = self.far_top
+      elif pos_y >= self.far_bottom:
+        x.set_dir('b')
+        pos_y = self.far_bottom - size
+      elif pos_x <= self.far_left:
+        x.set_dir('l')
+        pos_x = self.far_left
+      elif pos_x >= self.far_right:
+        x.set_dir('r')
+        pos_x = self.far_right - size
+
+      surface.blit(x.get_surface(self.surface_size), (int(pos_x), int(pos_y)))
+      list_of_render.append(rendering.Render_Surface(surface))
+
+    return list_of_render
+
+  def get_points(self, book):
+    points = book.points
+    surface_size = book.eye_size
     width = surface_size[0]
     height = surface_size[1]
 
-    if(width < height):
-      height = width
-    elif(width > height):
-      width = height
+    aspect = width / height
 
-    width *= self.width
-    height *= self.height
+    fov_x = 100
 
-    self.surface = pygame.transform.scale(self.surface, 
-      (int(width), int(height)))
+    fov_y = fov_x * width / height
 
-    if (self.dir == 'l'):
-      self.surface = self.rot_center(self.surface, -90)
-    elif (self.dir == 'u'):
-      self.surface = self.rot_center(self.surface, -180)
-    elif (self.dir == 'r'):
-      self.surface = self.rot_center(self.surface, -270)
-    elif (self.dir == 'bl'):
-      self.surface = self.rot_center(self.surface, -45)
-    elif (self.dir == 'ul'):
-      self.surface = self.rot_center(self.surface, -135)
-    elif (self.dir == 'ur'):
-      self.surface = self.rot_center(self.surface, -225)
-    elif (self.dir == 'br'):
-      self.surface = self.rot_center(self.surface, -315)
+    f = math.atan(fov_y / 2)
 
+    z_near = 1.5
+
+    z_far = 100
+
+class Arrow:
+  def __init__(self, information, list_of_arrows):
+    x = information[0]
+    y = information[1]
+    self.color = information[2].lower().capitalize()
+
+    self.arrows = list_of_arrows
+
+    self.location = (x, y)
+
+    self.dir = 'b'
+
+    self.surface = pygame.Surface((0, 0))
+
+  def set_dir(self, dir):
+    self.dir = dir
+
+  def get_surface(self, surface_size):
+    for x in self.arrows:
+      if x[0] == self.color:
+        for y in x[1]:
+          if self.dir == 'b' and y[0] == 'b':
+            self.surface = y[1]
+            break
+          elif self.dir == 'bl' and y[0] == 'bl':
+            self.surface = y[1]
+            break
+          elif self.dir == 'l' and y[0] == 'l':
+            self.surface = y[1]
+            break
+          elif self.dir == 'ul' and y[0] == 'ul':
+            self.surface = y[1]
+            break
+          elif self.dir == 'u' and y[0] == 'u':
+            self.surface = y[1]
+            break
+          elif self.dir == 'ur' and y[0] == 'ur':
+            self.surface = y[1]
+            break
+          elif self.dir == 'r' and y[0] == 'r':
+            self.surface = y[1]
+            break
+          elif self.dir == 'br' and y[0] == 'br':
+            self.surface = y[1]
+            break
+        break
+        
     return self.surface
