@@ -142,7 +142,7 @@ begin
             for y in 0 to 7 loop
                 bram_ins(x, y).clk <= sync.pixel_clk;
                 bram_ins(x, y).dip <= (others => '-');
-                bram_ins(x, y).we <= (others => '-');
+                bram_ins(x, y).we <= (others => '1');
                 bram_ins(x, y).regce <= '-';
                 bram_ins(x, y).rst <= '0';
                 
@@ -161,11 +161,12 @@ begin
             next_number_read := 0;
         elsif ram1_out.rd.empty = '0' then
             for i in 0 to 3 loop
-                p.x := command.x/4*4 + number_read * 4 + i;
-                p.y := command.y;
+                p.y := command.x/4*4 + number_read * 4 + i;
+                p.x := command.y;
                 next_bram_ins(p.x mod 8, p.y mod 8).en := '1';
                 next_bram_ins(p.x mod 8, p.y mod 8).di := "------------------------" & ram1_out.rd.data(8*i+7 downto 8*i);
-                next_bram_ins(p.x mod 8, p.y mod 8).addr := std_logic_vector(to_unsigned(p.x/8 + 256*((p.y/8) mod 8), next_bram_ins(p.x mod 8, p.y mod 8).addr'length));
+                next_bram_ins(p.x mod 8, p.y mod 8).addr(13 downto 3) := std_logic_vector(to_unsigned(p.x/8 + 256*((p.y/8) mod 8), next_bram_ins(p.x mod 8, p.y mod 8).addr(13 downto 3)'length));
+                next_bram_ins(p.x mod 8, p.y mod 8).addr(2 downto 0) := (others => '-');
             end loop;
             ram1_in.rd.en <= '1';
             if number_read /= BURST_SIZE_WORDS-1 then

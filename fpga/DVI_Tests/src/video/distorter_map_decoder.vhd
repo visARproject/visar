@@ -69,6 +69,7 @@ begin
             if en = '1' then
                 if pos /= SIZE-1 then
                     -- increment and output new result
+                    next_pos := pos + 1;
                 else
                     first.red  .x := to_integer(unsigned(ram_streamer_output( 12-1 downto   0)));
                     first.red  .y := to_integer(unsigned(ram_streamer_output( 23-1 downto  12)));
@@ -87,6 +88,8 @@ begin
                     next_output_int := first;
                     
                     ram_streamer_en <= '1';
+                    
+                    next_pos := 0;
                 end if;
             end if;
         end if;

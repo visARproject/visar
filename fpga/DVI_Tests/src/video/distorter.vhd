@@ -49,7 +49,8 @@ begin
                     DATA_WIDTH_A => 9,
                     DATA_WIDTH_B => 9,
                     DOA_REG      => 1,
-                    DOB_REG      => 1)
+                    DOB_REG      => 1,
+                    SIM_DEVICE   => "SPARTAN6")
                 port map (
                     ADDRA  => bram_porta_ins(x, y).addr,
                     ADDRB  => bram_portb_ins(x, y).addr,
@@ -145,7 +146,7 @@ begin
                 dx := (memx - center.x + 4) mod 8 - 4; -- solving for dx in (center.x + dx) mod 8 = x with dx constrained to [-4, 3]
                 dy := (memy - center.y + 4) mod 8 - 4;
                 pxx := center.x + dx;
-                pxy := center.x + dy;
+                pxy := center.y + dy;
                 bram_portb_ins(memx, memy).addr(13 downto 3) <= std_logic_vector(to_unsigned(
                     pxx/8 + 256*((pxy/8) mod 8)
                 , bram_portb_ins(memx, memy).addr(13 downto 3)'length));
