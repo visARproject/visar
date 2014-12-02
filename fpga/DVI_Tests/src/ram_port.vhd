@@ -82,6 +82,8 @@ package ram_port is
         cmd : ram_port_cmd_out;
         rd: ram_port_rd_out;
     end record;
+    
+    type MemoryType is array (natural range <>) of std_logic_vector(7 downto 0);
 
 end ram_port;
 

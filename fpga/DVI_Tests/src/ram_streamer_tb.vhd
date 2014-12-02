@@ -11,15 +11,19 @@ end entity ram_streamer_tb;
 architecture RTL of ram_streamer_tb is
     constant WORDS : integer := 5;
     
-    signal ram_in  : ram_rd_port_in;
-    signal ram_out : ram_rd_port_out;
-    
     signal clock  : std_logic := '0';
     signal reset  : std_logic;
     signal en     : std_logic;
     signal output : std_logic_vector(32*WORDS-1 downto 0);
+    
+    signal ram_in  : ram_rd_port_in;
+    signal ram_out : ram_rd_port_out;
 begin
     clock <= not clock after 5 ns;
+    
+    U_ram_port : entity work.mock_ram_port port map (
+        ram_in => ram_in,
+        ram_out => ram_out);
     
     UUT : entity work.ram_streamer
         generic map (
@@ -37,16 +41,10 @@ begin
     begin
         reset <= '1';
         en <= '0';
-        ram_out.rd.empty <= '1';
         
         wait for 1 us;
         wait until rising_edge(clock);
         reset <= '0';
-        
-        wait for 10 us;
-        wait until rising_edge(clock);
-        ram_out.rd.empty <= '0';
-        ram_out.rd.data <= x"ABCDEF01";
         
         wait for 10 us;
         wait until rising_edge(clock);

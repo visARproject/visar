@@ -23,3 +23,5 @@ pos needs to be 4-pixel aligned
 
 
 remember that camera data storage will eventually be segmented by bayer type and prefetcher commands will specify which color to be filled in
+
+change camera_writer to use CAMERA_STEP

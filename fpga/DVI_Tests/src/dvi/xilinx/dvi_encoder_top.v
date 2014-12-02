@@ -82,9 +82,17 @@ module dvi_encoder_top (
 
   always @ (posedge pclkx2) begin
     if (toggle)
-      tmdsclkint <= 5'b11111;
-    else
       tmdsclkint <= 5'b00000;
+    else
+      tmdsclkint <= 5'b11111;
+  end
+  
+  reg [4:0] tmds_data_delayed0, tmds_data_delayed1, tmds_data_delayed2;
+
+  always @ (posedge pclkx2) begin
+    tmds_data_delayed0 <= tmds_data0;
+    tmds_data_delayed1 <= tmds_data1;
+    tmds_data_delayed2 <= tmds_data2;
   end
 
   wire tmdsclk;
@@ -109,7 +117,7 @@ module dvi_encoder_top (
              .serdesstrobe(serdesstrobe),
              .reset(rstin),
              .gclk(pclkx2),
-             .datain(tmds_data0),
+             .datain(tmds_data_delayed0),
              .iob_data_out(tmdsint[0])) ;
 
   serdes_n_to_1 #(.SF(5)) oserdes1 (
@@ -117,7 +125,7 @@ module dvi_encoder_top (
              .serdesstrobe(serdesstrobe),
              .reset(rstin),
              .gclk(pclkx2),
-             .datain(tmds_data1),
+             .datain(tmds_data_delayed1),
              .iob_data_out(tmdsint[1])) ;
 
   serdes_n_to_1 #(.SF(5)) oserdes2 (
@@ -125,7 +133,7 @@ module dvi_encoder_top (
              .serdesstrobe(serdesstrobe),
              .reset(rstin),
              .gclk(pclkx2),
-             .datain(tmds_data2),
+             .datain(tmds_data_delayed2),
              .iob_data_out(tmdsint[2])) ;
 
   OBUFDS TMDS0 (.I(tmdsint[0]), .O(TMDS[0]), .OB(TMDSB[0])) ;
@@ -168,5 +176,6 @@ module dvi_encoder_top (
     .clkx2   (pclkx2),
     .datain  (s_data),
     .dataout ({tmds_data2, tmds_data1, tmds_data0}));
+   
 
 endmodule

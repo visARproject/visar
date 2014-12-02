@@ -132,6 +132,7 @@ begin
         variable number_read, next_number_read : integer range 0 to BURST_SIZE_WORDS-1;
         variable command : CameraCoordinate;
         variable p : CameraCoordinate;
+        variable next_bram_ins : BRAMInArray;
     begin
         ram1_in.rd.clk <= sync.pixel_clk;
         
@@ -139,22 +140,20 @@ begin
         
         for x in 0 to 7 loop
             for y in 0 to 7 loop
-                bram_ins(x, y).addr <= (others => '-');
-                bram_ins(x, y).di <= (others => '-');
+                bram_ins(x, y).clk <= sync.pixel_clk;
                 bram_ins(x, y).dip <= (others => '-');
                 bram_ins(x, y).we <= (others => '-');
-                bram_ins(x, y).clk <= sync.pixel_clk;
-                bram_ins(x, y).en <= '0';
                 bram_ins(x, y).regce <= '-';
                 bram_ins(x, y).rst <= '0';
+                
+                next_bram_ins(x, y).en := '0';
+                next_bram_ins(x, y).di := (others => '-');
+                next_bram_ins(x, y).addr := (others => '-');
             end loop;
         end loop;
         
         next_pos_buf_read_pos := pos_buf_read_pos;
         next_number_read := number_read;
-        
-        command := pos_buf(pos_buf_read_pos);
-        
         
         if reset = '1' then
             next_pos_buf_read_pos := 0;
@@ -164,9 +163,9 @@ begin
             for i in 0 to 3 loop
                 p.x := command.x/4*4 + number_read * 4 + i;
                 p.y := command.y;
-                bram_ins(p.x mod 8, p.y mod 8).en <= '1';
-                bram_ins(p.x mod 8, p.y mod 8).di <= "------------------------" & ram1_out.rd.data(8*i+7 downto 8*i);
-                bram_ins(p.x mod 8, p.y mod 8).addr <= std_logic_vector(to_unsigned(p.x/8 + 256*((p.y/8) mod 8), bram_ins(p.x mod 8, p.y mod 8).addr'length));
+                next_bram_ins(p.x mod 8, p.y mod 8).en := '1';
+                next_bram_ins(p.x mod 8, p.y mod 8).di := "------------------------" & ram1_out.rd.data(8*i+7 downto 8*i);
+                next_bram_ins(p.x mod 8, p.y mod 8).addr := std_logic_vector(to_unsigned(p.x/8 + 256*((p.y/8) mod 8), next_bram_ins(p.x mod 8, p.y mod 8).addr'length));
             end loop;
             ram1_in.rd.en <= '1';
             if number_read /= BURST_SIZE_WORDS-1 then
@@ -182,8 +181,16 @@ begin
         end if;
         
         if rising_edge(sync.pixel_clk) then
+            command := pos_buf(next_pos_buf_read_pos);
             pos_buf_read_pos := next_pos_buf_read_pos;
             number_read := next_number_read;
+            for x in 0 to 7 loop
+                for y in 0 to 7 loop
+                    bram_ins(x, y).en   <= next_bram_ins(x, y).en;
+                    bram_ins(x, y).di   <= next_bram_ins(x, y).di;
+                    bram_ins(x, y).addr <= next_bram_ins(x, y).addr;
+                end loop;
+            end loop;
         end if;
     end process;
 end architecture;

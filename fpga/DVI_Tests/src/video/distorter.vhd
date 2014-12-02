@@ -105,7 +105,7 @@ begin
         h_cnt => h_cnt,
         v_cnt => v_cnt);
     
-    process (h_cnt_1future, v_cnt_1future) is
+    process (h_cnt_1future, v_cnt_1future, v_cnt) is
     begin
         map_decoder_reset <= '0';
         map_decoder_en <= '0';
@@ -135,7 +135,7 @@ begin
         variable dx, dy : integer range -4 to 3;
         variable pxx : integer range 0 to CAMERA_WIDTH-1;
         variable pxy : integer range 0 to CAMERA_HEIGHT-1;
-        type SampleArray is array (7 downto 0, 7 downto 0) of integer range 0 to 511;
+        type SampleArray is array (7 downto 0, 7 downto 0) of integer range 0 to 255;
         variable samples : SampleArray;
     begin
         center := current_lookup.green;
@@ -158,16 +158,18 @@ begin
                 bram_portb_ins(memx, memy).regce <= '1';
                 bram_portb_ins(memx, memy).rst <= '0';
                 
-                samples(memx, memy) := to_integer(unsigned(
-                    bram_portb_outs(memx, memy).do(7 downto 0) &
-                    bram_portb_outs(memx, memy).dop(0 downto 0)));
+                if rising_edge(sync.pixel_clk) then
+                    samples(memx, memy) := to_integer(unsigned(bram_portb_outs(memx, memy).do(7 downto 0)));
+                end if;
             end loop;
         end loop;
         
         -- samples is delayed 2 clocks relative to address calculation
         
-        data_out.red   <= std_logic_vector(to_unsigned(samples(0, 0), data_out.red'length));
-        data_out.green <= std_logic_vector(to_unsigned(samples(0, 0), data_out.green'length));
-        data_out.blue  <= std_logic_vector(to_unsigned(samples(0, 0), data_out.blue'length));
+        if rising_edge(sync.pixel_clk) then
+            data_out.red   <= std_logic_vector(to_unsigned(samples(center.x mod 8, center.y mod 8), data_out.red'length));
+            data_out.green <= std_logic_vector(to_unsigned(samples(center.x mod 8, center.y mod 8), data_out.green'length));
+            data_out.blue  <= std_logic_vector(to_unsigned(samples(center.x mod 8, center.y mod 8), data_out.blue'length));
+        end if;
     end process;
 end architecture;
