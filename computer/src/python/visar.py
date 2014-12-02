@@ -10,6 +10,7 @@ import sys
 import arrows
 import pygame
 import pyaudio
+import comms_pop_up
 
 def visar():
   debug_mode = False;
@@ -28,6 +29,10 @@ def visar():
   arrows_ = arrows.Arrows()
   renderer.add_module(arrows_)
 
+  # communications pop up
+  comm_pu = comms_pop_up.Pop_Up()
+  renderer.add_module(comm_pu)
+
   # menu buttons 
   menu = menu_button.Menu()
   renderer.add_module(menu)
@@ -36,6 +41,7 @@ def visar():
   visar_controller.add_update(pose_source.update)
   visar_controller.add_update(menu.update)
   visar_controller.add_update(arrows_.update)
+  visar_controller.add_update(comm_pu.update)
   
   # setup/start the audio manager (voice communication)
   audio_controller = audio.Audio_Manager(visar_controller)
