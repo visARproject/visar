@@ -26,17 +26,22 @@ class Controller:
   
   # spawn thread to run control loop forever
   def do_loop(self):
-    #p = multiprocessing.Process(target=update_loop, args=(self,))
+    #p = multiprocessing.Process(target=self.update_loop)
     p = threading.Thread(target=self.update_loop)
     p.start() # start the process       
 
   # function wrapper loops around the update method
-  def update_loop(self):
-    while not self.book.exiting:
+  def update_loop(self, single_thread = False):
+    if(single_thread): # single-threaded mode, run once
       self.book.update()
       self.do_update()
-      self.clock.tick(FPS)
-    self.kill_flag.set() # notify rest of program to exit
+      if(self.book.exiting): self.kill_flag.set()
+    else: # multithreaded mode, run forever
+      while not self.book.exiting:
+        self.book.update()
+        self.do_update()
+        self.clock.tick(FPS)
+      self.kill_flag.set() # notify rest of program to exit
 
 # Controller book stores state information, add things as nessecarry
 class Controller_Book:

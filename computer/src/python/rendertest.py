@@ -31,7 +31,7 @@ def debug_wrapper():
   renderer.add_module(square3) # add module to render stack
   
   # run the controller (spawns new thread)
-  visar_controller.do_loop()
+  #visar_controller.do_loop() # removed unused code
   
   # run the renderer (blocks until code is done)
   renderer.do_loop(visar_controller.kill_flag)
