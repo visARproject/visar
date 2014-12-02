@@ -5,7 +5,6 @@
 import pygame
 from pygame.locals import *
 import numpy as np
-import cv
 
 FPS = 30 # run at 30FPS or so
 
