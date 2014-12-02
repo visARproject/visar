@@ -21,7 +21,7 @@ class Renderer:
     self.draws = [] # List of drawable objects to be rendered each frame
     self.controller = controller # controller object for the visAR program 
     # initialize a fullscreen display
-    #self.display_surface = pygame.display.set_mode((0,0),pygame.FULLSCREEN,0)
+    # self.display_surface = pygame.display.set_mode((0,0),pygame.FULLSCREEN,0)
     self.display_surface = pygame.display.set_mode((400,300)) #DEBUG
     if(debug): self.eye_size = (self.display_surface.get_width(), self.display_surface.get_height())
     else: self.eye_size = (self.display_surface.get_width()/2, self.display_surface.get_height())
@@ -39,7 +39,7 @@ class Renderer:
     done = False
     while not kill_flag.is_set(): # main game loop      
       self.controller.update_loop(True) # run single update
-      #!!!print self.clock.get_fps()
+      print self.clock.get_fps()
     
       # create new surfaces (one per eye)
       left_eye = self.eye_surface.copy()
