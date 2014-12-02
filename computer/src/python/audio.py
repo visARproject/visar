@@ -2,10 +2,11 @@
 import SocketServer
 import socket
 import pyaudio
+import alsaaudio
 import threading
 import time
 
-CHUNK = 1024     # number of frames/packet
+CHUNK = 32     # number of frames/packet
 SAMPLE_RATE = 11025 # sending frequency, mic samples at 44100?
 PORT = 9001 # application port number (likely to change)
   
@@ -20,20 +21,20 @@ def get_sound(stream, sock, bytes, kill_flag):
     except: break # stream closed
     if(kill_flag.is_set()): break  # thread is kill
   kill_flag.set() # client disconnected, set flag
-  stream.stop_stream() # stop streaming
-  stream.close() # cleanup
+  #stream.stop_stream() # stop streaming
+  #stream.close() # cleanup
     
 # send sound gets audio from mic and sends over socket   
 def send_sound(stream, sock, bytes, kill_flag):
-  data = stream.read(bytes) # get inital data
+  l, data = stream.read() # get inital data
   while data != '': # go while we're getting data
     try: sock.send(data) # send the data over socket
     except: break # stream closed
-    data = stream.read(bytes) # get audio from mic
+    l, data = stream.read() # get audio from mic
     if(kill_flag.is_set()): break  # thread is kill
   kill_flag.set() # client disconnected, set flag
-  stream.stop_stream() #cleanup
-  stream.close()
+  #stream.stop_stream() #cleanup
+  #stream.close()
 
 # manage the connection status information
 class Connection_Status:
@@ -60,7 +61,7 @@ class Audio_Manager:
       self.shutdown = threading.Event()
     if(kill_flag): self.kill_flag = kill_flag
     else: self.kill_flag = threading.Event()
-    self.p = pyaudio.PyAudio()
+    #self.p = pyaudio.PyAudio()
     # create and configure a server socket
     try:
       self.server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -121,20 +122,30 @@ class Audio_Manager:
     width = ord(sock.recv(1)) # get the samle width
     
     # setup the playback stream/thread
-    speaker_stream = self.p.open(format = pyaudio.paInt16,
-              channels = channels,
-              rate = rate,
-              output = True)          
-    bytes = CHUNK * channels * width              
+    #speaker_stream = self.p.open(format = pyaudio.paInt16,
+    #          channels = channels,
+    #          rate = rate,
+    #          output = True)          
+    bytes = CHUNK * channels * width   
+    speaker_stream = alsaaudio.PCM(alsaaudio.PCM_PLAYBACK)
+    speaker_stream.setchannels(channels)
+    speaker_stream.setrate(rate)
+    speaker_stream.setformat(alsaaudio.PCM_FORMAT_S16_LE)           
+    speaker_stream.setperiodsize(CHUNK)   
     in_thread = threading.Thread(target=get_sound, args=(speaker_stream,sock,bytes,self.kill_flag))
     in_thread.start()
     
     # setup mic stream/thread
     if(output):
-      mic_stream = self.p.open(format = pyaudio.paInt16,
-                         channels = channels,
-                         rate = rate,
-                         input = True)
+      #mic_stream = self.p.open(format = pyaudio.paInt16,
+      #                   channels = channels,
+      #                   rate = rate,
+      #                   input = True)
+      mic_stream = alsaaudio.PCM(alsaaudio.PCM_CAPTURE)
+      mic_stream.setchannels(channels)
+      mic_stream.setrate(rate)
+      mic_stream.setformat(alsaaudio.PCM_FORMAT_S16_LE)
+      mic_stream.setperiodsize(CHUNK)
       out_thread = threading.Thread(target=send_sound, args=(mic_stream,sock,bytes,self.kill_flag))
       out_thread.start()
     
@@ -144,6 +155,7 @@ class Audio_Manager:
     self.kill_flag.set() # signal threads to die
     self.connection.disconnect() # signal the disconnect
     sock.close()
+    print 'Disconnected from ' + name
     
   # wrapper runs threads forever
   def start_server_loop(self):
@@ -158,7 +170,7 @@ class Audio_Manager:
   # cleanup pyaudido (streams will timeout)
   def cleanup(self):
     time.sleep(2)
-    self.p.terminate()  
+    #self.p.terminate()  
     
   def start_client(self, hostname):
     # setup the connection
@@ -189,19 +201,30 @@ class Audio_Manager:
 
     # start sending data
     # setup the playback stream/thread
-    speaker_stream = self.p.open(format = pyaudio.paInt16,
-              channels = 1,
-              rate = SAMPLE_RATE,
-              output = True)          
+    #speaker_stream = self.p.open(format = pyaudio.paInt16,
+    #          channels = 1,
+    #          rate = SAMPLE_RATE,
+    #          output = True)          
+    speaker_stream = alsaaudio.PCM(alsaaudio.PCM_PLAYBACK)
+    speaker_stream.setchannels(1)
+    speaker_stream.setrate(SAMPLE_RATE)
+    speaker_stream.setperiodsize(CHUNK)    
+    speaker_stream.setformat(alsaaudio.PCM_FORMAT_S16_LE)
+      
     bytes = CHUNK * 1 * 1 # num frames * channels * width
     in_thread = threading.Thread(target=get_sound, args=(speaker_stream,sock,bytes,self.kill_flag))
     in_thread.start()
       
     # setup mic stream/thread
-    mic_stream = self.p.open(format = pyaudio.paInt16,
-                       channels = 1,
-                       rate = SAMPLE_RATE,
-                       input = True)
+    #mic_stream = self.p.open(format = pyaudio.paInt16,
+    #                   channels = 1,
+    #                   rate = SAMPLE_RATE,
+    #                   input = True)
+    mic_stream = alsaaudio.PCM(alsaaudio.PCM_CAPTURE)
+    mic_stream.setchannels(1)
+    mic_stream.setrate(SAMPLE_RATE)
+    mic_stream.setformat(alsaaudio.PCM_FORMAT_S16_LE)                         
+    mic_stream.setperiodsize(CHUNK) 
     out_thread = threading.Thread(target=send_sound, args=(mic_stream,sock,bytes,self.kill_flag))
     out_thread.start()
       
@@ -211,6 +234,7 @@ class Audio_Manager:
     self.kill_flag.set() # signal threads to die (redundant)
     sock.close() # close the socket
     self.connection.disconnect()
+    print 'Disconnected from ' + name
     
     
 if __name__ == '__main__':

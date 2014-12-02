@@ -49,6 +49,7 @@ def visar():
   renderer.do_loop(visar_controller.kill_flag)
   
   # cleanup
+  print 'Shutting Down'
   audio_controller.cleanup()
   pygame.quit() # shutdown pygame
   

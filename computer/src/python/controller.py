@@ -74,8 +74,8 @@ class Controller_Book:
     # audio connection (uses t, connects to predefined ip)
     if self.keys[K_t] and not self.last_keys[K_t]: # watch for keypress
       if not self.audio_manager.connection.connected: # connect voicechat
-        #self.audio_manager.connect('192.168.1.16') # connect to val
-        self.audio_manager.connect('127.0.0.1') # connect to localhost
+        self.audio_manager.connect('192.168.1.12') # connect to somebody
+        #self.audio_manager.connect('127.0.0.1') # connect to localhost
       else: # disconnect voicechat
         self.audio_manager.disconnect()
     
