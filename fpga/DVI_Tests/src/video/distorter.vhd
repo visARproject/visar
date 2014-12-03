@@ -134,22 +134,20 @@ begin
     process (sync.pixel_clk, bram_portb_outs, current_lookup) is
         variable center, center1, center2, center3 : CameraCoordinate;
         variable dx, dy : integer range -4 to 3;
-        variable pxx : integer range 0 to CAMERA_HEIGHT-1;
-        variable pxy : integer range 0 to 2*CAMERA_WIDTH-1;
+        variable px : CameraCoordinate;
         type SampleArray is array (7 downto 0, 7 downto 0) of integer range 0 to 255;
         variable samples : SampleArray;
     begin
         center := current_lookup.green;
         
-        -- XXX x/y need to be flipped to match
         for memx in 0 to 7 loop
             for memy in 0 to 7 loop
-                dx := (memx - center.y + 4) mod 8 - 4; -- solving for dx in (center.x + dx) mod 8 = x with dx constrained to [-4, 3]
-                dy := (memy - center.x + 4) mod 8 - 4;
-                pxx := center.y + dx;
-                pxy := center.x + dy;
+                dx := (memx - center.x + 4) mod 8 - 4; -- solving for dx in (center.x + dx) mod 8 = x with dx constrained to [-4, 3]
+                dy := (memy - center.y + 4) mod 8 - 4;
+                px.x := center.x + dx;
+                px.y := center.y + dy;
                 bram_portb_ins(memx, memy).addr(13 downto 3) <= std_logic_vector(to_unsigned(
-                    pxx/8 + 256*((pxy/8) mod 8)
+                    256*((px.x/8) mod 8) + px.y/8
                 , bram_portb_ins(memx, memy).addr(13 downto 3)'length));
                 bram_portb_ins(memx, memy).addr(2 downto 0) <= (others => '-');
                 bram_portb_ins(memx, memy).di <= (others => '-');
@@ -174,9 +172,9 @@ begin
                 data_out.green <= x"00";
                 data_out.blue <= x"00";
             else
-                data_out.red   <= std_logic_vector(to_unsigned(samples(center3.y mod 8, center3.x mod 8), data_out.red'length));
-                data_out.green <= std_logic_vector(to_unsigned(samples(center3.y mod 8, center3.x mod 8), data_out.green'length));
-                data_out.blue  <= std_logic_vector(to_unsigned(samples(center3.y mod 8, center3.x mod 8), data_out.blue'length));
+                data_out.red   <= std_logic_vector(to_unsigned(samples(center3.x mod 8, center3.y mod 8), data_out.red'length));
+                data_out.green <= std_logic_vector(to_unsigned(samples(center3.x mod 8, center3.y mod 8), data_out.green'length));
+                data_out.blue  <= std_logic_vector(to_unsigned(samples(center3.x mod 8, center3.y mod 8), data_out.blue'length));
             end if;
             center3 := center2;
             center2 := center1;
