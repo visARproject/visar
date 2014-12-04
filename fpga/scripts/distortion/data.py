@@ -8,6 +8,8 @@ import image_geometry
 mkmat = image_geometry.cameramodels.mkmat
 import scipy.misc
 
+import constants
+
 try:
     with open('dump', 'rb') as f:
         d = numpy.load(f)
@@ -120,16 +122,6 @@ if 0:
     print 's_range', s_range
     print 'm_range', m_range
 
-H_DISPLAY_END = 1080
-HSYNC_BEGIN   = 1113
-HSYNC_END     = 1123
-H_MAX         = 1138
-    
-V_DISPLAY_END = 1920
-VSYNC_BEGIN   = 1921
-VSYNC_END     = 1927
-V_MAX         = 1933
-
 COLOR = 1
 
 # generate initial schedule with every event happening at latest possible time
@@ -139,8 +131,8 @@ BEFORENESS = 1000
 res = [] # pairs of (time, pos)
 present = set()
 t = -1
-for y in xrange(V_MAX):
-    for x in xrange(H_MAX):
+for y in xrange(constants.V_MAX):
+    for x in xrange(constants.H_MAX):
         t += 1
         ox = 1919-y
         oy = x
@@ -179,8 +171,8 @@ present = [[None]*(256*8) for i in xrange(8*8)]
 t = -1
 good = 0
 bad = 0
-for y in xrange(V_MAX):
-    for x in xrange(H_MAX):
+for y in xrange(constants.V_MAX):
+    for x in xrange(constants.H_MAX):
         t += 1
         ox = 1919-y
         oy = x
@@ -226,12 +218,9 @@ for cmd_delay, cmd_pos in res4:
 import ram_test
 rp = ram_test.RAMPoker()
 
-DISTORTER_PREFETCHER_TABLE_MEMORY_LOCATION = 64*1024*1024
-DISTORTER_MAP_MEMORY_LOCATION = 96*1024*1024
-
 print 'writing prefetcher table...'
 
-write_pos = DISTORTER_PREFETCHER_TABLE_MEMORY_LOCATION
+write_pos = constants.DISTORTER_PREFETCHER_TABLE_MEMORY_LOCATION
 for cmd_delay, cmd_pos in res4:
     data = '{0:09b}{1:011b}{2:012b}'.format(cmd_delay, cmd_pos[1], cmd_pos[0])
     rp.write(write_pos, int(data, 2))
@@ -248,7 +237,7 @@ right = scipy.misc.imread('right.png')
 test = numpy.zeros((1080, 1920, 3), dtype=numpy.uint8)
 
 COLOR = 1
-write_pos = DISTORTER_MAP_MEMORY_LOCATION
+write_pos = constants.DISTORTER_MAP_MEMORY_LOCATION
 for v_cnt in xrange(1920):
     for h_cnt in xrange(0, 1089, 33):
         x = 1919 - v_cnt
