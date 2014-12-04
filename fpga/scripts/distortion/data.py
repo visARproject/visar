@@ -124,6 +124,29 @@ if 0:
 
 COLOR = 1
 
+# change coordinates to what interpolation would yield
+d2 = d.copy()
+for y in xrange(constants.V_MAX):
+    for x in xrange(0, constants.H_MAX, 33):
+        ox = 1919-y
+        oy = x
+        if not (0 <= ox < 1920 and 0 <= oy < 1080): continue
+        
+        src = tuple(map(int, d[ox, oy][COLOR]))
+        if src == (-1, -1): src = (0, 0)
+        try:
+            src2 = tuple(map(int, d[ox, oy+32][COLOR]))
+            if src2 == (-1, -1): src2 = (0, 0)
+        except IndexError:
+            src2 = (0, 0)
+        
+        for i in xrange(33):
+            
+            if src == (0, 0) or src2 == (0, 0): continue
+            interp = (src[0] * 32 + (src2[0]-src[0])*i + 16)//32, (src[1] * 32 + (src2[1]-src[1])*i+16)//32
+            
+            d2[ox, oy+i] = interp
+
 # generate initial schedule with every event happening at latest possible time
 
 BEFORENESS = 1000
@@ -137,19 +160,23 @@ for y in xrange(constants.V_MAX):
         ox = 1919-y
         oy = x
         if not (0 <= ox < 1920 and 0 <= oy < 1080): continue
-        src = tuple(map(int, d[ox, oy][COLOR]))
-        if src == (-1, -1): continue
         
-        if src not in present:
-            choice = src[0]-src[0]%32, src[1]
-            for i in xrange(32):
-                present.add((choice[0]+i, choice[1]))
-            #print 'ack', t, choice, src
-            res.append((t-BEFORENESS, choice))
+        for dx in xrange(2):
+            for dy in xrange(2):
+                src = tuple(map(int, d2[ox, oy][COLOR]))
+                if src == (-1, -1): continue
+                src = src[0]//2*2 + dx, src[1]//2*2 + dy
+                
+                if src not in present:
+                    choice = src[0]-src[0]%32, src[1]
+                    for i in xrange(32):
+                        present.add((choice[0]+i, choice[1]))
+                    #print 'ack', t, choice, src
+                    res.append((t-BEFORENESS, choice))
 
 # push events back to ensure minimum spacing
 
-SPACING = 16
+SPACING = 11
 res2 = list(res)
 last_time = 1e99
 for i in reversed(xrange(len(res2))):
@@ -177,7 +204,7 @@ for y in xrange(constants.V_MAX):
         ox = 1919-y
         oy = x
         if not (0 <= ox < 1920 and 0 <= oy < 1080): continue
-        src = tuple(map(int, d[ox, oy][COLOR]))
+        src = tuple(map(int, d2[ox, oy][COLOR]))
         if src == (-1, -1): continue
         
         while res3 and t >= res3[-1][0]:
