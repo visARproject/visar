@@ -38,7 +38,7 @@ architecture arc of video_distorter_prefetcher is
     
     constant BURST_SIZE_WORDS : positive := 8;
     
-    constant BUF_SIZE : positive := 16;
+    constant BUF_SIZE : positive := 32;
     type CoordinateBuf is array (0 to BUF_SIZE-1) of CameraCoordinate;
     signal pos_buf : CoordinateBuf;
 begin
@@ -73,6 +73,7 @@ begin
     process (sync, h_cnt, v_cnt, reset, table_decoder_command) is
         variable pos_buf_write_pos, next_pos_buf_write_pos : integer range 0 to BUF_SIZE-1;
         variable delay_counter, next_delay_counter : DistorterDelay;
+        variable command, next_command: PrefetcherCommand;
     begin
         ram1_in.cmd.clk <= sync.pixel_clk;
         
@@ -83,15 +84,24 @@ begin
         
         table_decoder_en <= '0';
         
+        next_pos_buf_write_pos := pos_buf_write_pos;
+        next_delay_counter := delay_counter;
+        next_command := command;
+        
         if reset = '1' then
             next_pos_buf_write_pos := 0;
-            next_delay_counter := 2**9-1; -- initial delay to give time for first command to appear
+            next_delay_counter := 0;
+            next_command := (
+                delay => 2**9-1, -- initial delay to give time for first command to appear
+                pos => (
+                    x => 0,
+                    y => 0));
         else
-            if delay_counter > 0 then
-                next_delay_counter := delay_counter - 1;
+            if delay_counter /= command.delay then
+                next_delay_counter := delay_counter + 1;
             else
-                -- execute command in table_decoder_command
-                next_delay_counter := table_decoder_command.delay;
+                -- execute command in command
+                next_delay_counter := 0;
                 if pos_buf_write_pos /= BUF_SIZE-1 then
                     next_pos_buf_write_pos := pos_buf_write_pos + 1;
                 else
@@ -100,21 +110,22 @@ begin
                 
                 ram1_in.cmd.en <= '1';
                 ram1_in.cmd.instr <= READ_PRECHARGE_COMMAND;
-                if table_decoder_command.pos.x < CAMERA_WIDTH then
+                if command.pos.x < CAMERA_WIDTH then
                     ram1_in.cmd.byte_addr <= std_logic_vector(to_unsigned(
-                        LEFT_CAMERA_MEMORY_LOCATION + table_decoder_command.pos.y * CAMERA_STEP + table_decoder_command.pos.x
+                        LEFT_CAMERA_MEMORY_LOCATION + command.pos.y * CAMERA_STEP + command.pos.x
                     , ram1_in.cmd.byte_addr'length));
                 else
                     ram1_in.cmd.byte_addr <= std_logic_vector(to_unsigned(
-                        RIGHT_CAMERA_MEMORY_LOCATION + table_decoder_command.pos.y * CAMERA_STEP + (table_decoder_command.pos.x - CAMERA_WIDTH)
+                        RIGHT_CAMERA_MEMORY_LOCATION + command.pos.y * CAMERA_STEP + (command.pos.x - CAMERA_WIDTH)
                     , ram1_in.cmd.byte_addr'length));
                 end if;
                 ram1_in.cmd.bl <= std_logic_vector(to_unsigned(BURST_SIZE_WORDS - 1, ram1_in.cmd.bl'length));
                 
                 table_decoder_en <= '1';
+                next_command := table_decoder_command;
                 
                 if rising_edge(sync.pixel_clk) then
-                    pos_buf(pos_buf_write_pos) <= table_decoder_command.pos;
+                    pos_buf(pos_buf_write_pos) <= command.pos;
                 end if;
             end if;
         end if;
@@ -122,6 +133,7 @@ begin
         if rising_edge(sync.pixel_clk) then
             pos_buf_write_pos := next_pos_buf_write_pos;
             delay_counter := next_delay_counter;
+            command := next_command;
         end if;
     end process;
     
