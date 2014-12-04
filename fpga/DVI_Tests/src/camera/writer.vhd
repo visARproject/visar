@@ -63,7 +63,7 @@ begin
                 ram_in.wr.mask <= (others => '0');
                 ram_in.wr.data <= next_data;
                 
-                if state2 /= 31 then
+                if state2 /= 31 and x/= CAMERA_WIDTH-1 then
                     next_state2 := state2 + 1;
                 else
                     next_state2 := 0;
@@ -71,7 +71,7 @@ begin
                     ram_in.cmd.en <= '1';
                     ram_in.cmd.instr <= WRITE_PRECHARGE_COMMAND;
                     ram_in.cmd.bl <= std_logic_vector(to_unsigned(32-1, ram_in.cmd.bl'length));
-                    ram_in.cmd.byte_addr <= std_logic_vector(to_unsigned(BUFFER_ADDRESS + y * CAMERA_STEP + x - 32*4, ram_in.cmd.byte_addr'length));
+                    ram_in.cmd.byte_addr <= std_logic_vector(to_unsigned(BUFFER_ADDRESS + y * CAMERA_STEP + x/(32*4)*(32*4), ram_in.cmd.byte_addr'length));
                 end if;
             end if;
         end if;
