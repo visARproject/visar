@@ -1,0 +1,9 @@
+*.pyc
+*~
+
+# binary of test.cpp
+/test
+
+*.png
+*.csv
+/dump
