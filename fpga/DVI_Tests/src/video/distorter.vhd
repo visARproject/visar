@@ -133,8 +133,8 @@ begin
     
     process (sync.pixel_clk, bram_portb_outs_2, current_lookup_4) is
         variable center_4, center_3, center_2, center_1 : CameraCoordinate;
-        variable dx, dy : integer range -4 to 3;
-        variable px : CameraCoordinate;
+        variable dx_4, dy_4 : integer range -4 to 3;
+        variable px_4 : CameraCoordinate;
         type SampleArray is array (7 downto 0, 7 downto 0) of integer range 0 to 255;
         variable samples_1 : SampleArray;
     begin
@@ -142,12 +142,12 @@ begin
         
         for memx in 0 to 7 loop
             for memy in 0 to 7 loop
-                dx := (memx - center_4.x + 4) mod 8 - 4; -- solving for dx in (center_4.x + dx) mod 8 = x with dx constrained to [-4, 3]
-                dy := (memy - center_4.y + 4) mod 8 - 4;
-                px.x := center_4.x + dx;
-                px.y := center_4.y + dy;
+                dx_4 := (memx - center_4.x + 4) mod 8 - 4; -- solving for dx in (center_4.x + dx) mod 8 = x with dx constrained to [-4, 3]
+                dy_4 := (memy - center_4.y + 4) mod 8 - 4;
+                px_4.x := center_4.x + dx_4;
+                px_4.y := center_4.y + dy_4;
                 bram_portb_ins_4(memx, memy).addr(13 downto 3) <= std_logic_vector(to_unsigned(
-                    256*((px.x/8) mod 8) + px.y/8
+                    256*((px_4.x/8) mod 8) + px_4.y/8
                 , bram_portb_ins_4(memx, memy).addr(13 downto 3)'length));
                 bram_portb_ins_4(memx, memy).addr(2 downto 0) <= (others => '-');
                 bram_portb_ins_4(memx, memy).di <= (others => '-');
