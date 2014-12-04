@@ -40,7 +40,7 @@ architecture arc of video_distorter is
     signal v_cnt : VCountType;
     
     signal map_decoder_reset, map_decoder_en: std_logic;
-    signal current_lookup_4 : CameraTripleCoordinate;
+    signal current_lookup_5 : CameraTripleCoordinate;
 begin
     GEN_BRAM1: for x in 0 to 7 generate
         GEN_BRAM2: for y in 0 to 7 generate
@@ -128,37 +128,38 @@ begin
             clock  => sync.pixel_clk,
             reset  => map_decoder_reset,
             en     => map_decoder_en,
-            output => current_lookup_4);
+            output => current_lookup_5);
     
     
-    process (sync.pixel_clk, bram_portb_outs_2, current_lookup_4) is
-        variable center_4, center_3, center_2, center_1 : CameraCoordinate;
-        variable dx_4, dy_4 : integer range -4 to 3;
-        variable px_4 : CameraCoordinate;
+    process (sync.pixel_clk, bram_portb_outs_2, current_lookup_5) is
+        variable center_5, center_4, center_3, center_2, center_1 : CameraCoordinate;
+        variable dx_5, dy_5 : integer range -4 to 3;
+        variable px_5 : CameraCoordinate;
         type SampleArray is array (7 downto 0, 7 downto 0) of integer range 0 to 255;
         variable samples_1 : SampleArray;
     begin
-        center_4 := current_lookup_4.green;
+        center_5 := current_lookup_5.green;
         
         for memx in 0 to 7 loop
             for memy in 0 to 7 loop
-                dx_4 := (memx - center_4.x + 4) mod 8 - 4; -- solving for dx in (center_4.x + dx) mod 8 = x with dx constrained to [-4, 3]
-                dy_4 := (memy - center_4.y + 4) mod 8 - 4;
-                px_4.x := center_4.x + dx_4;
-                px_4.y := center_4.y + dy_4;
-                bram_portb_ins_4(memx, memy).addr(13 downto 3) <= std_logic_vector(to_unsigned(
-                    256*((px_4.x/8) mod 8) + px_4.y/8
-                , bram_portb_ins_4(memx, memy).addr(13 downto 3)'length));
-                bram_portb_ins_4(memx, memy).addr(2 downto 0) <= (others => '-');
-                bram_portb_ins_4(memx, memy).di <= (others => '-');
-                bram_portb_ins_4(memx, memy).dip <= (others => '-');
-                bram_portb_ins_4(memx, memy).we <= (others => '0');
-                bram_portb_ins_4(memx, memy).clk <= sync.pixel_clk;
-                bram_portb_ins_4(memx, memy).en <= '1';
-                bram_portb_ins_4(memx, memy).regce <= '1';
-                bram_portb_ins_4(memx, memy).rst <= '0';
+                dx_5 := (memx - center_5.x + 4) mod 8 - 4; -- solving for dx in (center_5.x + dx) mod 8 = x with dx constrained to [-4, 3]
+                dy_5 := (memy - center_5.y + 4) mod 8 - 4;
+                px_5.x := center_5.x + dx_5;
+                px_5.y := center_5.y + dy_5;
                 
+                bram_portb_ins_4(memx, memy).clk <= sync.pixel_clk;
                 if rising_edge(sync.pixel_clk) then
+                    bram_portb_ins_4(memx, memy).addr(13 downto 3) <= std_logic_vector(to_unsigned(
+                        256*((px_5.x/8) mod 8) + px_5.y/8
+                    , bram_portb_ins_4(memx, memy).addr(13 downto 3)'length));
+                    bram_portb_ins_4(memx, memy).addr(2 downto 0) <= (others => '-');
+                    bram_portb_ins_4(memx, memy).di <= (others => '-');
+                    bram_portb_ins_4(memx, memy).dip <= (others => '-');
+                    bram_portb_ins_4(memx, memy).we <= (others => '0');
+                    bram_portb_ins_4(memx, memy).en <= '1';
+                    bram_portb_ins_4(memx, memy).regce <= '1';
+                    bram_portb_ins_4(memx, memy).rst <= '0';
+                    
                     samples_1(memx, memy) := to_integer(unsigned(bram_portb_outs_2(memx, memy).do(7 downto 0)));
                 end if;
             end loop;
@@ -177,6 +178,7 @@ begin
             center_1 := center_2;
             center_2 := center_3;
             center_3 := center_4;
+            center_4 := center_5;
         end if;
     end process;
 end architecture;
