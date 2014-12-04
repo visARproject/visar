@@ -29,8 +29,8 @@ entity video_distorter is
 end entity;
 
 architecture arc of video_distorter is
-    signal bram_porta_ins, bram_portb_ins : BRAMInArray;
-    signal bram_porta_outs, bram_portb_outs : BRAMOutArray;
+    signal bram_porta_ins, bram_portb_ins_4 : BRAMInArray;
+    signal bram_porta_outs, bram_portb_outs_2 : BRAMOutArray;
     
     
     signal h_cnt_1future : HCountType;
@@ -40,7 +40,7 @@ architecture arc of video_distorter is
     signal v_cnt : VCountType;
     
     signal map_decoder_reset, map_decoder_en: std_logic;
-    signal current_lookup : CameraTripleCoordinate;
+    signal current_lookup_4 : CameraTripleCoordinate;
 begin
     GEN_BRAM1: for x in 0 to 7 generate
         GEN_BRAM2: for y in 0 to 7 generate
@@ -53,26 +53,26 @@ begin
                     SIM_DEVICE   => "SPARTAN6")
                 port map (
                     ADDRA  => bram_porta_ins(x, y).addr,
-                    ADDRB  => bram_portb_ins(x, y).addr,
+                    ADDRB  => bram_portb_ins_4(x, y).addr,
                     DIA    => bram_porta_ins(x, y).di,
-                    DIB    => bram_portb_ins(x, y).di,
+                    DIB    => bram_portb_ins_4(x, y).di,
                     DIPA   => bram_porta_ins(x, y).dip,
-                    DIPB   => bram_portb_ins(x, y).dip,
+                    DIPB   => bram_portb_ins_4(x, y).dip,
                     WEA    => bram_porta_ins(x, y).we,
-                    WEB    => bram_portb_ins(x, y).we,
+                    WEB    => bram_portb_ins_4(x, y).we,
                     CLKA   => bram_porta_ins(x, y).clk,
-                    CLKB   => bram_portb_ins(x, y).clk,
+                    CLKB   => bram_portb_ins_4(x, y).clk,
                     ENA    => bram_porta_ins(x, y).en,
-                    ENB    => bram_portb_ins(x, y).en,
+                    ENB    => bram_portb_ins_4(x, y).en,
                     REGCEA => bram_porta_ins(x, y).regce,
-                    REGCEB => bram_portb_ins(x, y).regce,
+                    REGCEB => bram_portb_ins_4(x, y).regce,
                     RSTA   => bram_porta_ins(x, y).rst,
-                    RSTB   => bram_portb_ins(x, y).rst,
+                    RSTB   => bram_portb_ins_4(x, y).rst,
 
                     DOA  => bram_porta_outs(x, y).do,
-                    DOB  => bram_portb_outs(x, y).do,
+                    DOB  => bram_portb_outs_2(x, y).do,
                     DOPA => bram_porta_outs(x, y).dop,
-                    DOPB => bram_portb_outs(x, y).dop);
+                    DOPB => bram_portb_outs_2(x, y).dop);
         end generate;
     end generate;
     
@@ -128,57 +128,55 @@ begin
             clock  => sync.pixel_clk,
             reset  => map_decoder_reset,
             en     => map_decoder_en,
-            output => current_lookup);
+            output => current_lookup_4);
     
     
-    process (sync.pixel_clk, bram_portb_outs, current_lookup) is
-        variable center, center1, center2, center3 : CameraCoordinate;
+    process (sync.pixel_clk, bram_portb_outs_2, current_lookup_4) is
+        variable center_4, center_3, center_2, center_1 : CameraCoordinate;
         variable dx, dy : integer range -4 to 3;
         variable px : CameraCoordinate;
         type SampleArray is array (7 downto 0, 7 downto 0) of integer range 0 to 255;
-        variable samples : SampleArray;
+        variable samples_1 : SampleArray;
     begin
-        center := current_lookup.green;
+        center_4 := current_lookup_4.green;
         
         for memx in 0 to 7 loop
             for memy in 0 to 7 loop
-                dx := (memx - center.x + 4) mod 8 - 4; -- solving for dx in (center.x + dx) mod 8 = x with dx constrained to [-4, 3]
-                dy := (memy - center.y + 4) mod 8 - 4;
-                px.x := center.x + dx;
-                px.y := center.y + dy;
-                bram_portb_ins(memx, memy).addr(13 downto 3) <= std_logic_vector(to_unsigned(
+                dx := (memx - center_4.x + 4) mod 8 - 4; -- solving for dx in (center_4.x + dx) mod 8 = x with dx constrained to [-4, 3]
+                dy := (memy - center_4.y + 4) mod 8 - 4;
+                px.x := center_4.x + dx;
+                px.y := center_4.y + dy;
+                bram_portb_ins_4(memx, memy).addr(13 downto 3) <= std_logic_vector(to_unsigned(
                     256*((px.x/8) mod 8) + px.y/8
-                , bram_portb_ins(memx, memy).addr(13 downto 3)'length));
-                bram_portb_ins(memx, memy).addr(2 downto 0) <= (others => '-');
-                bram_portb_ins(memx, memy).di <= (others => '-');
-                bram_portb_ins(memx, memy).dip <= (others => '-');
-                bram_portb_ins(memx, memy).we <= (others => '0');
-                bram_portb_ins(memx, memy).clk <= sync.pixel_clk;
-                bram_portb_ins(memx, memy).en <= '1';
-                bram_portb_ins(memx, memy).regce <= '1';
-                bram_portb_ins(memx, memy).rst <= '0';
+                , bram_portb_ins_4(memx, memy).addr(13 downto 3)'length));
+                bram_portb_ins_4(memx, memy).addr(2 downto 0) <= (others => '-');
+                bram_portb_ins_4(memx, memy).di <= (others => '-');
+                bram_portb_ins_4(memx, memy).dip <= (others => '-');
+                bram_portb_ins_4(memx, memy).we <= (others => '0');
+                bram_portb_ins_4(memx, memy).clk <= sync.pixel_clk;
+                bram_portb_ins_4(memx, memy).en <= '1';
+                bram_portb_ins_4(memx, memy).regce <= '1';
+                bram_portb_ins_4(memx, memy).rst <= '0';
                 
                 if rising_edge(sync.pixel_clk) then
-                    samples(memx, memy) := to_integer(unsigned(bram_portb_outs(memx, memy).do(7 downto 0)));
+                    samples_1(memx, memy) := to_integer(unsigned(bram_portb_outs_2(memx, memy).do(7 downto 0)));
                 end if;
             end loop;
         end loop;
         
-        -- samples is delayed 3 clocks relative to address calculation
-        
         if rising_edge(sync.pixel_clk) then
-            if center3.x = 0 or center3.y = 0 then
-                data_out.red <= x"FF";
-                data_out.green <= x"00";
-                data_out.blue <= x"00";
+            if center_1.x = 0 and center_1.y = 0 then
+                data_out.red <= x"20";
+                data_out.green <= x"10";
+                data_out.blue <= x"10";
             else
-                data_out.red   <= std_logic_vector(to_unsigned(samples(center3.x mod 8, center3.y mod 8), data_out.red'length));
-                data_out.green <= std_logic_vector(to_unsigned(samples(center3.x mod 8, center3.y mod 8), data_out.green'length));
-                data_out.blue  <= std_logic_vector(to_unsigned(samples(center3.x mod 8, center3.y mod 8), data_out.blue'length));
+                data_out.red   <= std_logic_vector(to_unsigned(samples_1((center_1.x mod 8)/2*2+0, (center_1.y mod 8)/2*2+0), data_out.red'length));
+                data_out.green <= std_logic_vector(to_unsigned(samples_1((center_1.x mod 8)/2*2+0, (center_1.y mod 8)/2*2+1), data_out.green'length));
+                data_out.blue  <= std_logic_vector(to_unsigned(samples_1((center_1.x mod 8)/2*2+1, (center_1.y mod 8)/2*2+1), data_out.blue'length));
             end if;
-            center3 := center2;
-            center2 := center1;
-            center1 := center;
+            center_1 := center_2;
+            center_2 := center_3;
+            center_3 := center_4;
         end if;
     end process;
 end architecture;
