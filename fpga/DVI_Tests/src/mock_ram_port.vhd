@@ -23,6 +23,26 @@ begin
         for i in 0 to 255 loop
             memory(1230 + i) <= std_logic_vector(to_unsigned(i, 8));
         end loop;
+        memory(1236) <= "00000000";
+        memory(1237) <= "00000000";
+        memory(1238) <= "10000000";
+        memory(1239) <= "00011101";
+        memory(1240) <= "01000001";
+        memory(1241) <= "00000100";
+        memory(1242) <= "00000000";
+        memory(1243) <= "00000000";
+        memory(1244) <= "00000000";
+        memory(1245) <= "00000000";
+        memory(1246) <= "00000000";
+        memory(1247) <= "11000000";
+        memory(1248) <= "00100011";
+        memory(1249) <= "11101111";
+        memory(1250) <= "00000000";
+        memory(1251) <= "00000000";
+        memory(1252) <= "00000000";
+        memory(1253) <= "00000000";
+        memory(1254) <= "00000000";
+        memory(1255) <= "00000000";
         
         wait;
     end process;

@@ -50,7 +50,7 @@ begin
     process (v_cnt) is
     begin
         reset <= '0';
-        if v_cnt = V_DISPLAY_END then
+        if v_cnt = V_MAX-1 then
             reset <= '1';
         end if;
     end process;

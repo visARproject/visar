@@ -81,12 +81,12 @@ begin
                     next_tmp.blue.x := tmp.blue.x + (last.blue.x - first.blue.x);
                     next_tmp.blue.y := tmp.blue.y + (last.blue.y - first.blue.y);
                     
-                    --next_output_int.red.x := (next_tmp.red.x + N/2)/N;
-                    --next_output_int.red.y := (next_tmp.red.y + N/2)/N;
-                    --next_output_int.green.x := (next_tmp.green.x + N/2)/N;
-                    --next_output_int.green.y := (next_tmp.green.y + N/2)/N;
-                    --next_output_int.blue.x := (next_tmp.blue.x + N/2)/N;
-                    --next_output_int.blue.y := (next_tmp.blue.y + N/2)/N;
+                    next_output_int.red.x := (next_tmp.red.x + N/2)/N;
+                    next_output_int.red.y := (next_tmp.red.y + N/2)/N;
+                    next_output_int.green.x := (next_tmp.green.x + N/2)/N;
+                    next_output_int.green.y := (next_tmp.green.y + N/2)/N;
+                    next_output_int.blue.x := (next_tmp.blue.x + N/2)/N;
+                    next_output_int.blue.y := (next_tmp.blue.y + N/2)/N;
                 else
                     next_first.red  .x := to_integer(unsigned(ram_streamer_output( 12-1 downto   0)));
                     next_first.red  .y := to_integer(unsigned(ram_streamer_output( 23-1 downto  12)));
