@@ -4,6 +4,7 @@
 
 # whitelist some files
 !/*/src/**
+!/*/doc/**
 !/*/*/*.xco
 !/*/ipcore*/**/user_design/mig.prj
 !.gitignore

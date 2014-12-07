@@ -322,7 +322,7 @@ begin
         end if;
     end process;
 
-    OUTPUT_DECODE : process(state, twiDone, twiErr, initWord)
+    OUTPUT_DECODE : process(state, twiDone, twiErr, initWord, regData1)
     begin
         twiDi     <= "--------";
         twiStb    <= '0';

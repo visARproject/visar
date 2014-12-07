@@ -1,0 +1,11 @@
+RAM bandwidth budget
+
+Total: 12.8e9 bit/s
+
+Write:
+Cameras: 80e6*8*2/12.8e9 = 10% (might later change to 10 bit/pixel)
+
+Read:
+Precacher commands (average): (136.5e6/1138/1933)*(1280*1024*2)/32*32/12.8e9 = 1%
+Image data (average): (136.5e6/1138/1933)*(1280*1024*2)*8/12.8e9 = 10%
+Distortion map: 136.5e6*(5*32)/33/12.8e9 = 5%

@@ -27,10 +27,17 @@ package camera is
 
     constant CAMERA_WIDTH : integer := 1600;
     constant CAMERA_HEIGHT : integer := 1200;
+    constant CAMERA_STEP : integer := 2048; -- should be CAMERA_WIDTH rounded up to the next power of two
     
     type CameraCoordinate is record
-        x : integer range 0 to 2*CAMERA_WIDTH-1;
+        x : integer range 0 to 2*CAMERA_WIDTH-1; -- stacked left-right because distorter buffer moves left-right
         y : integer range 0 to CAMERA_HEIGHT-1;
+    end record;
+    
+    type CameraTripleCoordinate is record
+        red   : CameraCoordinate;
+        green : CameraCoordinate;
+        blue  : CameraCoordinate;
     end record;
     
 end package;
