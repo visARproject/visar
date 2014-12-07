@@ -23,7 +23,7 @@ except:
     model.R = mkmat(3, 3, [1, 0, 0, 0, 1, 0, 0, 0, 1])
     model.P = mkmat(3, 4, [1729.883544921875, 0, 795.8956955131871, 0, 0, 1724.427978515625, 597.9395276549985, 0, 0, 0, 1, 0])
     c2 = lambda (x, y): model.project3dToPixel((-x, -y, 1))
-    c = lambda (x, y): model.rectifyPoint(model.project3dToPixel((-x, -y, 1)))
+    c = lambda (x, y): model.rectifyPoint(c2((x, y)))
     
     d = {}
     with open(sys.argv[1], 'rb') as f:
@@ -242,8 +242,17 @@ for cmd_delay, cmd_pos in res4:
 
 # load everything into FPGA
 
-import ram_test
-rp = ram_test.RAMPoker()
+import intelhex
+
+class HEXWriter(object):
+    def __init__(self):
+        self._d = {}
+    def write(self, addr, value):
+        for i in xrange(4):
+            self._d[addr+i] = (value>>(8*i))&0xFF
+    def save(self, filename):
+        intelhex.IntelHex(self._d).write_hex_file(filename)
+rp = HEXWriter()
 
 print 'writing prefetcher table...'
 
@@ -306,4 +315,6 @@ for v_cnt in xrange(1920):
             write_pos += 4
 
 scipy.misc.imsave('test.png', test)
+
+rp.save('out.hex')
 print 'done'
