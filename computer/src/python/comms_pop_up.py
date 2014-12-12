@@ -23,12 +23,12 @@ class Pop_Up(rendering.Drawable):
 
     if self.surface_size != book.eye_size:
       self.surface_size = book.eye_size
-      self.set_draw_target(self.draw(self.surface_size))
+      self.set_draw_target(self.draw())
 
     if self.connection != book.audio_manager.connection.connected:
       self.connection = book.audio_manager.connection.connected
       self.name = book.audio_manager.connection.remote_name
-      self.set_draw_target(self.draw(self.surface_size))
+      self.set_draw_target(self.draw())
 
   def draw(self):
     surface = pygame.Surface(self.surface_size)

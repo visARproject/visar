@@ -45,7 +45,7 @@ class Controller:
 
 # Controller book stores state information, add things as nessecarry
 class Controller_Book:
-  def __init__(self, pose_source, name='anonymous'):
+  def __init__(self, pose_source, name='Laptop'):
     self.pose_source = pose_source # position information
     self.keys = pygame.key.get_pressed()
     self.last_keys = None
@@ -65,9 +65,10 @@ class Controller_Book:
     self.last_keys = self.keys
     self.keys = pygame.key.get_pressed()
     self.events = pygame.event.get()
-    self.arrow_locations = [(0, 0, "red"), (.5, 0, "blue"), (1, 0, "green"),
-      (1, .5, "red"), (1, 1, "blue"), (.5, 1, "green"),
-      (0, 1, "red"), (0, .5, "blue"), (.5, .5, "yellow")]
+    # self.arrow_locations = [(0, 0, "red"), (.5, 0, "blue"), (1, 0, "green"),
+    #   (1, .5, "red"), (1, 1, "blue"), (.5, 1, "green"),
+    #   (0, 1, "red"), (0, .5, "blue"), (.5, .5, "yellow")]
+    self.arrow_locations = [(.3, .3, "red"), (.8, .4, "yellow")]
     
     # check exit conditions
     if self.keys[K_ESCAPE]: self.exiting = True
