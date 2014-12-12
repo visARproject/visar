@@ -73,8 +73,10 @@ architecture RTL of toplevel is
     signal c3_p0_in  : ram_bidir_port_in;
     signal c3_p0_out : ram_bidir_port_out;
 
-    signal c3_p1_in  : ram_bidir_port_in;
-    signal c3_p1_out : ram_bidir_port_out;
+    signal c3_p1_in         : ram_bidir_port_in;
+    signal c3_p1_out        : ram_bidir_port_out;
+    signal c3_p1_rdonly_in  : ram_rd_port_in;
+    signal c3_p1_rdonly_out : ram_rd_port_out;
 
     signal c3_p2_in  : ram_rd_port_in;
     signal c3_p2_out : ram_rd_port_out;
@@ -102,6 +104,11 @@ architecture RTL of toplevel is
 
     signal uart_rx_valid : std_logic;
     signal uart_rx_data : std_logic_vector(7 downto 0);
+    
+    constant                LEFT_CAMERA_MEMORY_LOCATION : integer :=  0*1024*1024;
+    constant               RIGHT_CAMERA_MEMORY_LOCATION : integer := 32*1024*1024;
+    constant DISTORTER_PREFETCHER_TABLE_MEMORY_LOCATION : integer := 64*1024*1024;
+    constant              DISTORTER_MAP_MEMORY_LOCATION : integer := 96*1024*1024;
 begin
     reset <= not rst_n;
 
@@ -143,7 +150,7 @@ begin
     
     U_CAMERA_A_WRITER : entity work.camera_writer
         generic map (
-            BUFFER_ADDRESS => 0)
+            BUFFER_ADDRESS => LEFT_CAMERA_MEMORY_LOCATION)
         port map (
             camera_output => camera_a_output,
             
@@ -152,7 +159,7 @@ begin
     
     U_CAMERA_B_WRITER : entity work.camera_writer
         generic map (
-            BUFFER_ADDRESS => CAMERA_WIDTH*CAMERA_HEIGHT)
+            BUFFER_ADDRESS => RIGHT_CAMERA_MEMORY_LOCATION)
         port map (
             camera_output => camera_b_output,
             
@@ -304,6 +311,15 @@ begin
         c3_p5_wr_count      => c3_p5_out.wr.count,
         c3_p5_wr_underrun   => c3_p5_out.wr.underrun,
         c3_p5_wr_error      => c3_p5_out.wr.error);
+    c3_p1_in <= (
+        cmd => c3_p1_rdonly_in.cmd,
+        rd => c3_p1_rdonly_in.rd,
+        wr => (
+            clk => '0',
+            en => '0',
+            mask => (others => '-'),
+            data => (others => '-')));
+    c3_p1_rdonly_out <= (cmd => c3_p1_out.cmd, rd => c3_p1_out.rd);
 
     led(0) <= c3_calib_done;
 
@@ -335,11 +351,21 @@ begin
                  sel       => received_video.sync.valid,
                  video_out => overlay_video);
 
-    U_RAM_VID_SRC : entity work.video_ram_source port map (
-        sync => overlay_video.sync,
-        data_out => base_video_data,
-        ram_in => c3_p2_in,
-        ram_out => c3_p2_out);
+    U_DISTORTER : entity work.video_distorter
+        generic map (
+            LEFT_CAMERA_MEMORY_LOCATION => LEFT_CAMERA_MEMORY_LOCATION,
+            RIGHT_CAMERA_MEMORY_LOCATION => RIGHT_CAMERA_MEMORY_LOCATION,
+            PREFETCHER_TABLE_MEMORY_LOCATION => DISTORTER_PREFETCHER_TABLE_MEMORY_LOCATION,
+            MAP_MEMORY_LOCATION => DISTORTER_MAP_MEMORY_LOCATION)
+        port map (
+            sync     => overlay_video.sync,
+            data_out => base_video_data,
+            ram1_in  => c3_p2_in,
+            ram1_out => c3_p2_out,
+            ram2_in  => c3_p3_in,
+            ram2_out => c3_p3_out,
+            ram3_in  => c3_p1_rdonly_in,
+            ram3_out => c3_p1_rdonly_out);
 
     composite_video.sync <= overlay_video.sync;
     U_OVERLAY : entity work.video_overlay

@@ -7,7 +7,7 @@ use work.ram_port.all;
 
 entity camera_writer is
     generic (
-        BUFFER_ADDRESS : in integer); -- needs to be aligned to 32 bytes
+        BUFFER_ADDRESS : in integer); -- needs to be 4-byte aligned
     port (
         camera_output : in camera_output;
         
@@ -20,7 +20,8 @@ begin
     process (camera_output) is
         variable state, next_state : integer range 0 to 3;
         variable state2, next_state2 : integer range 0 to 31;
-        variable write_pos, next_write_pos : integer range BUFFER_ADDRESS to BUFFER_ADDRESS + CAMERA_WIDTH*CAMERA_HEIGHT-1;
+        variable x, next_x : integer range 0 to CAMERA_WIDTH-1;
+        variable y, next_y : integer range 0 to CAMERA_HEIGHT-1;
         variable data, next_data : std_logic_vector(31 downto 0);
     begin
         ram_in.cmd.clk <= camera_output.clock;
@@ -36,15 +37,23 @@ begin
         
         next_state := state;
         next_state2 := state2;
-        next_write_pos := write_pos;
+        next_x := x;
+        next_y := y;
         next_data := data;
         
         if camera_output.frame_valid = '0' then
             next_state := 0;
             next_state2 := 0;
-            next_write_pos := BUFFER_ADDRESS;
+            next_x := 0;
+            next_y := 0;
         elsif camera_output.data_valid = '1' then
             next_data(8*state+7 downto 8*state) := camera_output.data;
+            if x /= CAMERA_WIDTH-1 then
+                next_x := x + 1;
+            else
+                next_x := 0;
+                next_y := y + 1;
+            end if;
             if state /= 3 then
                 next_state := state + 1;
             else
@@ -54,7 +63,7 @@ begin
                 ram_in.wr.mask <= (others => '0');
                 ram_in.wr.data <= next_data;
                 
-                if state2 /= 31 then
+                if state2 /= 31 and x/= CAMERA_WIDTH-1 then
                     next_state2 := state2 + 1;
                 else
                     next_state2 := 0;
@@ -62,9 +71,7 @@ begin
                     ram_in.cmd.en <= '1';
                     ram_in.cmd.instr <= WRITE_PRECHARGE_COMMAND;
                     ram_in.cmd.bl <= std_logic_vector(to_unsigned(32-1, ram_in.cmd.bl'length));
-                    ram_in.cmd.byte_addr <= std_logic_vector(to_unsigned(write_pos, ram_in.cmd.byte_addr'length));
-                    
-                    next_write_pos := write_pos + 32 * 4;
+                    ram_in.cmd.byte_addr <= std_logic_vector(to_unsigned(BUFFER_ADDRESS + y * CAMERA_STEP + x/(32*4)*(32*4), ram_in.cmd.byte_addr'length));
                 end if;
             end if;
         end if;
@@ -72,7 +79,8 @@ begin
         if rising_edge(camera_output.clock) then
             state := next_state;
             state2 := next_state2;
-            write_pos := next_write_pos;
+            x := next_x;
+            y := next_y;
             data := next_data;
         end if;
     end process;

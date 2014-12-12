@@ -21,7 +21,7 @@ class Arrows(rendering.Drawable):
 
     self.check = True
     self.surface_size = (0, 0)
-    self.image_size = 0.05
+    self.image_size = 0.1
 
   def get_arrows(self, color):
     color = color.lower()

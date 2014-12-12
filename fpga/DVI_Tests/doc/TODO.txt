@@ -1,0 +1,35 @@
+naive way of representing distortion map in RAM is very large - would make delaying it in FPGA impossible and reading it twice exceeds RAM bandwidth
+    .: need to implement some sort of compression before anything else can happen
+
+do we care about chromatic abburation right now? sure
+
+let's start by not storing errors
+
+(x, y) is (12, 11) bits if images are stacked sideways
+
+every 2^n+1 pixels need (12+11)*6 bits
+
+
+Prefetcher table data
+---------------------
+
+Each command reads 32 pixels along x into the cache (= 32 bytes = 8 words)
+
+delay(9 bits) pos(y:11,x:12)
+
+Each command is 4 bytes/1 word
+
+pos needs to be 4-pixel aligned
+
+
+remember that camera data storage will eventually be segmented by bayer type and prefetcher commands will specify which color to be filled in
+
+change camera_writer to use CAMERA_STEP
+
+
+
+problem hypothesis
+
+we're only precaching things that the original pattern will hit, but map compression changes them slightly
+
+either make map compression lossless or generate precacher commands based on simulation of compressed map

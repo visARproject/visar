@@ -23,7 +23,7 @@ class Pop_Up(rendering.Drawable):
 
     if self.surface_size != book.eye_size:
       self.surface_size = book.eye_size
-      self.set_draw_target(self.draw(self.surface_size))
+      self.set_draw_target(self.draw())
 
     if self.connection != book.audio_manager.connection.connected:
       self.connection = book.audio_manager.connection.connected
