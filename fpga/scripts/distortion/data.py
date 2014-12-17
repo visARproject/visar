@@ -4,11 +4,33 @@ import sys
 
 import numpy
 import cv2
-import image_geometry
-mkmat = image_geometry.cameramodels.mkmat
 import scipy.misc
 
 import constants
+
+
+
+def mkmat(rows, cols, L):
+    mat = numpy.matrix(L, dtype='float64')
+    mat.resize((rows,cols))
+    return mat
+
+class PinholeCameraModel(object):
+    def rectifyPoint(self, uv_raw):
+        src = mkmat(1, 2, list(uv_raw))
+        src.resize((1, 1, 2))
+        dst = src.copy()
+        res = cv2.undistortPoints(src, self.K, self.D, dst, self.R, self.P)
+        return [float(res[0,0,0]), float(res[0,0,1])]
+
+    def project3dToPixel(self, point):
+        src = mkmat(4, 1, [point[0], point[1], point[2], 1.0])
+        dst = self.P * src
+        x = dst[0,0]
+        y = dst[1,0]
+        w = dst[2,0]
+        return x / w, y / w
+
 
 try:
     with open('dump', 'rb') as f:
@@ -16,8 +38,7 @@ try:
 except:
     image_array = numpy.zeros((1080, 1920, 3), dtype=numpy.uint8)
     scipy.misc.imsave('outfile.png', image_array)
-    model = image_geometry.PinholeCameraModel()
-    model.__dict__.clear()
+    model = PinholeCameraModel()
     model.K = mkmat(3, 3, [1708.696467385962, 0, 799.5, 0, 1699.698456801442, 599.5, 0, 0, 1])
     model.D = mkmat(5, 1, [0.1690694920899251, -0.5050198309345741, -0.001501064571807179, -0.002772422551331286, 0])
     model.R = mkmat(3, 3, [1, 0, 0, 0, 1, 0, 0, 0, 1])
