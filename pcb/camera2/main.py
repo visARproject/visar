@@ -3,10 +3,10 @@ from __future__ import division
 import itertools
 import math
 
-from autoee import Net, Bus
+from autoee import Net, Bus, Interval
 from autoee import kicad, bom, easypart, landpattern, model, util, harnesses
 from autoee.units import INCH, MM
-from autoee.components import resistor, capacitor, inductor
+from autoee.components import resistor as _resistor, capacitor as _capacitor, inductor
 
 from autoee_components.mounting_hole import mounting_hole
 from autoee_components.on_semiconductor import NOIV1SE1300A_QDC
@@ -19,23 +19,30 @@ from autoee_components.vishay_semiconductors.VSMY7850X01 import VSMY7850X01
 from autoee_components.rohm_semiconductor import BUxxTD3WG
 from autoee_components.linear_technology.LT3476 import LT3476
 
+resistor = lambda *args, **kwargs: _resistor.resistor(*args, packages=frozenset({'0402 '}), **kwargs)
+capacitor = lambda *args, **kwargs: _capacitor.capacitor(*args, packages=frozenset({'0402 '}), **kwargs) # might create a problem for power filtering...
+
 '''
 TODO
+    buffers could use incoming 3.3v instead of regulated?
 
-buffers could use incoming 3.3v instead of regulated?
+    LED
+        LED drivers
 
-LED
-    LED drivers
+    power
+        decoupling caps everywhere
+        connect regulators to microcontroller for sequencing
 
-power
-    decoupling caps everywhere
-    connect regulators to microcontroller for sequencing
+    thermal
+        ???
 
-thermal
-    ???
-
-IMU/barometer
-    need to insert
+    IMU/barometer
+        need to insert
+    
+    microcontroller
+        decoupling
+        reset line
+        SWD header
 '''
 
 digilent_vhdci = _71430._71430_0101('''
@@ -107,7 +114,7 @@ class CameraHarness(object):
 
 def camera(prefix, gnd, vcc3_3, vcc1_8, harness):
     ibias_master = Net(prefix+'IBIAS')
-    yield resistor.resistor(47e3)(prefix+'R1', A=ibias_master, B=gnd) # gnd_33
+    yield resistor(47e3)(prefix+'R1', A=ibias_master, B=gnd) # gnd_33
     
     yield NOIV1SE1300A_QDC.NOIV1SE1300A_QDC(prefix+'U1',
         vdd_33=vcc3_3,
@@ -151,13 +158,7 @@ def camera(prefix, gnd, vcc3_3, vcc1_8, harness):
         reset_n=harness.reset_n,
     )
     yield CMT821.CMT821(prefix+'M1')
-    yield resistor.resistor(100, error=0, tolerance=0.01)(prefix+'R2', A=harness.clock_in.P, B=harness.clock_in.N)
-
-def combine_dicts(*xs):
-    res = {}
-    for a in xs:
-        res.update(a)
-    return res
+    yield resistor(100, error=0, tolerance=0.01)(prefix+'R2', A=harness.clock_in.P, B=harness.clock_in.N)
 
 @util.listify
 def main():
@@ -182,11 +183,11 @@ def main():
             VOUT=n,
         )
     
-    yield capacitor.capacitor(10e-6, voltage=5*2)('C1', A=vcc3_0, B=gnd)
+    yield capacitor(10e-6, voltage=5*2)('C1', A=vcc3_0, B=gnd)
     
     shield = Net('shield')
-    yield capacitor.capacitor(1e-9, voltage=250)('C2', A=shield, B=gnd)
-    yield resistor.resistor(1e6)('R2', A=shield, B=gnd)
+    yield _capacitor.capacitor(1e-9, voltage=250)('C2', A=shield, B=gnd)
+    yield resistor(1e6)('R2', A=shield, B=gnd)
     
     pairs = {i: harnesses.LVDSPair.new('pair%i' % (i,)) for i in xrange(1, 20+1)}
     yield digilent_vhdci('P1',
@@ -208,7 +209,7 @@ def main():
         bufout[i] = harnesses.LVDSPair.new('out%i' % (i,))
         a = bufout[i].swapped if swap else bufout[i]
         b = pairs[i].swapped if swap else pairs[i]
-        yield capacitor.capacitor(100e-9)('B%iC' % (i,), A=vcc3_3in, B=gnd)
+        yield capacitor(100e-9)('B%iC' % (i,), A=vcc3_3in, B=gnd)
         yield DS10BR150TSD('B%i' % (i,),
             GND=gnd,
             INn=a.N,
@@ -225,7 +226,7 @@ def main():
         bufin[i] = harnesses.LVDSPair.new('out%i' % (i,))
         a = pairs[i].swapped if swap else pairs[i]
         b = bufin[i].swapped if swap else bufin[i]
-        yield capacitor.capacitor(100e-9)('B%iC' % (i,), A=vcc3_3in, B=gnd)
+        yield capacitor(100e-9)('B%iC' % (i,), A=vcc3_3in, B=gnd)
         yield DS10BR150TSD('B%i' % (i,),
             GND=gnd,
             INn=a.N,
@@ -295,6 +296,7 @@ def main():
     
     cpld_jtag = harnesses.JTAG.new('cpld_')
     
+    # XXX add cpld decoupling
     yield XC2C128_6VQG100C('U2',
         GND=gnd,
         VCC=vcc1_8,
@@ -366,37 +368,57 @@ def main():
         IO2_77=lepton2.i2c_bus.SCL,
     )
     
+    yield leds('I',
+        gnd=gnd, vcc5in=vcc5in,
+        pwm=[Net('pwm%i' % (i,)) for i in xrange(4)],
+    )
+
+def leds(prefix, gnd, vcc5in, pwm):
+    # XXX expose nSHDN and add pulldown for safety? or do same to PWM pins?
+    
+    assert len(pwm) == 4
     cap = [vcc5in for i in xrange(4)]
-    led = [Net('led%i' % (i,)) for i in xrange(4)]
-    cat = [Net('cat%i' % (i,)) for i in xrange(4)]
-    pwm = [Net('pwm%i' % (i,)) for i in xrange(4)]
-    sw = [Net('sw%i' % (i,)) for i in xrange(4)]
+    led = [Net(prefix+'led%i' % (i,)) for i in xrange(4)]
+    cat = [Net(prefix+'cat%i' % (i,)) for i in xrange(4)]
+    sw = [Net(prefix+'sw%i' % (i,)) for i in xrange(4)]
+    vadj = [Net(prefix+'vadj%i' % (i,)) for i in xrange(4)]
+    vc = [Net(prefix+'vc%i' % (i,)) for i in xrange(4)]
+    
+    ref = Net(prefix+'ref') # 1.05 V
+    refdiv = Net(prefix+'refdiv') # 1.00 V
+    yield resistor(4.99e3)(prefix+'R1', A=ref, B=refdiv)
+    yield resistor(100e3)(prefix+'R2', A=refdiv, B=gnd)
+    
     for i in xrange(4):
-        yield resistor.resistor(100e-3)('D%iR' % (i,), A=cap[i], B=led[i]) # check power rating
-        yield VSMY7850X01('D%i' % (i,),
+        yield resistor(100e-3)(prefix+'D%iR' % (i,), A=cap[i], B=led[i]) # refdiv setting & this = 1.00 A thru LED # XXX check power rating
+        yield VSMY7850X01(prefix+'D%i' % (i,),
             A=led[i],
             C=cat[i],
         )
-        yield capacitor.capacitor(0.22e-6)('D%iC' % (i,), A=cap[i], B=cat[i])
-        yield inductor.inductor(10e-6)('L%i' % (i,), A=cat[i], B=sw[i])
-        #yield capacitor.capacitor
-    ref = Net('ref')
-    rt = Net('rt')
-    yield resistor.resistor(21e3)('RT', A=rt, B=gnd)
-    yield capacitor.capacitor(2.2e-6)('U3C', A=vcc5in, B=gnd)
-    yield LT3476('U3',
+        yield capacitor(0.22e-6)(prefix+'D%iC' % (i,), A=cap[i], B=cat[i])
+        yield inductor.inductor(Interval.from_center_and_relative_error(10e-6, 1.1))(prefix+'L%i' % (i,), A=cat[i], B=sw[i]) # XXX add current
+        # need flyback(?) diodes
+        
+        yield capacitor(1e-9)(prefix+'D%iC' % (i+4,), A=vc[i], B=gnd)
+    
+    rt = Net(prefix+'rt')
+    yield resistor(21e3)(prefix+'RT', A=rt, B=gnd) # 1 MHz
+    
+    yield capacitor(2.2e-6)(prefix+'U3C', A=vcc5in, B=gnd)
+    yield LT3476(prefix+'U3',
         GND=gnd,
         VIN=vcc5in,
         nSHDN=vcc5in,
         REF=ref,
         RT=rt,
-        **combine_dicts(
+        **util.union_dicts(
             {'PWM%i' % (i+1,): pwm[i] for i in xrange(4)},
             {'SW%i' % (i+1,): sw[i] for i in xrange(4)},
             {'CAP%i' % (i+1,): cap[i] for i in xrange(4)},
             {'LED%i' % (i+1,): led[i] for i in xrange(4)},
+            {'VADJ%i' % (i+1,): vadj[i] for i in xrange(4)},
+            {'VC%i' % (i+1,): vc[i] for i in xrange(4)},
         ))
-    
 
 desc = main()
 kicad.generate(desc, 'kicad')
