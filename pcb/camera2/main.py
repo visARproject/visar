@@ -18,6 +18,7 @@ from autoee_components.xilinx.XC2C128 import XC2C128_6VQG100C
 from autoee_components.vishay_semiconductors.VSMY7850X01 import VSMY7850X01
 from autoee_components.rohm_semiconductor import BUxxTD3WG
 from autoee_components.linear_technology.LT3476 import LT3476
+from autoee_components.murata_electronics import BLM15G
 
 resistor = lambda *args, **kwargs: _resistor.resistor(*args, packages=frozenset({'0402 '}), **kwargs)
 capacitor = lambda *args, **kwargs: _capacitor.capacitor(*args, packages=frozenset({'0402 '}), **kwargs) # might create a problem for power filtering...
@@ -30,7 +31,6 @@ TODO
         LED drivers
 
     power
-        decoupling caps everywhere
         connect regulators to microcontroller for sequencing
 
     thermal
@@ -43,6 +43,8 @@ TODO
         decoupling
         reset line
         SWD header
+    
+    allow connecting external 5V input
 '''
 
 digilent_vhdci = _71430._71430_0101('''
@@ -116,12 +118,26 @@ def camera(prefix, gnd, vcc3_3, vcc1_8, harness):
     ibias_master = Net(prefix+'IBIAS')
     yield resistor(47e3)(prefix+'R1', A=ibias_master, B=gnd) # gnd_33
     
+    vdd_18 = vcc1_8 # Net(prefix+'vdd_18')
+    for i in xrange(3): yield capacitor(100e-9)(prefix+'C1%i' % i, A=vdd_18, B=gnd)
+    for i in xrange(2): yield capacitor( 10e-6)(prefix+'C2%i' % i, A=vdd_18, B=gnd)
+    
+    vdd_33 = vcc3_3 # Net(prefix+'vdd_33')
+    for i in xrange(4): yield capacitor(100e-9)(prefix+'C3%i' % i, A=vdd_33, B=gnd)
+    for i in xrange(2): yield capacitor(4.7e-6)(prefix+'C4%i' % i, A=vdd_33, B=gnd)
+    for i in xrange(2): yield capacitor( 10e-6)(prefix+'C5%i' % i, A=vdd_33, B=gnd)
+    
+    vdd_pix = Net(prefix+'vdd_pix')
+    yield BLM15G.BLM15GG471SN1D(prefix+'FB1', A=vcc3_3, B=vdd_pix)
+    for i in xrange(4): yield capacitor(4.7e-6)(prefix+'C6%i' % i, A=vdd_pix, B=gnd)
+    for i in xrange(2): yield _capacitor.capacitor(100e-6)(prefix+'C7%i' % i, A=vdd_pix, B=gnd) # not restricted to 0402
+    
     yield NOIV1SE1300A_QDC.NOIV1SE1300A_QDC(prefix+'U1',
-        vdd_33=vcc3_3,
+        vdd_33=vdd_33,
         gnd_33=gnd,
-        vdd_pix=vcc3_3, # XXX filter separately?
+        vdd_pix=vdd_pix,
         gnd_colpc=gnd,
-        vdd_18=vcc1_8,
+        vdd_18=vdd_18,
         gnd_18=gnd,
         
         mosi=harness.spi_bus.MOSI,
@@ -167,8 +183,8 @@ def main():
     
     gnd = Net('gnd')
     
-    vcc5in = Net('vcc5in')
-    vcc3_3in = Net('vcc3_3in')
+    vcc5in = Net('vcc5in') # specified at 1 A. could supply a lot more at peak if pulsed. used only for LED driver.
+    vcc3_3in = Net('vcc3_3in') # specification unclear; around 1 A. used only for LVDS buffers and regulators.
     
     vcc1_2 = Net('vcc1_2') # thermal (110mA*2)
     vcc1_8 = Net('vcc1_8') # CMOS (75mA*2), CPLD (40mA) - CMOS needs to be switched
@@ -182,8 +198,8 @@ def main():
             nSTBY=vcc3_3in,
             VOUT=n,
         )
-    
-    yield capacitor(10e-6, voltage=5*2)('C1', A=vcc3_0, B=gnd)
+        yield capacitor(0.47e-6)('REG%iC1' % (i,), A=vcc3_3in, B=gnd)
+        yield capacitor(0.47e-6)('REG%iC2' % (i,), A=n, B=gnd)
     
     shield = Net('shield')
     yield _capacitor.capacitor(1e-9, voltage=250)('C2', A=shield, B=gnd)
@@ -279,24 +295,13 @@ def main():
     )
     yield lepton2.make()
     
-    jtag = harnesses.JTAG.new('mc_')
-    
-    yield STM32F103TB('U1',
-        VSS=gnd,
-        BOOT0=gnd,
-        NRST=vcc3_0,
-        VDD=vcc3_0,
-        
-        PA13=jtag.TMS,
-        PA14=jtag.TCK,
-        PA15=jtag.TDI,
-        PB3=jtag.TDO,
-        PB4=jtag.TRST,
-    )
-    
     cpld_jtag = harnesses.JTAG.new('cpld_')
     
     # XXX add cpld decoupling
+    for i in xrange(6):
+        yield capacitor(0.1e-6)('U2C%i' % (i,), A=vcc3_0, B=gnd)
+    for i in xrange(2):
+        yield capacitor(0.1e-6)('U2C%i' % (10+i,), A=vcc1_8, B=gnd)
     yield XC2C128_6VQG100C('U2',
         GND=gnd,
         VCC=vcc1_8,
@@ -372,9 +377,17 @@ def main():
         gnd=gnd, vcc5in=vcc5in,
         pwm=[Net('pwm%i' % (i,)) for i in xrange(4)],
     )
+    
+    yield micro('M',
+        gnd=gnd, vcc3_0=vcc3_0,
+    )
 
 def leds(prefix, gnd, vcc5in, pwm):
     # XXX expose nSHDN and add pulldown for safety? or do same to PWM pins?
+    
+    # maximum current
+    #   driver: > 1 A/channel
+    #   LED: 1 A DC, 5 A pulses
     
     assert len(pwm) == 4
     cap = [vcc5in for i in xrange(4)]
@@ -419,6 +432,22 @@ def leds(prefix, gnd, vcc5in, pwm):
             {'VADJ%i' % (i+1,): vadj[i] for i in xrange(4)},
             {'VC%i' % (i+1,): vc[i] for i in xrange(4)},
         ))
+
+def micro(prefix, gnd, vcc3_0):
+    jtag = harnesses.JTAG.new(prefix+'mc_')
+    
+    yield STM32F103TB(prefix+'U1',
+        VSS=gnd,
+        BOOT0=gnd,
+        NRST=vcc3_0,
+        VDD=vcc3_0,
+        
+        PA13=jtag.TMS,
+        PA14=jtag.TCK,
+        PA15=jtag.TDI,
+        PB3=jtag.TDO,
+        PB4=jtag.TRST,
+    )
 
 desc = main()
 kicad.generate(desc, 'kicad')
