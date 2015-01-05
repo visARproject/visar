@@ -19,33 +19,12 @@ from autoee_components.vishay_semiconductors.VSMY7850X01 import VSMY7850X01
 from autoee_components.rohm_semiconductor import BUxxTD3WG
 from autoee_components.linear_technology.LT3476 import LT3476
 from autoee_components.murata_electronics import BLM15G
+from autoee_components.measurement_specialties import MS5611_01BA03
+from autoee_components.invensense import MPU_9250
+from autoee_components.maxim import DS18B20
 
 resistor = lambda *args, **kwargs: _resistor.resistor(*args, packages=frozenset({'0402 '}), **kwargs)
 capacitor = lambda *args, **kwargs: _capacitor.capacitor(*args, packages=frozenset({'0402 '}), **kwargs) # might create a problem for power filtering...
-
-'''
-TODO
-    buffers could use incoming 3.3v instead of regulated?
-
-    LED
-        LED drivers
-
-    power
-        connect regulators to microcontroller for sequencing
-
-    thermal
-        ???
-
-    IMU/barometer
-        need to insert
-    
-    microcontroller
-        decoupling
-        reset line
-        SWD header
-    
-    allow connecting external 5V input
-'''
 
 digilent_vhdci = _71430._71430_0101('''
     IO1_P GND IO2_P IO3_P GND IO4_P IO5_P GND IO6_P IO7_P GND IO8_P IO9_P GND CLK10_P VCC VU
@@ -161,7 +140,7 @@ def camera(prefix, gnd, vcc3_3, vcc1_8, harness):
         lvds_clock_inn=harness.clock_in.N,
         lvds_clock_inp=harness.clock_in.P,
         
-        clk_pll=gnd, # XXX maybe do put a 62 MHz clock here?
+        clk_pll=gnd,
         
         ibias_master=ibias_master,
         
@@ -175,6 +154,50 @@ def camera(prefix, gnd, vcc3_3, vcc1_8, harness):
     )
     yield CMT821.CMT821(prefix+'M1')
     yield resistor(100, error=0, tolerance=0.01)(prefix+'R2', A=harness.clock_in.P, B=harness.clock_in.N)
+
+@util.listify
+def sensors(prefix,
+    GND, VCC,
+    
+    imu_spi_bus,
+    imu_spi_nCS,
+    imu_FSYNC, imu_INT,
+    
+    baro_spi_bus,
+    baro_spi_nCS,
+):
+    yield capacitor(100e-9)(prefix+'C0', A=VCC, B=GND)
+    yield MS5611_01BA03.MS5611_01BA03(prefix+'U1',
+        VDD=VCC,
+        PS=GND, # use SPI
+        GND=GND,
+        CSB=baro_spi_nCS,
+        SDO=baro_spi_bus.MISO,
+        SDI=baro_spi_bus.MOSI,
+        SCLK=baro_spi_bus.SCLK,
+    )
+    
+    
+    yield capacitor(10e-9)(prefix+'C3', A=VCC, B=GND) # near VDDIO
+    yield capacitor(0.1e-6)(prefix+'C2', A=VCC, B=GND) # near VDD
+    
+    REGOUT = Net(prefix+'_REGOUT')
+    yield capacitor(0.1e-6)(prefix+'C1', A=REGOUT, B=GND)
+    
+    yield MPU_9250.MPU_9250(prefix+'U2',
+        RESV_1=VCC,
+        VDDIO=VCC,
+        AD0_SDO=imu_spi_bus.MISO,
+        REGOUT=REGOUT,
+        FSYNC=imu_FSYNC,
+        INT=imu_INT,
+        VDD=VCC,
+        GND=GND,
+        RESV_20=GND,
+        nCS=imu_spi_nCS,
+        SCL_SCLK=imu_spi_bus.SCLK,
+        SDA_SDI=imu_spi_bus.MOSI,
+    )
 
 @util.listify
 def main():
@@ -195,7 +218,7 @@ def main():
         yield BUxxTD3WG.by_voltage[v]('REG%i' % (i,),
             VIN=vcc3_3in,
             GND=gnd,
-            nSTBY=vcc3_3in,
+            nSTBY=vcc3_3in, # XXX some need to be connected to CPLD to be switched/split off into switched ones
             VOUT=n,
         )
         yield capacitor(0.47e-6)('REG%iC1' % (i,), A=vcc3_3in, B=gnd)
@@ -295,9 +318,35 @@ def main():
     )
     yield lepton2.make()
     
-    cpld_jtag = harnesses.JTAG.new('cpld_')
+    baro_spi_bus = harnesses.SPIBus.new('baro_') # XXX connect to CPLD
+    baro_spi_nCS = Net('baro_spi_nCS') # XXX connect to CPLD
+    imu_spi_bus = harnesses.SPIBus.new('imu_') # XXX connect to CPLD
+    imu_spi_nCS = Net('imu_spi_nCS') # XXX connect to CPLD
+    imu_FSYNC = Net('imu_FSYNC') # XXX connect to CPLD
+    imu_INT = Net('imu_INT') # XXX connect to CPLD
+    yield sensors('S',
+        GND=gnd,
+        VCC=vcc3_0,
+        baro_spi_bus=baro_spi_bus,
+        baro_spi_nCS=baro_spi_nCS,
+        imu_spi_bus=imu_spi_bus,
+        imu_spi_nCS=imu_spi_nCS,
+        imu_FSYNC=imu_FSYNC,
+        imu_INT=imu_INT,
+    )
     
-    # XXX add cpld decoupling
+    led_pwm = [Net('led_pwm%i' % (i,)) for i in xrange(4)]
+    temp_bus = Net('temp_bus')
+    yield leds('I',
+        gnd=gnd,
+        vcc5in=vcc5in, # XXX add connector for external higher current 5V power
+        vcc3in=vcc3_0, # XXX use vcc3_3 instead? more within DS18B20 spec
+        pwm=led_pwm,
+        temp_bus=temp_bus,
+    )
+    
+    cpld_jtag = harnesses.JTAG.new('cpld_') # XXX make connector for
+    
     for i in xrange(6):
         yield capacitor(0.1e-6)('U2C%i' % (i,), A=vcc3_0, B=gnd)
     for i in xrange(2):
@@ -350,6 +399,12 @@ def main():
         IO1_50=lepton1.video_spi_bus.SCLK,
         IO1_52=lepton1.video_ss_n,
         
+        IO1_53=temp_bus,
+        IO1_54=led_pwm[0],
+        IO1_55=led_pwm[0],
+        IO1_56=led_pwm[0],
+        IO1_58=led_pwm[0],
+        
         
         IO2_89=C2_harness.spi_bus.SCLK,
         IO2_90=C2_harness.spi_bus.MISO,
@@ -373,16 +428,11 @@ def main():
         IO2_77=lepton2.i2c_bus.SCL,
     )
     
-    yield leds('I',
-        gnd=gnd, vcc5in=vcc5in,
-        pwm=[Net('pwm%i' % (i,)) for i in xrange(4)],
-    )
-    
     yield micro('M',
         gnd=gnd, vcc3_0=vcc3_0,
     )
 
-def leds(prefix, gnd, vcc5in, pwm):
+def leds(prefix, gnd, vcc5in, vcc3in, pwm, temp_bus):
     # XXX expose nSHDN and add pulldown for safety? or do same to PWM pins?
     
     # maximum current
@@ -413,6 +463,13 @@ def leds(prefix, gnd, vcc5in, pwm):
         # need flyback(?) diodes
         
         yield capacitor(1e-9)(prefix+'D%iC' % (i+4,), A=vc[i], B=gnd)
+        
+        yield DS18B20.DS18B20U_('D%iU' % (i,),
+            GND=gnd,
+            VDD=vcc3in,
+            DQ=temp_bus,
+            NC=led[i], # thermal connection
+        )
     
     rt = Net(prefix+'rt')
     yield resistor(21e3)(prefix+'RT', A=rt, B=gnd) # 1 MHz
@@ -434,6 +491,10 @@ def leds(prefix, gnd, vcc5in, pwm):
         ))
 
 def micro(prefix, gnd, vcc3_0):
+    # XXX decoupling
+    # XXX reset line
+    # XXX SWD header
+    
     jtag = harnesses.JTAG.new(prefix+'mc_')
     
     yield STM32F103TB(prefix+'U1',
