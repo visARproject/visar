@@ -284,7 +284,7 @@ def main():
     
     bufout = {}
     for i in [2, 3, 4, -5, -6, -10, 11, 15, 16, -17, 18, 19]:
-        swap = i < 0
+        swap = not (i < 0)
         i = abs(i)
         bufout[i] = harnesses.LVDSPair.new('out%i' % (i,))
         a = bufout[i].swapped if swap else bufout[i]
@@ -301,7 +301,7 @@ def main():
     
     bufin = {}
     for i in [-1, 20]:
-        swap = i < 0
+        swap = not (i < 0)
         i = abs(i)
         bufin[i] = harnesses.LVDSPair.new('out%i' % (i,))
         a = pairs[i].swapped if swap else pairs[i]
