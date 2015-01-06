@@ -9,7 +9,7 @@ from autoee.units import INCH, MM
 from autoee.components import resistor as _resistor, capacitor as _capacitor, inductor
 
 from autoee_components.mounting_hole import mounting_hole
-from autoee_components.on_semiconductor import NOIV1SE1300A_QDC
+from autoee_components.on_semiconductor import NOIV1SE1300A_QDC, NCP702
 from autoee_components.molex import _71430, _1050281001
 from autoee_components.sunex import CMT821
 from autoee_components.stmicroelectronics.STM32F103TB import STM32F103TB
@@ -93,7 +93,7 @@ class CameraHarness(object):
         assert len(self.monitors) == 2
         self.reset_n = Net(prefix+'reset_n') if reset_n is None else reset_n
 
-def camera(prefix, gnd, vcc3_3, vcc1_8, harness):
+def camera(prefix, gnd, vcc3_3, vcc3_3_pix, vcc1_8, harness):
     ibias_master = Net(prefix+'IBIAS')
     yield resistor(47e3)(prefix+'R1', A=ibias_master, B=gnd) # gnd_33
     
@@ -107,7 +107,7 @@ def camera(prefix, gnd, vcc3_3, vcc1_8, harness):
     for i in xrange(2): yield capacitor( 10e-6)(prefix+'C5%i' % i, A=vdd_33, B=gnd)
     
     vdd_pix = Net(prefix+'vdd_pix')
-    yield BLM15G.BLM15GG471SN1D(prefix+'FB1', A=vcc3_3, B=vdd_pix)
+    yield BLM15G.BLM15GG471SN1D(prefix+'FB1', A=vcc3_3_pix, B=vdd_pix)
     for i in xrange(4): yield capacitor(4.7e-6)(prefix+'C6%i' % i, A=vdd_pix, B=gnd)
     for i in xrange(2): yield _capacitor.capacitor(100e-6)(prefix+'C7%i' % i, A=vdd_pix, B=gnd) # not restricted to 0402
     
@@ -209,20 +209,57 @@ def main():
     vcc5in = Net('vcc5in') # specified at 1 A. could supply a lot more at peak if pulsed. used only for LED driver.
     vcc3_3in = Net('vcc3_3in') # specification unclear; around 1 A. used only for LVDS buffers and regulators.
     
-    vcc1_2 = Net('vcc1_2') # thermal (110mA*2)
-    vcc1_8 = Net('vcc1_8') # CMOS (75mA*2), CPLD (40mA) - CMOS needs to be switched
+    vcc1_2_1 = Net('vcc1_2_1') # thermal 1 (110mA)
+    vcc1_2_2 = Net('vcc1_2_2') # thermal 2 (110mA)
+    vcc1_8 = Net('vcc1_8') # CPLD (40mA)
+    vcc1_8_1 = Net('vcc1_8_1') # CMOS (75mA) - switched
+    vcc1_8_1_en = Net('vcc1_8_1_en') # XXX connect to CPLD
+    vcc1_8_2 = Net('vcc1_8_2') # CMOS (75mA) - switched
+    vcc1_8_2_en = Net('vcc1_8_2_en') # XXX connect to CPLD
     vcc2_8 = Net('vcc2_8') # thermal (16mA*2)
-    vcc3_0 = Net('vcc3_0') # CPLD, thermal (4mA*2), ARM, CMOS ((130+2.5mA)*2) - CMOS needs to be switched
+    vcc3_0 = Net('vcc3_0') # CPLD, thermal (4mA*2), ARM
+    vcc3_0_1a = Net('vcc3_0_1a') # CMOS (130mA) - switched
+    vcc3_0_1a_en = Net('vcc3_0_1a_en') # XXX connect to CPLD
+    vcc3_0_1b = Net('vcc3_0_1b') # CMOS (2.5mA) - switched
+    vcc3_0_1b_en = Net('vcc3_0_1b_en') # XXX connect to CPLD
+    vcc3_0_2a = Net('vcc3_0_2a') # CMOS (130mA) - switched
+    vcc3_0_2a_en = Net('vcc3_0_2a_en') # XXX connect to CPLD
+    vcc3_0_2b = Net('vcc3_0_2b') # CMOS (2.5mA) - switched
+    vcc3_0_2b_en = Net('vcc3_0_2b_en') # XXX connect to CPLD
     
-    for i, (n, v) in enumerate({vcc1_2: 1.2, vcc1_8: 1.8, vcc2_8: 2.8, vcc3_0: 3.0}.iteritems()):
-        yield BUxxTD3WG.by_voltage[v]('REG%i' % (i,),
-            VIN=vcc3_3in,
-            GND=gnd,
-            nSTBY=vcc3_3in, # XXX some need to be connected to CPLD to be switched/split off into switched ones
-            VOUT=n,
-        )
-        yield capacitor(0.47e-6)('REG%iC1' % (i,), A=vcc3_3in, B=gnd)
-        yield capacitor(0.47e-6)('REG%iC2' % (i,), A=n, B=gnd)
+    for n, v, en in [
+        (vcc1_2_1 , 1.2, None),
+        (vcc1_2_2 , 1.2, None),
+        (vcc1_8   , 1.8, None),
+        (vcc1_8_1 , 1.8, vcc1_8_1_en),
+        (vcc1_8_2 , 1.8, vcc1_8_2_en),
+        (vcc2_8   , 2.8, None),
+        (vcc3_0   , 3.0, None),
+        (vcc3_0_1a, 3.0, vcc3_0_1a_en),
+        (vcc3_0_1b, 3.0, vcc3_0_1b_en),
+        (vcc3_0_2a, 3.0, vcc3_0_2a_en),
+        (vcc3_0_2b, 3.0, vcc3_0_2b_en),
+    ]:
+        if v != 1.2:
+            yield NCP702.by_voltage[v](n.name + 'U',
+                IN=vcc3_3in,
+                GND=gnd,
+                EN=vcc3_3in if en is None else en,
+                OUT=n,
+                NC=gnd, # thermal
+            )
+            yield capacitor(1e-6)(n.name + 'C1', A=vcc3_3in, B=gnd)
+            yield capacitor(1e-6)(n.name + 'C2', A=n, B=gnd)
+        else:
+            yield BUxxTD3WG.by_voltage[v](n.name + 'U',
+                VIN=vcc3_3in,
+                GND=gnd,
+                nSTBY=vcc3_3in if en is None else en,
+                VOUT=n,
+                NC=gnd, # thermal
+            )
+            yield capacitor(0.47e-6)(n.name + 'C1', A=vcc3_3in, B=gnd)
+            yield capacitor(0.47e-6)(n.name + 'C2', A=n, B=gnd)
     
     shield = Net('shield')
     yield _capacitor.capacitor(1e-9, voltage=250)('C2', A=shield, B=gnd)
@@ -283,8 +320,9 @@ def main():
     )
     yield camera('C1',
         gnd=gnd,
-        vcc1_8=vcc1_8,
-        vcc3_3=vcc3_0,
+        vcc1_8=vcc1_8_1,
+        vcc3_3=vcc3_0_1a,
+        vcc3_3_pix=vcc3_0_1b,
         harness=C1_harness,
     )
     
@@ -296,15 +334,16 @@ def main():
     )
     yield camera('C2',
         gnd=gnd,
-        vcc1_8=vcc1_8,
-        vcc3_3=vcc3_0,
+        vcc1_8=vcc1_8_2,
+        vcc3_3=vcc3_0_2a,
+        vcc3_3_pix=vcc3_0_2b,
         harness=C2_harness,
     )
     
     
     lepton1 = LeptonHarness('T1',
         gnd=gnd,
-        vddc=vcc1_2,
+        vddc=vcc1_2_1,
         vdd=vcc2_8,
         vddio=vcc3_0,
     )
@@ -312,7 +351,7 @@ def main():
     
     lepton2 = LeptonHarness('T2',
         gnd=gnd,
-        vddc=vcc1_2,
+        vddc=vcc1_2_2,
         vdd=vcc2_8,
         vddio=vcc3_0,
     )
@@ -340,7 +379,7 @@ def main():
     yield leds('I',
         gnd=gnd,
         vcc5in=vcc5in, # XXX add connector for external higher current 5V power
-        vcc3in=vcc3_0, # XXX use vcc3_3 instead? more within DS18B20 spec
+        vcc3in=vcc3_3in,
         pwm=led_pwm,
         temp_bus=temp_bus,
     )
@@ -432,7 +471,7 @@ def main():
         gnd=gnd, vcc3_0=vcc3_0,
     )
 
-def leds(prefix, gnd, vcc5in, vcc3in, pwm, temp_bus):
+def leds(prefix, gnd, vcc5in, vcc3in, pwm, temp_bus, nSHDN):
     # XXX expose nSHDN and add pulldown for safety? or do same to PWM pins?
     
     # maximum current
@@ -478,7 +517,7 @@ def leds(prefix, gnd, vcc5in, vcc3in, pwm, temp_bus):
     yield LT3476(prefix+'U3',
         GND=gnd,
         VIN=vcc5in,
-        nSHDN=vcc5in,
+        nSHDN=nSHDN,
         REF=ref,
         RT=rt,
         **util.union_dicts(
