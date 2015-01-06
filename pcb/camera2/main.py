@@ -5,10 +5,11 @@ import math
 
 from autoee import Net, Bus, Interval
 from autoee import kicad, bom, easypart, landpattern, model, util, harnesses
-from autoee.units import INCH, MM
+from autoee.units import INCH, MM, MIL
 from autoee.components import resistor as _resistor, capacitor as _capacitor, inductor
 
 from autoee_components.mounting_hole import mounting_hole
+from autoee_components.jumper import trace_jumper
 from autoee_components.on_semiconductor import NOIV1SE1300A_QDC, NCP702
 from autoee_components.molex import _71430, _1050281001
 from autoee_components.sunex import CMT821
@@ -22,6 +23,7 @@ from autoee_components.murata_electronics import BLM15G
 from autoee_components.measurement_specialties import MS5611_01BA03
 from autoee_components.invensense import MPU_9250
 from autoee_components.maxim import DS18B20
+from autoee_components.diodes_incorporated.DFLS140L import DFLS140L_7
 
 resistor = lambda *args, **kwargs: _resistor.resistor(*args, packages=frozenset({'0402 '}), **kwargs)
 capacitor = lambda *args, **kwargs: _capacitor.capacitor(*args, packages=frozenset({'0402 '}), **kwargs) # might create a problem for power filtering...
@@ -58,6 +60,7 @@ class LeptonHarness(object):
         self.reset_l = Net(prefix+'_reset_l') if reset_l is None else reset_l
         self.master_clk = Net(prefix+'_master_clk') if master_clk is None else master_clk
     
+    @util.listify
     def make(self):
         yield lepton(self.prefix+'U',
             GND=self.gnd,
@@ -93,6 +96,7 @@ class CameraHarness(object):
         assert len(self.monitors) == 2
         self.reset_n = Net(prefix+'reset_n') if reset_n is None else reset_n
 
+@util.listify
 def camera(prefix, gnd, vcc3_3, vcc3_3_pix, vcc1_8, harness):
     ibias_master = Net(prefix+'IBIAS')
     yield resistor(47e3)(prefix+'R1', A=ibias_master, B=gnd) # gnd_33
@@ -375,6 +379,7 @@ def main():
     )
     
     led_pwm = [Net('led_pwm%i' % (i,)) for i in xrange(4)]
+    led_nSHDN = Net('led_nSHDN')
     temp_bus = Net('temp_bus')
     yield leds('I',
         gnd=gnd,
@@ -382,9 +387,10 @@ def main():
         vcc3in=vcc3_3in,
         pwm=led_pwm,
         temp_bus=temp_bus,
+        nSHDN=led_nSHDN,
     )
     
-    cpld_jtag = harnesses.JTAG.new('cpld_') # XXX make connector for
+    cpld_jtag = harnesses.JTAG.new('cpld_') # XXX make connector for. make sure to use vcc3_0 for power pin
     
     for i in xrange(6):
         yield capacitor(0.1e-6)('U2C%i' % (i,), A=vcc3_0, B=gnd)
@@ -394,7 +400,7 @@ def main():
         GND=gnd,
         VCC=vcc1_8,
         
-        VAUX=vcc3_0, # XXX
+        VAUX=vcc3_0,
         TDI=cpld_jtag.TDI,
         TDO=cpld_jtag.TDO,
         TCK=cpld_jtag.TCK,
@@ -440,9 +446,10 @@ def main():
         
         IO1_53=temp_bus,
         IO1_54=led_pwm[0],
-        IO1_55=led_pwm[0],
-        IO1_56=led_pwm[0],
-        IO1_58=led_pwm[0],
+        IO1_55=led_pwm[1],
+        IO1_56=led_pwm[2],
+        IO1_58=led_pwm[3],
+        IO1_59=led_nSHDN,
         
         
         IO2_89=C2_harness.spi_bus.SCLK,
@@ -471,15 +478,14 @@ def main():
         gnd=gnd, vcc3_0=vcc3_0,
     )
 
+@util.listify
 def leds(prefix, gnd, vcc5in, vcc3in, pwm, temp_bus, nSHDN):
-    # XXX expose nSHDN and add pulldown for safety? or do same to PWM pins?
-    
     # maximum current
     #   driver: > 1 A/channel
     #   LED: 1 A DC, 5 A pulses
     
     assert len(pwm) == 4
-    cap = [vcc5in for i in xrange(4)]
+    cap = [Net(prefix+'cap%i' % (i,)) for i in xrange(4)]
     led = [Net(prefix+'led%i' % (i,)) for i in xrange(4)]
     cat = [Net(prefix+'cat%i' % (i,)) for i in xrange(4)]
     sw = [Net(prefix+'sw%i' % (i,)) for i in xrange(4)]
@@ -491,17 +497,21 @@ def leds(prefix, gnd, vcc5in, vcc3in, pwm, temp_bus, nSHDN):
     yield resistor(4.99e3)(prefix+'R1', A=ref, B=refdiv)
     yield resistor(100e3)(prefix+'R2', A=refdiv, B=gnd)
     
+    yield resistor(10e3)(prefix+'R3', A=nSHDN, B=gnd)
+    
     for i in xrange(4):
+        yield trace_jumper(5*MIL)(prefix+'D%iJ' % (i,), A=vcc5in, B=cap[i])
+        
         yield resistor(100e-3)(prefix+'D%iR' % (i,), A=cap[i], B=led[i]) # refdiv setting & this = 1.00 A thru LED # XXX check power rating
         yield VSMY7850X01(prefix+'D%i' % (i,),
             A=led[i],
             C=cat[i],
         )
         yield capacitor(0.22e-6)(prefix+'D%iC' % (i,), A=cap[i], B=cat[i])
-        yield inductor.inductor(Interval.from_center_and_relative_error(10e-6, 1.1))(prefix+'L%i' % (i,), A=cat[i], B=sw[i]) # XXX add current
-        # need flyback(?) diodes
+        yield inductor.inductor(Interval.from_center_and_relative_error(10e-6, 0.3), minimum_current=1, maximum_resistance=100e-3)(prefix+'D%iL' % (i,), A=cat[i], B=sw[i])
+        yield DFLS140L_7(prefix+'D%iD' % (i+4,), A=sw[i], C=cap[i])
         
-        yield capacitor(1e-9)(prefix+'D%iC' % (i+4,), A=vc[i], B=gnd)
+        yield capacitor(1e-9)(prefix+'D%iC2' % (i,), A=vc[i], B=gnd)
         
         yield DS18B20.DS18B20U_('D%iU' % (i,),
             GND=gnd,
@@ -529,6 +539,7 @@ def leds(prefix, gnd, vcc5in, vcc3in, pwm, temp_bus, nSHDN):
             {'VC%i' % (i+1,): vc[i] for i in xrange(4)},
         ))
 
+@util.listify
 def micro(prefix, gnd, vcc3_0):
     # XXX decoupling
     # XXX reset line
