@@ -494,18 +494,19 @@ def leds(prefix, gnd, vcc5in, vcc3in, pwm, temp_bus, nSHDN):
     #   driver: > 1 A/channel
     #   LED: 1 A DC, 5 A pulses
     
+    ref = Net(prefix+'ref') # 1.05 V
+    yield capacitor(0.1e-6)(prefix+'C1', A=ref, B=gnd)
+    refdiv = Net(prefix+'refdiv') # 1.00 V
+    yield resistor(4.99e3)(prefix+'R1', A=ref, B=refdiv)
+    yield resistor(100e3)(prefix+'R2', A=refdiv, B=gnd)
+    
     assert len(pwm) == 4
     cap = [Net(prefix+'cap%i' % (i,)) for i in xrange(4)]
     led = [Net(prefix+'led%i' % (i,)) for i in xrange(4)]
     cat = [Net(prefix+'cat%i' % (i,)) for i in xrange(4)]
     sw = [Net(prefix+'sw%i' % (i,)) for i in xrange(4)]
-    vadj = [Net(prefix+'vadj%i' % (i,)) for i in xrange(4)]
+    vadj = [refdiv for i in xrange(4)]
     vc = [Net(prefix+'vc%i' % (i,)) for i in xrange(4)]
-    
-    ref = Net(prefix+'ref') # 1.05 V
-    refdiv = Net(prefix+'refdiv') # 1.00 V
-    yield resistor(4.99e3)(prefix+'R1', A=ref, B=refdiv)
-    yield resistor(100e3)(prefix+'R2', A=refdiv, B=gnd)
     
     yield resistor(10e3)(prefix+'R3', A=nSHDN, B=gnd)
     
@@ -517,9 +518,9 @@ def leds(prefix, gnd, vcc5in, vcc3in, pwm, temp_bus, nSHDN):
             A=led[i],
             C=cat[i],
         )
-        yield capacitor(0.22e-6)(prefix+'D%iC' % (i,), A=cap[i], B=cat[i])
+        yield capacitor(0.22e-6)(prefix+'D%iC' % (i,), A=vcc5in, B=cat[i])
         yield inductor.inductor(Interval.from_center_and_relative_error(10e-6, 0.3), minimum_current=1, maximum_resistance=100e-3)(prefix+'D%iL' % (i,), A=cat[i], B=sw[i])
-        yield DFLS140L_7(prefix+'D%iD' % (i+4,), A=sw[i], C=cap[i])
+        yield DFLS140L_7(prefix+'D%iD' % (i+4,), A=sw[i], C=vcc5in)
         
         yield capacitor(1e-9)(prefix+'D%iC2' % (i,), A=vc[i], B=gnd)
         
@@ -536,6 +537,7 @@ def leds(prefix, gnd, vcc5in, vcc3in, pwm, temp_bus, nSHDN):
     yield capacitor(2.2e-6)(prefix+'U3C', A=vcc5in, B=gnd)
     yield LT3476(prefix+'U3',
         GND=gnd,
+        NC=gnd, # better heat dissipation
         VIN=vcc5in,
         nSHDN=nSHDN,
         REF=ref,
