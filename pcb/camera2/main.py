@@ -24,6 +24,7 @@ from autoee_components.measurement_specialties import MS5611_01BA03
 from autoee_components.invensense import MPU_9250
 from autoee_components.maxim import DS18B20
 from autoee_components.diodes_incorporated.DFLS140L import DFLS140L_7
+from autoee_components.header import make_header
 
 resistor = lambda *args, **kwargs: _resistor.resistor(*args, packages=frozenset({'0402 '}), **kwargs)
 capacitor = lambda *args, **kwargs: _capacitor.capacitor(*args, packages=frozenset({'0402 '}), **kwargs) # might create a problem for power filtering...
@@ -113,7 +114,7 @@ def camera(prefix, gnd, vcc3_3, vcc3_3_pix, vcc1_8, harness):
     vdd_pix = Net(prefix+'vdd_pix')
     yield BLM15G.BLM15GG471SN1D(prefix+'FB1', A=vcc3_3_pix, B=vdd_pix)
     for i in xrange(4): yield capacitor(4.7e-6)(prefix+'C6%i' % i, A=vdd_pix, B=gnd)
-    for i in xrange(2): yield _capacitor.capacitor(100e-6)(prefix+'C7%i' % i, A=vdd_pix, B=gnd) # not restricted to 0402
+    for i in xrange(2): yield _capacitor.capacitor(100e-6, voltage=3.3*1.5)(prefix+'C7%i' % i, A=vdd_pix, B=gnd) # not restricted to 0402
     
     yield NOIV1SE1300A_QDC.NOIV1SE1300A_QDC(prefix+'U1',
         vdd_33=vdd_33,
@@ -391,6 +392,14 @@ def main():
     )
     
     cpld_jtag = harnesses.JTAG.new('cpld_') # XXX make connector for. make sure to use vcc3_0 for power pin
+    yield make_header('VREF GND TCK TDO TDI TMS'.split(' '))('P2',
+        VREF=vcc3_0,
+        GND=gnd,
+        TCK=cpld_jtag.TCK,
+        TDI=cpld_jtag.TDI,
+        TDO=cpld_jtag.TDO,
+        TMS=cpld_jtag.TMS,
+    )
     
     for i in xrange(6):
         yield capacitor(0.1e-6)('U2C%i' % (i,), A=vcc3_0, B=gnd)
