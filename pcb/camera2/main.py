@@ -221,7 +221,8 @@ def main():
     vcc1_8_1_en = Net('vcc1_8_1_en') # XXX connect to CPLD
     vcc1_8_2 = Net('vcc1_8_2') # CMOS (75mA) - switched
     vcc1_8_2_en = Net('vcc1_8_2_en') # XXX connect to CPLD
-    vcc2_8 = Net('vcc2_8') # thermal (16mA*2)
+    vcc2_8_1 = Net('vcc2_8_1') # thermal (16mA)
+    vcc2_8_2 = Net('vcc2_8_2') # thermal (16mA)
     vcc3_0 = Net('vcc3_0') # CPLD, thermal (4mA*2), ARM
     vcc3_0_1a = Net('vcc3_0_1a') # CMOS (130mA) - switched
     vcc3_0_1a_en = Net('vcc3_0_1a_en') # XXX connect to CPLD
@@ -238,7 +239,8 @@ def main():
         (vcc1_8   , 1.8, None),
         (vcc1_8_1 , 1.8, vcc1_8_1_en),
         (vcc1_8_2 , 1.8, vcc1_8_2_en),
-        (vcc2_8   , 2.8, None),
+        (vcc2_8_1 , 2.8, None),
+        (vcc2_8_2 , 2.8, None),
         (vcc3_0   , 3.0, None),
         (vcc3_0_1a, 3.0, vcc3_0_1a_en),
         (vcc3_0_1b, 3.0, vcc3_0_1b_en),
@@ -349,7 +351,7 @@ def main():
     lepton1 = LeptonHarness('T1',
         gnd=gnd,
         vddc=vcc1_2_1,
-        vdd=vcc2_8,
+        vdd=vcc2_8_1,
         vddio=vcc3_0,
     )
     yield lepton1.make()
@@ -357,7 +359,7 @@ def main():
     lepton2 = LeptonHarness('T2',
         gnd=gnd,
         vddc=vcc1_2_2,
-        vdd=vcc2_8,
+        vdd=vcc2_8_2,
         vddio=vcc3_0,
     )
     yield lepton2.make()
