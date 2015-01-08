@@ -9,7 +9,8 @@ from autoee.units import INCH, MM, MIL
 from autoee.components import resistor as _resistor, capacitor as _capacitor, inductor
 
 from autoee_components.mounting_hole import mounting_hole
-from autoee_components.jumper import trace_jumper
+from autoee_components.wire_terminal import wire_terminal
+from autoee_components.jumper import trace_jumper, make_jumper_grid
 from autoee_components.on_semiconductor import NOIV1SE1300A_QDC, NCP702
 from autoee_components.molex import _71430, _1050281001
 from autoee_components.sunex import CMT821
@@ -214,6 +215,12 @@ def main():
     vcc5in = Net('vcc5in') # specified at 1 A. could supply a lot more at peak if pulsed. used only for LED driver.
     vcc3_3in = Net('vcc3_3in') # specification unclear; around 1 A. used only for LVDS buffers and regulators.
     
+    yield wire_terminal()('P3', T=vcc5in)
+    yield wire_terminal()('P4', T=gnd)
+    
+    vcc5in_vhdci = Net('vcc5in_vhdci')
+    yield make_jumper_grid('J1', [[vcc5in_vhdci, vcc5in]], grid_size=66*MIL, box_size=60*MIL)
+    
     vcc1_2_1 = Net('vcc1_2_1') # thermal 1 (110mA)
     vcc1_2_2 = Net('vcc1_2_2') # thermal 2 (110mA)
     vcc1_8 = Net('vcc1_8') # CPLD (40mA)
@@ -276,7 +283,7 @@ def main():
     yield digilent_vhdci('P1',
         GND=gnd,
         SHIELD=shield,
-        VU=vcc5in,
+        VU=vcc5in_vhdci,
         VCC=vcc3_3in,
         CLK10_P=pairs[10].P, CLK10_N=pairs[10].N,
         CLK11_P=pairs[11].P, CLK11_N=pairs[11].N,
