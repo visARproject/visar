@@ -529,11 +529,12 @@ def leds(prefix, led_gnd, led_pwr, pwm, nSHDN, temp_gnd, temp_pwr, temp_bus):
             A=led[i],
             C=cat[i],
         )
-        yield capacitor(0.22e-6)(prefix+'D%iC' % (i,), A=led_pwr, B=cat[i])
+        yield _capacitor.capacitor(0.22e-6, voltage=20, packages=frozenset(['0805 ']))(prefix+'D%iC' % (i,), A=led_pwr, B=cat[i])
         yield inductor.inductor(Interval.from_center_and_relative_error(10e-6, 0.3), minimum_current=1, maximum_resistance=100e-3)(prefix+'D%iL' % (i,), A=cat[i], B=sw[i])
         yield DFLS140L_7(prefix+'D%iD' % (i+4,), A=sw[i], C=led_pwr)
         
-        yield capacitor(1e-9)(prefix+'D%iC2' % (i,), A=vc[i], B=led_gnd)
+        yield capacitor(1e-9, voltage=20)(prefix+'D%iC2' % (i,), A=vc[i], B=led_gnd)
+        yield _capacitor.capacitor(2.2e-6, voltage=20, packages=frozenset(['0805 ']))(prefix+'D%iC_BYP' % (i,), A=led_pwr, B=led_gnd)
         
         yield DS18B20.DS18B20U_('D%iU' % (i,),
             GND=temp_gnd,
@@ -545,7 +546,7 @@ def leds(prefix, led_gnd, led_pwr, pwm, nSHDN, temp_gnd, temp_pwr, temp_bus):
     rt = Net(prefix+'rt')
     yield resistor(21e3)(prefix+'RT', A=rt, B=led_gnd) # 1 MHz
     
-    yield capacitor(2.2e-6)(prefix+'U3C', A=led_pwr, B=led_gnd)
+    yield _capacitor.capacitor(2.2e-6, voltage=20, packages=frozenset(['0805 ']))(prefix+'U3C', A=led_pwr, B=led_gnd)
     yield LT3476(prefix+'U3',
         GND=led_gnd,
         NC=led_gnd, # better heat dissipation
