@@ -215,12 +215,6 @@ def main():
     vcc5in = Net('vcc5in') # specified at 1 A. could supply a lot more at peak if pulsed. used only for LED driver.
     vcc3_3in = Net('vcc3_3in') # specification unclear; around 1 A. used only for LVDS buffers and regulators.
     
-    yield wire_terminal()('P3', T=vcc5in)
-    yield wire_terminal()('P4', T=gnd)
-    
-    vcc5in_vhdci = Net('vcc5in_vhdci')
-    yield make_jumper_grid('J1', [[vcc5in_vhdci, vcc5in]], grid_size=66*MIL, box_size=60*MIL)
-    
     vcc1_2_1 = Net('vcc1_2_1') # thermal 1 (110mA)
     vcc1_2_2 = Net('vcc1_2_2') # thermal 2 (110mA)
     vcc1_8 = Net('vcc1_8') # CPLD (40mA)
@@ -283,7 +277,7 @@ def main():
     yield digilent_vhdci('P1',
         GND=gnd,
         SHIELD=shield,
-        VU=vcc5in_vhdci,
+        VU=vcc5in,
         VCC=vcc3_3in,
         CLK10_P=pairs[10].P, CLK10_N=pairs[10].N,
         CLK11_P=pairs[11].P, CLK11_N=pairs[11].N,
@@ -388,16 +382,24 @@ def main():
         imu_INT=imu_INT,
     )
     
+    led_gnd = Net('led_gnd')
+    yield trace_jumper(60*MIL)('J2', A=led_gnd, B=gnd)
+    led_pwr = Net('led_pwr')
+    yield wire_terminal()('P3', T=led_pwr)
+    yield wire_terminal()('P4', T=led_gnd)
+    yield make_jumper_grid('J1', [[vcc5in, led_pwr]], grid_size=66*MIL, box_size=60*MIL)
     led_pwm = [Net('led_pwm%i' % (i,)) for i in xrange(4)]
     led_nSHDN = Net('led_nSHDN')
     temp_bus = Net('temp_bus')
     yield leds('I',
-        gnd=gnd,
-        vcc5in=vcc5in, # XXX add connector for external higher current 5V power
-        vcc3in=vcc3_3in,
+        led_gnd=led_gnd,
+        led_pwr=vcc5in, # XXX add connector for external higher current 5V power
         pwm=led_pwm,
-        temp_bus=temp_bus,
         nSHDN=led_nSHDN,
+        
+        temp_gnd=gnd,
+        temp_pwr=vcc3_3in,
+        temp_bus=temp_bus,
     )
     
     cpld_jtag = harnesses.JTAG.new('cpld_') # XXX make connector for. make sure to use vcc3_0 for power pin
@@ -498,16 +500,16 @@ def main():
     )
 
 @util.listify
-def leds(prefix, gnd, vcc5in, vcc3in, pwm, temp_bus, nSHDN):
+def leds(prefix, led_gnd, led_pwr, pwm, nSHDN, temp_gnd, temp_pwr, temp_bus):
     # maximum current
     #   driver: > 1 A/channel
     #   LED: 1 A DC, 5 A pulses
     
     ref = Net(prefix+'ref') # 1.05 V
-    yield capacitor(0.1e-6)(prefix+'C1', A=ref, B=gnd)
+    yield capacitor(0.1e-6)(prefix+'C1', A=ref, B=led_gnd)
     refdiv = Net(prefix+'refdiv') # 1.00 V
     yield resistor(4.99e3)(prefix+'R1', A=ref, B=refdiv)
-    yield resistor(100e3)(prefix+'R2', A=refdiv, B=gnd)
+    yield resistor(100e3)(prefix+'R2', A=refdiv, B=led_gnd)
     
     assert len(pwm) == 4
     cap = [Net(prefix+'cap%i' % (i,)) for i in xrange(4)]
@@ -517,37 +519,37 @@ def leds(prefix, gnd, vcc5in, vcc3in, pwm, temp_bus, nSHDN):
     vadj = [refdiv for i in xrange(4)]
     vc = [Net(prefix+'vc%i' % (i,)) for i in xrange(4)]
     
-    yield resistor(10e3)(prefix+'R3', A=nSHDN, B=gnd)
+    yield resistor(10e3)(prefix+'R3', A=nSHDN, B=led_gnd)
     
     for i in xrange(4):
-        yield trace_jumper(5*MIL)(prefix+'D%iJ' % (i,), A=vcc5in, B=cap[i])
+        yield trace_jumper(5*MIL)(prefix+'D%iJ' % (i,), A=led_pwr, B=cap[i])
         
         yield resistor(100e-3)(prefix+'D%iR' % (i,), A=cap[i], B=led[i]) # refdiv setting & this = 1.00 A thru LED # XXX check power rating
         yield VSMY7850X01(prefix+'D%i' % (i,),
             A=led[i],
             C=cat[i],
         )
-        yield capacitor(0.22e-6)(prefix+'D%iC' % (i,), A=vcc5in, B=cat[i])
+        yield capacitor(0.22e-6)(prefix+'D%iC' % (i,), A=led_pwr, B=cat[i])
         yield inductor.inductor(Interval.from_center_and_relative_error(10e-6, 0.3), minimum_current=1, maximum_resistance=100e-3)(prefix+'D%iL' % (i,), A=cat[i], B=sw[i])
-        yield DFLS140L_7(prefix+'D%iD' % (i+4,), A=sw[i], C=vcc5in)
+        yield DFLS140L_7(prefix+'D%iD' % (i+4,), A=sw[i], C=led_pwr)
         
-        yield capacitor(1e-9)(prefix+'D%iC2' % (i,), A=vc[i], B=gnd)
+        yield capacitor(1e-9)(prefix+'D%iC2' % (i,), A=vc[i], B=led_gnd)
         
         yield DS18B20.DS18B20U_('D%iU' % (i,),
-            GND=gnd,
-            VDD=vcc3in,
+            GND=temp_gnd,
+            VDD=temp_pwr,
             DQ=temp_bus,
             NC=led[i], # thermal connection
         )
     
     rt = Net(prefix+'rt')
-    yield resistor(21e3)(prefix+'RT', A=rt, B=gnd) # 1 MHz
+    yield resistor(21e3)(prefix+'RT', A=rt, B=led_gnd) # 1 MHz
     
-    yield capacitor(2.2e-6)(prefix+'U3C', A=vcc5in, B=gnd)
+    yield capacitor(2.2e-6)(prefix+'U3C', A=led_pwr, B=led_gnd)
     yield LT3476(prefix+'U3',
-        GND=gnd,
-        NC=gnd, # better heat dissipation
-        VIN=vcc5in,
+        GND=led_gnd,
+        NC=led_gnd, # better heat dissipation
+        VIN=led_pwr,
         nSHDN=nSHDN,
         REF=ref,
         RT=rt,
