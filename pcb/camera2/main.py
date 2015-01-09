@@ -382,7 +382,7 @@ def main():
         imu_INT=imu_INT,
     )
     
-    led_gnd = Net('led_gnd')
+    '''led_gnd = Net('led_gnd')
     yield trace_jumper(60*MIL)('J2', A=led_gnd, B=gnd)
     led_pwr = Net('led_pwr')
     yield wire_terminal()('P3', T=led_pwr)
@@ -400,7 +400,7 @@ def main():
         temp_gnd=gnd,
         temp_pwr=vcc3_3in,
         temp_bus=temp_bus,
-    )
+    )'''
     
     cpld_jtag = harnesses.JTAG.new('cpld_') # XXX make connector for. make sure to use vcc3_0 for power pin
     yield make_header('VREF GND TCK TDO TDI TMS'.split(' '))('P2',
@@ -493,11 +493,31 @@ def main():
         IO2_91=lepton2.video_spi_bus.MOSI,
         IO2_90=lepton2.i2c_bus.SDA,
         IO2_89=lepton2.i2c_bus.SCL,
+        
+        IO1_35=vcc1_8_1_en,
+        IO1_36=vcc3_0_1a_en,
+        IO1_37=vcc3_0_1b_en,
+        
+        IO2_13=vcc3_0_2b_en,
+        IO2_12=vcc3_0_2a_en,
+        IO2_11=vcc1_8_2_en,
+        
+        IO2_70=baro_spi_bus.SCLK,
+        IO2_71=baro_spi_bus.MOSI,
+        IO2_72=baro_spi_bus.MISO,
+        IO2_73=baro_spi_nCS,
+        
+        IO2_82=imu_spi_nCS,
+        IO2_81=imu_spi_bus.SCLK,
+        IO2_80=imu_spi_bus.MOSI,
+        IO2_79=imu_spi_bus.MISO,
+        IO2_78=imu_FSYNC,
+        IO2_77=imu_INT,
     )
     
-    yield micro('M',
-        gnd=gnd, vcc3_0=vcc3_0,
-    )
+    #yield micro('M',
+    #    gnd=gnd, vcc3_0=vcc3_0,
+    #)
 
 @util.listify
 def leds(prefix, led_gnd, led_pwr, pwm, nSHDN, temp_gnd, temp_pwr, temp_bus):
