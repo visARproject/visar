@@ -68,7 +68,7 @@ class Controller_Book:
     # self.arrow_locations = [(0, 0, "red"), (.5, 0, "blue"), (1, 0, "green"),
     #   (1, .5, "red"), (1, 1, "blue"), (.5, 1, "green"),
     #   (0, 1, "red"), (0, .5, "blue"), (.5, .5, "yellow")]
-    self.arrow_locations = [(.3, .3, "green"), (.8, .4, "blue")]
+    self.arrow_locations = [(.4, .4, "green"), (.6, .5, "blue")]
     
     # check exit conditions
     if self.keys[K_ESCAPE]: self.exiting = True

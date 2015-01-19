@@ -1,175 +1,94 @@
-# define the class that handles the rendering
-# individual modules should pass it an object with
-#   a draw(surface) method which will return a surface or a Surface_3D
-# Surface depth factor (f*b/2*Pxmax*cot(FOV/2)) is also stored in renderer
-import pygame
-from pygame.locals import *
 import numpy as np
+import vispy.gloo as gloo
+from vispy.gloo import Program, gl
+from vispy import app
 
-FPS = 30 # run at 30FPS or so
+VERT_SHADER_TEX = """ //texture vertex shader
+attribute vec3 position;
+attribute vec2 texcoord;
+varying vec2 v_texcoord;
 
-# 3D transformation constants defined here
-EYE_DISTANCE = .06 # (might be dynamic later? 60mm)
-FOCAL_LENGTH = .022 # internet says 22mm for human eyes, confirm later
-FOV_DEGREES = 100.0 # display FOV in degrees
-FOV_RADIANS = FOV_DEGREES / 180.0 * np.pi # convert to radians
-HUD_DEPTH = 1.5 # hud is located at 3m
+void main(void){
+    v_texcoord = texcoord; //send tex coordinates
+    gl_Position = vec4(position.xyz, 1.0);
+}"""
 
-class Renderer:
-  def __init__(self, controller=None, debug=False):
-    self.draws = [] # List of drawable objects to be rendered each frame
-    self.controller = controller # controller object for the visAR program 
-    # initialize a fullscreen display
-    self.display_surface = pygame.display.set_mode((0,0),pygame.FULLSCREEN,0)
-    #self.display_surface = pygame.display.set_mode((400,300)) #DEBUG
-    if(debug): self.eye_size = (self.display_surface.get_width(), self.display_surface.get_height())
-    else: self.eye_size = (self.display_surface.get_width()/2, self.display_surface.get_height())
-    if (controller): controller.book.eye_size = self.eye_size
-    self.eye_surface = pygame.Surface(self.eye_size) # eye surface template
-    self.eye_surface.fill((0,0,0)) # fill with zero
-    self.clock = pygame.time.Clock() # timer for fpsing
-    self.debug_mode = debug # debug mode only displays left eye
-    # define the depth_factor and HUD_offset amount and store in class
-    self.depth_factor = (FOCAL_LENGTH * EYE_DISTANCE) / (2.0 * np.tan(FOV_RADIANS/2.0)) * self.eye_size[0]
+FRAG_SHADER_TEX = """ // texture fragment shader
+uniform sampler2D texture;
+varying vec2 v_texcoord;
 
-  # method contains a loop running at 30hz
-  def do_loop(self, kill_flag):
-    pygame.display.set_caption('visAR')
-    done = False
-    while not kill_flag.is_set(): # main game loop      
-      self.controller.update_loop(True) # run single update
-      print self.clock.get_fps()
+void main(){
+    gl_FragColor = texture2D(texture, v_texcoord);
+}"""
+
+# full renderable 2D area
+vPosition_full = np.array([[-1.0, -1.0, 0.0], [+1.0, -1.0, 0.0],
+                           [-1.0, +1.0, 0.0], [+1.0, +1.0, 0.0, ]], np.float32)
+vTexcoord_full = np.array([[0.0, 0.0], [0.0, 1.0],
+                           [1.0, 0.0], [1.0, 1.0]], np.float32)
+
+HUD_DEPTH = 0.7 # minimum depth
+
+                      
+class Renderer(app.Canvas): # canvas is a GUI object
+  def __init__(self, size=(560,420)):
+    app.Canvas.__init__(self, keys='interactive')
+    self.size = size # get the size
+    self.renderList = [] # list of modules to render
     
-      # create new surfaces (one per eye)
-      left_eye = self.eye_surface.copy()
-      right_eye = self.eye_surface.copy()
-      
-      # get and combine each modules's drawn output
-      draw_map = lambda x: x.get_draw_target() # get the surface
-      renders = map(draw_map, self.draws) # call the draws
-      
-      # draw 3d surfaces first
-      for module in renders:
-        # combine the images for each eye
-        if(type(module) is list): # module returned list
-          for surface in module: # draw each surface
-            if(surface and surface.is_3d): # only draw 3D objects here
-              surface.draw_eye_surfaces(left_eye, right_eye, self.depth_factor)
-        elif(module and module.is_3d):  # single surface, draw if 3D
-          module.draw_eye_surfaces(left_eye, right_eye, self.depth_factor)
-        
-      # draw 2d surfaces second
-      for module in renders:
-        # combine the images for each eye
-        if(type(module) is list): # module returned list
-          for surface in module: # draw each surface
-            if(surface and not surface.is_3d): # only draw 3D objects here
-              surface.draw_eye_surfaces(left_eye, right_eye, self.depth_factor)
-        elif(module and not module.is_3d):  # single surface, draw if 3D
-          module.draw_eye_surfaces(left_eye, right_eye, self.depth_factor)
-      
-      # debug mode only shows one eye, with no distortion
-      if(self.debug_mode):
-        self.display_surface.blit(left_eye,(0,0))
-        pygame.display.flip()
-        #!!!self.clock.tick(FPS)
-        continue
-
-      # Make the mat headers
-      # left_mat = Render_Surface(left_eye).get_opencv_mat()
-      # right_mat = Render_Surface(right_eye).get_opencv_mat()
-                  
-      # JAKE: DO OCULUS DISTORTION HERE
-      
-      # retrieve the data from the mats
-      # left_eye = pygame.image.frombuffer(left_mat.tostring(), cv.GetSize(left_mat),"RGB")
-      # right_eye = pygame.image.frombuffer(right_mat.tostring(), cv.GetSize(right_mat),"RGB")  
-      
-      # resize images to output dimensions
-      #left_eye = pygame.transform.scale(left_eye, self.eye_size)
-      #right_eye = pygame.transform.scale(right_eye, self.eye_size)          
-
-      # clear the display buffer, then combine the eyes
-      self.display_surface.fill((0,0,0))
-      self.display_surface.blit(left_eye,(0,0))
-      self.display_surface.blit(right_eye,(self.eye_size[0],0))
-
-      pygame.display.update() # update the display
-      self.clock.tick(FPS) # wait for next frame
-           
-  # add a drawable object to the list     
-  def add_module(self, module):
-    self.draws.append(module)
+    # create texture to render modules to
+    shape = self.size[1], self.size[0]
+    self._rendertex = gloo.Texture2D(shape=shape+(3,),dtype='uint8')
   
-  # function shifts images to HUD_offset  
-  def eye_surfaces_2d(self, img):
-    left = img.copy()
-    right = img.copy()
-    left.scroll(dx=self.HUD_offset)   # move right, dx 
-    right.scroll(dx=-self.HUD_offset) # move left, -dx
-    return left, right
-
-# class for wrapping around 3d surfaces
-class Render_Surface:
-  def __init__(self, surface, position=(0,0),depth=0):  
-    self.surface = surface
-    self.surface.set_colorkey((0,0,0)) # make sure this is set to black
-    self.depth = depth
-    self.position = position
-    if(depth == 0): self.is_3d = False
-    else: self.is_3d = True
-    # bound the minimum depth, don't let things inside hud
-    if(depth < HUD_DEPTH): self.depth = HUD_DEPTH
-      
-  def copy(self): # deep-copy the render surface
-    new_render = Render_Surface(self.surface.copy(), self.position, self.depth)
-    new_render.is_3d = self.is_3d # 3d-ness must be set
-    return new_render # return the copy
-      
-  # return the surface for both eyes (debating resizing here vs. in method)
-  def draw_eye_surfaces(self, left_eye, right_eye, depth_factor):
-    shift_amt = int(depth_factor / (self.depth*self.depth) / 2.0) # get the shift amount
-    left_eye.blit(self.surface, (self.position[0]+shift_amt,self.position[1]))  # shift right
-    right_eye.blit(self.surface, (self.position[0]-shift_amt,self.position[1])) # shift left
-    return left_eye, right_eye
+    # create Frame Buffer Object, attach color/depth buffers
+    self._fbo = gloo.FrameBuffer(self._rendertex, gloo.DepthBuffer(shape))
     
-  # convert this into an opengl texture (not used, have to rewrite huge portions of code)
-  def make_opengl_texture(self):
-    # convert to string buffer
-    textureData = pygame.image.tostring(self.surface, "RGB", 1)
-    width = self.surface.get_width()
-    height = self.surface.get_height()
-   
-    # bind buffer to OpenGL texture
-    texture = glGenTextures(1)
-    glBindTexture(GL_TEXTURE_2D, texture)
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR)
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR)
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, width, height, 0, GL_RGB,
-      GL_UNSIGNED_BYTE, textureData)
-    return texture
+    # create texture rendering program
+    self.tex_program = gloo.Program(VERT_SHADER_TEX, FRAG_SHADER_TEX)
   
-  # convert surface to opencv matrix  
-  def get_opencv_mat(self):
-    surf_data = pygame.image.tostring(self.surface, "RGB") # get the data
-    mat = cv.CreateImageHeader(self.surface.get_size(), cv.IPL_DEPTH_8U, 3) # create Mat header
-    cv.SetData(mat,surf_data) # set the data
-    return mat # return Mat
+    # create program to render the results (TEST ONLY, same as before)
+    self._program2 = gloo.Program(VERT_SHADER_TEX, FRAG_SHADER_TEX)
+    self._program2['position'] = gloo.VertexBuffer(vPosition_full)
+    self._program2['texcoord'] = gloo.VertexBuffer(vTexcoord_full)
+    self._program2['texture']  = self._rendertex
   
+  def on_resize(self, event):
+    width, height = event.size
+    gloo.set_viewport(0,0,width,height)
+    
+  def on_draw(self, event):
+    # draw scene to FBO instead of output buffer
+    with self._fbo:
+      gloo.set_clear_color('black')
+      gloo.clear(color=True, depth=True)
+      gloo.set_viewport(0,0, *self.size)
+      for module in self.renderList:
+        module.program.draw('triangle_strip')
+    
+    # draw to full screen
+    gloo.set_clear_color('black')
+    gloo.clear(color=True,depth=True)
+    self._program2.draw('triangle_strip')
 
-# Drawable class is used by renderer to get surfaces each frame
+  # add drawable (might change scope later)
+  def addModule(self, drawable):
+    self.renderList.append(drawable)
+  
+# class for texture rendering  
 class Drawable:
-  def __init__(self): # setup the lock object and draw_target surface
-    self.draw_target = None
+  def __init__(self):
+    self.program = gloo.Program(VERT_SHADER_TEX, FRAG_SHADER_TEX)
+    self.program['texcoord'] = gloo.VertexBuffer(vTexcoord_full) # assume full usage
+  
+  # set the texture
+  def setTexture(self, data):
+    self.program['texture'] = gloo.Texture2D(data) # set the texture
+  
+  # set the verticies, make sure they're 3d and less than the hud depth
+  def setVerticies(self, verticies):
+    for v in verticies:
+      if(len(v) < 3): v.append(HUD_DEPTH)
+      elif(v[2] < HUD_DEPTH): v[2] = HUD_DEPTH
+    self.program['position'] = gloo.VertexBuffer(verticies) # define the position
+  
 
-  # return the render surfaces, no thread locking
-  def get_draw_target(self): 
-    return self.draw_target
-            
-  # set the render surfaces, no thread locking  
-  # call this method with updated surfaces
-  def set_draw_target(self, render):
-    if type(render) is list:
-      self.draw_target = []
-      for rend in render: self.draw_target.append(rend.copy())
-    else: self.draw_target = render.copy() # setting reference is atomic
