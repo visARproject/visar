@@ -1,7 +1,6 @@
 import numpy as np
-import vispy.gloo as gloo
 from vispy.gloo import Program, gl
-from vispy import app
+from vispy import app, gloo
 
 VERT_SHADER_TEX = """ //texture vertex shader
 attribute vec3 position;
@@ -23,15 +22,17 @@ void main(){
 
 # full renderable 2D area
 vPosition_full = np.array([[-1.0, -1.0, 0.0], [+1.0, -1.0, 0.0],
-                           [-1.0, +1.0, 0.0], [+1.0, +1.0, 0.0, ]], np.float32)
+                           [-1.0, +1.0, 0.0], [+1.0, +1.0, 0.0]], np.float32)
 vTexcoord_full = np.array([[0.0, 0.0], [0.0, 1.0],
                            [1.0, 0.0], [1.0, 1.0]], np.float32)
 
-HUD_DEPTH = 0.7 # minimum depth
+HUD_DEPTH = 0.3 # minimum depth
+FPS = 60 # hopefully not too optimistic
 
+renderer = None # singleton, don't reference this or declare an instance of the class
                       
 class Renderer(app.Canvas): # canvas is a GUI object
-  def __init__(self, size=(560,420)):
+  def __init__(self, size=(560,420)):    
     app.Canvas.__init__(self, keys='interactive')
     self.size = size # get the size
     self.renderList = [] # list of modules to render
@@ -47,10 +48,15 @@ class Renderer(app.Canvas): # canvas is a GUI object
     self.tex_program = gloo.Program(VERT_SHADER_TEX, FRAG_SHADER_TEX)
   
     # create program to render the results (TEST ONLY, same as before)
+    # JAKE: replace this with your shaders
     self._program2 = gloo.Program(VERT_SHADER_TEX, FRAG_SHADER_TEX)
     self._program2['position'] = gloo.VertexBuffer(vPosition_full)
     self._program2['texcoord'] = gloo.VertexBuffer(vTexcoord_full)
     self._program2['texture']  = self._rendertex
+    
+    # set an update timer to run every FPS
+    self.interval = 1/FPS
+    self._timer = app.Timer('auto',connect=self.on_timer, start=True)
   
   def on_resize(self, event):
     width, height = event.size
@@ -69,10 +75,21 @@ class Renderer(app.Canvas): # canvas is a GUI object
     gloo.set_clear_color('black')
     gloo.clear(color=True,depth=True)
     self._program2.draw('triangle_strip')
+    
+  # update the display
+  def on_timer(self, event):
+    self.update()
 
-  # add drawable (might change scope later)
-  def addModule(self, drawable):
-    self.renderList.append(drawable)
+# add drawable (statically scoped)
+def addModule(drawable):
+  renderer.renderList.append(drawable)
+
+# enforce singleton behavior
+def getRenderer():
+  global renderer
+  if (renderer is None): 
+    renderer = Renderer()
+  return renderer
   
 # class for texture rendering  
 class Drawable:
