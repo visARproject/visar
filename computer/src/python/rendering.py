@@ -1,6 +1,10 @@
 import numpy as np
 from vispy.gloo import Program, gl
 from vispy import app, gloo
+import threading
+
+HUD_DEPTH = 0.2 # minimum depth
+FPS = 1 # hopefully not too optimistic (not doing anything)
 
 VERT_SHADER_TEX = """ //texture vertex shader
 attribute vec3 position;
@@ -26,23 +30,34 @@ vPosition_full = np.array([[-1.0, -1.0, 0.0], [+1.0, -1.0, 0.0],
 vTexcoord_full = np.array([[0.0, 0.0], [0.0, 1.0],
                            [1.0, 0.0], [1.0, 1.0]], np.float32)
 
-HUD_DEPTH = 0.3 # minimum depth
-FPS = 60 # hopefully not too optimistic
-
 renderer = None # singleton, don't reference this or declare an instance of the class
+                      
+# thread locking for updating stuff
+renderingLock = threading.Lock()
+def renderLock(func):
+  def locked(*args, **kwargs):
+    global renderingLock
+    renderingLock.acquire()
+    result = func(*args, **kwargs)
+    renderingLock.release()
+    return result
+  return locked
                       
 class Renderer(app.Canvas): # canvas is a GUI object
   def __init__(self, size=(560,420)):    
+    self.renderList = [] # list of modules to render
+    self.updateQueue = [] # list of updates to perform
+    
+    # initialize gloo context
     app.Canvas.__init__(self, keys='interactive')
     self.size = size # get the size
-    self.renderList = [] # list of modules to render
-    
+            
     # create texture to render modules to
     shape = self.size[1], self.size[0]
-    self._rendertex = gloo.Texture2D(shape=shape+(3,),dtype='uint8')
+    self._rendertex = gloo.Texture2D(shape=shape+(3,))
   
     # create Frame Buffer Object, attach color/depth buffers
-    self._fbo = gloo.FrameBuffer(self._rendertex, gloo.DepthBuffer(shape))
+    self._fbo = gloo.FrameBuffer(self._rendertex, gloo.RenderBuffer(shape))
     
     # create texture rendering program
     self.tex_program = gloo.Program(VERT_SHADER_TEX, FRAG_SHADER_TEX)
@@ -68,23 +83,33 @@ class Renderer(app.Canvas): # canvas is a GUI object
       gloo.set_clear_color('black')
       gloo.clear(color=True, depth=True)
       gloo.set_viewport(0,0, *self.size)
-      for module in self.renderList:
-        module.program.draw('triangle_strip')
+      # render each of the modules
+      for module in self.renderList:   
+        if(module.textured and module.positioned):  # make sure it's ready
+          module.program.draw('triangle_strip')     # draw the module
+        else: print module
     
     # draw to full screen
     gloo.set_clear_color('black')
     gloo.clear(color=True,depth=True)
     self._program2.draw('triangle_strip')
-    
+  
   # update the display
+  @renderLock  
   def on_timer(self, event):
-    self.update()
+    for module in self.updateQueue:
+      module.doUpdate()   # update all modules
+    self.updateQueue = [] # clear the queue
+    self.update() # update self    
+    
+  # run preliminary update, then start rendering
+  def startRender(self):
+    #for module in self.updateQueue:
+    #  module.doUpdate()
+    self.show()
+    app.run()
 
-# add drawable (statically scoped)
-def addModule(drawable):
-  renderer.renderList.append(drawable)
-
-# enforce singleton behavior
+# enforce singleton pattern
 def getRenderer():
   global renderer
   if (renderer is None): 
@@ -93,19 +118,48 @@ def getRenderer():
   
 # class for texture rendering  
 class Drawable:
+  @renderLock
   def __init__(self):
     self.program = gloo.Program(VERT_SHADER_TEX, FRAG_SHADER_TEX)
     self.program['texcoord'] = gloo.VertexBuffer(vTexcoord_full) # assume full usage
+    self.textured = False
+    self.positioned = False
+    self.updates = [] # list of updates to perform
+    renderer.renderList.append(self) # add to render stack
   
   # set the texture
+  @renderLock
   def setTexture(self, data):
-    self.program['texture'] = gloo.Texture2D(data) # set the texture
+    self.addUpdate(('texture', gloo.Texture2D(data))) # queue the texture
+
   
   # set the verticies, make sure they're 3d and less than the hud depth
+  @renderLock
   def setVerticies(self, verticies):
-    for v in verticies:
+    for v in verticies: # add a default depth to verticies
       if(len(v) < 3): v.append(HUD_DEPTH)
       elif(v[2] < HUD_DEPTH): v[2] = HUD_DEPTH
-    self.program['position'] = gloo.VertexBuffer(verticies) # define the position
+    self.addUpdate(('position',verticies)) # define the position
   
-
+  # add update to list
+  def addUpdate(self, update):
+    self.updates.append(update)       # add the update
+    renderer.updateQueue.append(self) # add update to queue
+  
+  # perform updates
+  def doUpdate(self):
+    for update in self.updates: # get all updates
+      if update[0] == 'texture': # determine type
+        self.program['texture'] = update[1]
+        self.textured = True
+      elif update[0] == 'position':
+        self.program['position'] = update[1]
+        self.positioned = True
+    self.updates = [] # reset the list
+  
+  # pull render off of stack (would put in destructor, but wouldn't get called)
+  @renderLock
+  def stopRendering(self):
+    renderer.renderList.remove(self)
+  
+  
