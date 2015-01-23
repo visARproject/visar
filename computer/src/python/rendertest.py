@@ -1,10 +1,12 @@
-import rendering
 import numpy as np
 import cv2
 from vispy import app
 import threading
 import time
 import random
+import vispy
+import rendering
+import keyboard
 
 im1 = cv2.cvtColor(np.flipud(cv2.imread('Red_Apple.jpg')), cv2.COLOR_BGR2RGB)
 FPS = 60
@@ -19,6 +21,15 @@ d1.setVerticies([[-1,-1],[0,-1],[-1,0],[0,0]]) # no depth (automatically set at 
 d2 = rendering.Drawable()
 d2.setTexture(im1)
 d2.setVerticies([[-.2,-.2,0],[1,-.2,0],[-.2,1,0],[1,1,0]]) # has depth=0
+
+# keyboard listner, prints keypresses/releases
+def key_stuff(event):
+  print event.text
+  if(event.key == vispy.keys.ESCAPE): exit()
+
+# create keyboard listener and add a callback
+key = keyboard.KeyboardListener(renderer)
+key.add_callback(key_stuff)
 
 # make function to randomly move d1 (will be spastic)
 def move_stuff():

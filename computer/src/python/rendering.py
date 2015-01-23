@@ -47,6 +47,7 @@ class Renderer(app.Canvas): # canvas is a GUI object
   def __init__(self, size=(560,420)):    
     self.renderList = [] # list of modules to render
     self.updateQueue = [] # list of updates to perform
+    self.key_listener = None
     
     # initialize gloo context
     app.Canvas.__init__(self, keys='interactive')
@@ -87,7 +88,6 @@ class Renderer(app.Canvas): # canvas is a GUI object
       for module in self.renderList:   
         if(module.textured and module.positioned):  # make sure it's ready
           module.program.draw('triangle_strip')     # draw the module
-        else: print module
     
     # draw to full screen
     gloo.set_clear_color('black')
@@ -102,12 +102,22 @@ class Renderer(app.Canvas): # canvas is a GUI object
     self.updateQueue = [] # clear the queue
     self.update() # update self    
     
+  # define keyboard listeners  
+  def on_key_press(self, event):
+    if self.key_listener is not None:
+      self.key_listener.notify(event)
+  def on_key_release(self, event):
+    if self.key_listener is not None:
+      self.key_listener.notify(event)
+    
   # run preliminary update, then start rendering
   def startRender(self):
-    #for module in self.updateQueue:
-    #  module.doUpdate()
     self.show()
     app.run()
+    
+  def addListener(self, listener, target='keys'):
+    if (target == 'keys'):
+      self.key_listener = listener
 
 # enforce singleton pattern
 def getRenderer():
