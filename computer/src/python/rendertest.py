@@ -1,6 +1,5 @@
 import numpy as np
-import cv2
-from vispy import app
+from vispy import app, io
 import threading
 import time
 import random
@@ -8,8 +7,9 @@ import vispy
 import rendering
 import keyboard
 
-im1 = cv2.cvtColor(np.flipud(cv2.imread('Red_Apple.jpg')), cv2.COLOR_BGR2RGB)
-FPS = 60
+im1 = np.flipud(np.fliplr(io.imread('Red_Apple.jpg')))
+im2 = np.flipud(np.fliplr(io.imread('Blue_Apple.jpg')))
+FPS = 10
 
 renderer = rendering.getRenderer() # init the renderer
 
@@ -33,12 +33,20 @@ key.add_callback(key_stuff)
 
 # make function to randomly move d1 (will be spastic)
 def move_stuff():
+  count = 0
   while True:
-    time.sleep(1/FPS*20)
+    renderer.measure_fps(1, renderer.print_fps)
+    count += 1
+    time.sleep(1/FPS)
     d1.setVerticies([[random.uniform(-1,1),random.uniform(-1,1)],
       [random.uniform(-1,1),random.uniform(-1,1)],
       [random.uniform(-1,1),random.uniform(-1,1)],
       [random.uniform(-1,1),random.uniform(-1,1)]])
+    if count % 10 == 0:
+      d2.setTexture(im1)
+      count = 0
+    elif count % 5 == 0:
+      d2.setTexture(im2)
   
 # start thread to move stuff
 t = threading.Thread(target=move_stuff)

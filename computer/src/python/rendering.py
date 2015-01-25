@@ -1,10 +1,13 @@
+# NOTES: FPS is not very good, need to find a better backend
+#  Research: collections and scene canvases seem like alternatives
+
 import numpy as np
 from vispy.gloo import Program, gl
 from vispy import app, gloo
 import threading
 
 HUD_DEPTH = 0.2 # minimum depth
-FPS = 1 # hopefully not too optimistic (not doing anything)
+FPS = 60 # hopefully not too optimistic (not doing anything)
 
 VERT_SHADER_TEX = """ //texture vertex shader
 attribute vec3 position;
@@ -46,8 +49,8 @@ def renderLock(func):
 class Renderer(app.Canvas): # canvas is a GUI object
   def __init__(self, size=(560,420)):    
     self.renderList = [] # list of modules to render
-    self.updateQueue = [] # list of updates to perform
     self.key_listener = None
+    self.needs_update = False
     
     # initialize gloo context
     app.Canvas.__init__(self, keys='interactive')
@@ -97,10 +100,9 @@ class Renderer(app.Canvas): # canvas is a GUI object
   # update the display
   @renderLock  
   def on_timer(self, event):
-    for module in self.updateQueue:
-      module.doUpdate()   # update all modules
-    self.updateQueue = [] # clear the queue
-    self.update() # update self    
+    if self.needs_update:
+      self.update() # update self    
+      self.needs_update = False
     
   # define keyboard listeners  
   def on_key_press(self, event):
@@ -118,6 +120,10 @@ class Renderer(app.Canvas): # canvas is a GUI object
   def addListener(self, listener, target='keys'):
     if (target == 'keys'):
       self.key_listener = listener
+      
+  # callback funciton for FPS
+  def print_fps(self, fps):
+    print ('FPS: %.2f' % fps)
 
 # enforce singleton pattern
 def getRenderer():
@@ -132,6 +138,7 @@ class Drawable:
   def __init__(self):
     self.program = gloo.Program(VERT_SHADER_TEX, FRAG_SHADER_TEX)
     self.program['texcoord'] = gloo.VertexBuffer(vTexcoord_full) # assume full usage
+    self.position = None
     self.textured = False
     self.positioned = False
     self.updates = [] # list of updates to perform
@@ -140,32 +147,23 @@ class Drawable:
   # set the texture
   @renderLock
   def setTexture(self, data):
-    self.addUpdate(('texture', gloo.Texture2D(data))) # queue the texture
-
+    # create new program to avoid conflicts
+    new_program = gloo.Program(VERT_SHADER_TEX, FRAG_SHADER_TEX)
+    new_program['texcoord'] = gloo.VertexBuffer(vTexcoord_full) # assume full usage
+    new_program['texture'] = data
+    if self.positioned: 
+      new_program['position'] = self.position
+    self.program = new_program
+    self.textured = True
+    renderer.needs_update = True
   
   # set the verticies, make sure they're 3d and less than the hud depth
   @renderLock
   def setVerticies(self, verticies):
-    for v in verticies: # add a default depth to verticies
-      if(len(v) < 3): v.append(HUD_DEPTH)
-      elif(v[2] < HUD_DEPTH): v[2] = HUD_DEPTH
-    self.addUpdate(('position',verticies)) # define the position
-  
-  # add update to list
-  def addUpdate(self, update):
-    self.updates.append(update)       # add the update
-    renderer.updateQueue.append(self) # add update to queue
-  
-  # perform updates
-  def doUpdate(self):
-    for update in self.updates: # get all updates
-      if update[0] == 'texture': # determine type
-        self.program['texture'] = update[1]
-        self.textured = True
-      elif update[0] == 'position':
-        self.program['position'] = update[1]
-        self.positioned = True
-    self.updates = [] # reset the list
+    self.position = verticies
+    self.program['position'] = verticies
+    self.positioned = True  
+    renderer.needs_update = True
   
   # pull render off of stack (would put in destructor, but wouldn't get called)
   @renderLock
