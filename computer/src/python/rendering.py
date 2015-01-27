@@ -89,7 +89,7 @@ class Renderer(app.Canvas): # canvas is a GUI object
       gloo.set_viewport(0,0, *self.size)
       # render each of the modules
       for module in self.renderList:   
-        if(module.textured and module.positioned):  # make sure it's ready
+        if(module.rendering):  # make sure it's ready
           module.program.draw('triangle_strip')     # draw the module
     
     # draw to full screen
@@ -141,6 +141,7 @@ class Drawable:
     self.position = None
     self.textured = False
     self.positioned = False
+    self.rendering = False
     self.updates = [] # list of updates to perform
     renderer.renderList.append(self) # add to render stack
   
@@ -155,6 +156,7 @@ class Drawable:
       new_program['position'] = self.position
     self.program = new_program
     self.textured = True
+    if self.positioned: self.rendering = True
     renderer.needs_update = True
   
   # set the verticies, make sure they're 3d and less than the hud depth
@@ -163,11 +165,18 @@ class Drawable:
     self.position = verticies
     self.program['position'] = verticies
     self.positioned = True  
+    if self.textured: self.rendering = True
     renderer.needs_update = True
   
   # pull render off of stack (would put in destructor, but wouldn't get called)
   @renderLock
-  def stopRendering(self):
-    renderer.renderList.remove(self)
+  def pauseRender(self):
+    self.rendering = False
+    renderer.needs_update = True
+  
+  @renderLock
+  def resumeRender(self):
+    self.rendering = True
+    renderer.needs_update = True
   
   
