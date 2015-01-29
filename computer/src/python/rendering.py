@@ -47,7 +47,7 @@ def renderLock(func):
   return locked
                       
 class Renderer(app.Canvas): # canvas is a GUI object
-  def __init__(self, size=(560,420)):    
+  def __init__(self, size=(1600,900)):    
     self.renderList = [] # list of modules to render
     self.key_listener = None
     self.needs_update = False
@@ -107,10 +107,10 @@ class Renderer(app.Canvas): # canvas is a GUI object
   # define keyboard listeners  
   def on_key_press(self, event):
     if self.key_listener is not None:
-      self.key_listener.notify(event)
+      self.key_listener.notify(event,'down')
   def on_key_release(self, event):
     if self.key_listener is not None:
-      self.key_listener.notify(event)
+      self.key_listener.notify(event,'up')
     
   # run preliminary update, then start rendering
   def startRender(self):

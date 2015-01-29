@@ -8,7 +8,8 @@ class KeyboardListener(interface.Interface):
     renderer.addListener(self,'keys')
   
   # callback for the keypresses, forward events to modules
-  def notify(self, event):
-    self.do_updates(event)
+  # direction is for up or down strokes
+  def notify(self, event, direction):
+    self.do_updates(event, direction)
     
 # consider adding key-specific updates at some point

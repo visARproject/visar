@@ -29,7 +29,7 @@ d3.setTexture(im2)
 d3.setVerticies([[-.2,-.2,0],[1,-.2,0],[-.2,1,0],[1,1,0]]) # has depth=0
 
 # keyboard listner, prints keypresses/releases
-def key_stuff(event):
+def key_stuff(event, direction):
   print event.text
   if(event.key == vispy.keys.ESCAPE): exit()
 
