@@ -367,11 +367,11 @@ begin
             ram3_in  => c3_p1_rdonly_in,
             ram3_out => c3_p1_rdonly_out);
 
-    composite_video.sync <= overlay_video.sync;
     U_OVERLAY : entity work.video_overlay
-        port map(video_over  => overlay_video.data,
+        port map(video_sync  => overlay_video.sync,
+                 video_over  => overlay_video.data,
                  video_under => base_video_data,
-                 video_out   => composite_video.data);
+                 video_out   => composite_video);
 
     U_DVI_TX : entity work.dvi_transmitter
         port map(video_in => composite_video,

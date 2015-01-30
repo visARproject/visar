@@ -6,10 +6,11 @@ use work.video_bus.all;
 
 entity video_overlay is
     port(
+        video_sync  : in  video_sync;
         video_over  : in  video_data;
         video_under : in  video_data;
-        video_out   : out video_data
-    );
+        
+        video_out   : out video_bus);
 end entity video_overlay;
 
 -- Architecture assumes that the video data signals are synchronized together.
@@ -19,15 +20,19 @@ architecture RTL of video_overlay is
 begin
     process(video_over, video_under)
     begin
-        -- If the overlay is black, then let the under_video through
-        if(video_over.blue = x"00" and video_over.green = x"00" and video_over.red = x"00") then
-            video_out <= video_under;
-        else
-            video_out <= video_over;
+        if rising_edge(video_sync.pixel_clk) then
+            video_out.sync.frame_rst <= video_sync.frame_rst;
+            video_out.sync.valid <= video_sync.valid;
+            
+            -- If the overlay is black, then let the under_video through
+            if(video_over.blue = x"00" and video_over.green = x"00" and video_over.red = x"00") then
+                video_out.data <= video_under;
+            else
+                video_out.data <= video_over;
+            end if;
+
+
+            -- Later on add options for alpha layering.  For now, this is sufficient.
         end if;
-
-
-        -- Later on add options for alpha layering.  For now, this is sufficient.
-
     end process;
 end architecture RTL;
