@@ -42,20 +42,18 @@ begin
 			     
 	video_out.sync.pixel_clk <= px_clk_out;
 	
-	process(sel, video0, video1, valid_shift_reg) 
+	process (px_clk_out) is
 	begin
-		if sel = '0' then
-			video_out.data.blue <= video0.data.blue;
-			video_out.data.red <= video0.data.red;
-			video_out.data.green <= video0.data.green;
-			video_out.sync.frame_rst <= video0.sync.frame_rst;
-			video_out.sync.valid <= video0.sync.valid and valid_shift_reg(valid_shift_reg'length-1);
-		elsif sel = '1' then
-			video_out.data.blue <= video1.data.blue;
-			video_out.data.red <= video1.data.red;
-			video_out.data.green <= video1.data.green;
-			video_out.sync.frame_rst <= video1.sync.frame_rst;
-			video_out.sync.valid <= video1.sync.valid and valid_shift_reg(valid_shift_reg'length-1);
+		if rising_edge(px_clk_out) then
+			if sel = '0' then
+				video_out.sync.frame_rst <= video0.sync.frame_rst;
+				video_out.sync.valid <= video0.sync.valid and valid_shift_reg(valid_shift_reg'length-1);
+				video_out.data <= video0.data;
+			else
+				video_out.sync.frame_rst <= video1.sync.frame_rst;
+				video_out.sync.valid <= video1.sync.valid and valid_shift_reg(valid_shift_reg'length-1);
+				video_out.data <= video1.data;
+			end if;
 		end if;
 	end process;
 
