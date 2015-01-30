@@ -55,8 +55,8 @@
 -- "Output    Output      Phase     Duty      Pk-to-Pk        Phase"
 -- "Clock    Freq (MHz) (degrees) Cycle (%) Jitter (ps)  Error (ps)"
 ------------------------------------------------------------------------------
--- CLK_OUT1___132.500______0.000______50.0______190.260____382.431
--- CLK_OUT2____24.091______0.000______50.0______241.402____382.431
+-- CLK_OUT1___132.143______0.000______50.0______208.250____247.402
+-- CLK_OUT2___308.333______0.000______50.0______182.918____247.402
 --
 ------------------------------------------------------------------------------
 -- "Input Clock   Freq (MHz)    Input Jitter (UI)"
@@ -78,7 +78,7 @@ port
   CLK_IN_100MHz           : in     std_logic;
   -- Clock out ports
   CLK_OUT_132MHz          : out    std_logic;
-  CLK_OUT_24MHz          : out    std_logic;
+  CLK_OUT_310MHz          : out    std_logic;
   -- Status and control signals
   RESET             : in     std_logic;
   LOCKED            : out    std_logic
@@ -119,13 +119,13 @@ begin
    (BANDWIDTH            => "OPTIMIZED",
     CLK_FEEDBACK         => "CLKFBOUT",
     COMPENSATION         => "INTERNAL",
-    DIVCLK_DIVIDE        => 5,
-    CLKFBOUT_MULT        => 53,
+    DIVCLK_DIVIDE        => 4,
+    CLKFBOUT_MULT        => 37,
     CLKFBOUT_PHASE       => 0.000,
-    CLKOUT0_DIVIDE       => 8,
+    CLKOUT0_DIVIDE       => 7,
     CLKOUT0_PHASE        => 0.000,
     CLKOUT0_DUTY_CYCLE   => 0.500,
-    CLKOUT1_DIVIDE       => 44,
+    CLKOUT1_DIVIDE       => 3,
     CLKOUT1_PHASE        => 0.000,
     CLKOUT1_DUTY_CYCLE   => 0.500,
     CLKIN_PERIOD         => 10.000,
@@ -159,7 +159,7 @@ begin
 
   clkout2_buf : BUFG
   port map
-   (O   => CLK_OUT_24MHz,
+   (O   => CLK_OUT_310MHz,
     I   => clkout1);
 
 end xilinx;

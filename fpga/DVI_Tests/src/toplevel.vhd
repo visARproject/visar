@@ -24,12 +24,11 @@ entity toplevel is
         rx_scl : inout std_logic;
         led : out std_logic_vector(0 downto 0);
 
-        -- Camera A and B interface
-        camera_a_out    : out   camera_out;
-        camera_a_inout  : inout camera_inout;
-        camera_b_out    : out   camera_out;
-        camera_b_inout  : inout camera_inout;
-        camera_x_vdd_en : out   std_logic;
+        -- Camera interfaces
+        left_camera_out  : out camera_out;
+        left_camera_in   : in  camera_in;
+        right_camera_out : out camera_out;
+        right_camera_in  : in  camera_in;
 
         uart_tx : out std_logic;
         uart_rx : in std_logic;
@@ -60,10 +59,9 @@ architecture RTL of toplevel is
     signal reset          : std_logic;
     signal clk_100MHz_buf : std_logic;
     signal clk_132MHz     : std_logic;
-    signal clk_24MHz      : std_logic;
+    signal clk_310MHz      : std_logic;
 
-    signal camera_a_vdd_en, camera_b_vdd_en : std_logic;
-    signal camera_a_output, camera_b_output : camera_output;
+    signal left_camera_output, right_camera_output : camera_output;
 
     -- DDR2 Signals
     signal c3_calib_done : std_logic;
@@ -121,47 +119,43 @@ begin
     U_PIXEL_CLK_GEN : entity work.pixel_clk_gen port map (
         CLK_IN_100MHz     => clk_100MHz_buf,
         CLK_OUT_132MHz    => clk_132MHz,
-        CLK_OUT_24MHz     => clk_24MHz,
+        CLK_OUT_310MHz    => clk_310MHz,
         RESET             => '0',
         LOCKED            => open);
     
 
-    U_CAMERA_A_WRAPPER : entity work.camera_wrapper port map (
-        clock_24MHz     => clk_24MHz,
-        reset           => reset,
+    U_LEFT_CAMERA_WRAPPER : entity work.camera_wrapper port map (
+        clock_310MHz => clk_310MHz,
+        reset        => reset,
         
-        camera_out => camera_a_out,
-        camera_inout => camera_a_inout,
-        camera_vdd_en => camera_a_vdd_en,
+        camera_out => left_camera_out,
+        camera_in  => left_camera_in,
         
-        output => camera_a_output);
+        output => left_camera_output);
     
-    U_CAMERA_B_WRAPPER : entity work.camera_wrapper port map (
-        clock_24MHz     => clk_24MHz,
-        reset           => reset,
+    U_RIGHT_CAMERA_WRAPPER : entity work.camera_wrapper port map (
+        clock_310MHz => clk_310MHz,
+        reset        => reset,
         
-        camera_out => camera_b_out,
-        camera_inout => camera_b_inout,
-        camera_vdd_en => camera_b_vdd_en,
+        camera_out => right_camera_out,
+        camera_in  => right_camera_in,
         
-        output => camera_b_output);
-
-    camera_x_vdd_en <= camera_a_vdd_en and camera_b_vdd_en;
+        output => right_camera_output);
     
-    U_CAMERA_A_WRITER : entity work.camera_writer
+    U_LEFT_CAMERA_WRITER : entity work.camera_writer
         generic map (
             BUFFER_ADDRESS => LEFT_CAMERA_MEMORY_LOCATION)
         port map (
-            camera_output => camera_a_output,
+            camera_output => left_camera_output,
             
             ram_in  => c3_p4_in,
             ram_out => c3_p4_out);
     
-    U_CAMERA_B_WRITER : entity work.camera_writer
+    U_RIGHT_CAMERA_WRITER : entity work.camera_writer
         generic map (
             BUFFER_ADDRESS => RIGHT_CAMERA_MEMORY_LOCATION)
         port map (
-            camera_output => camera_b_output,
+            camera_output => right_camera_output,
             
             ram_in  => c3_p5_in,
             ram_out => c3_p5_out);
