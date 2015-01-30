@@ -20,7 +20,9 @@ end camera_wrapper;
 
 architecture arc of camera_wrapper is
     signal clock_out : std_logic;
-    signal sync, data0, data1, data2, data3, clock : std_logic;
+    
+    signal deserializer_clock : std_logic;
+    signal deserializer_out   : std_logic_vector(24 downto 0);
 begin
     CLOCK_OUT_DDR : ODDR2
         generic map (
@@ -44,52 +46,20 @@ begin
             O  => camera_out.clock_p,
             OB => camera_out.clock_n);
     
-    SYNC_IBUF : IBUFDS_DIFF_OUT
-        generic map (
-            IOSTANDARD => "LVDS_33",
-            DIFF_TERM  => TRUE)
-        port map (
-            I  => camera_in.sync_p,
-            IB => camera_in.sync_n,
-            O  => sync);
-    DATA0_IBUF : IBUFDS_DIFF_OUT
-        generic map (
-            IOSTANDARD => "LVDS_33",
-            DIFF_TERM  => TRUE)
-        port map (
-            I  => camera_in.data0_p,
-            IB => camera_in.data0_n,
-            O  => data0);
-    DATA1_IBUF : IBUFDS_DIFF_OUT
-        generic map (
-            IOSTANDARD => "LVDS_33",
-            DIFF_TERM  => TRUE)
-        port map (
-            I  => camera_in.data1_p,
-            IB => camera_in.data1_n,
-            O  => data1);
-    DATA2_IBUF : IBUFDS_DIFF_OUT
-        generic map (
-            IOSTANDARD => "LVDS_33",
-            DIFF_TERM  => TRUE)
-        port map (
-            I  => camera_in.data2_p,
-            IB => camera_in.data2_n,
-            O  => data2);
-    DATA3_IBUF : IBUFDS_DIFF_OUT
-        generic map (
-            IOSTANDARD => "LVDS_33",
-            DIFF_TERM  => TRUE)
-        port map (
-            I  => camera_in.data3_p,
-            IB => camera_in.data3_n,
-            O  => data3);
-    CLOCK_IBUF : IBUFDS_DIFF_OUT
-        generic map (
-            IOSTANDARD => "LVDS_33",
-            DIFF_TERM  => TRUE)
-        port map (
-            I  => camera_in.clock_p,
-            IB => camera_in.clock_n,
-            O  => clock);
+    DESERIALIZER : entity work.camera_deserializer port map (
+        IO_RESET => reset,
+        
+        CLK_IN_P => camera_in.clock_p,
+        CLK_IN_N => camera_in.clock_n,
+        DATA_IN_FROM_PINS_P => camera_in.sync_p & camera_in.data0_p &
+            camera_in.data1_p & camera_in.data2_p & camera_in.data3_p,
+        DATA_IN_FROM_PINS_N => camera_in.sync_n & camera_in.data0_n &
+            camera_in.data1_n & camera_in.data2_n & camera_in.data3_n,
+        
+        CLK_DIV_OUT => deserializer_clock,
+        DATA_IN_TO_DEVICE => deserializer_out,
+        BITSLIP => '0',
+        
+        DEBUG_IN => "00",
+        DEBUG_OUT => open);
 end architecture;
