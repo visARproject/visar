@@ -7,6 +7,7 @@ from autoee import Net, Bus, Interval
 from autoee import kicad, bom, easypart, landpattern, model, util, harnesses
 from autoee.units import INCH, MM, MIL
 from autoee.components import resistor as _resistor, capacitor as _capacitor, inductor
+from autoee.xilinx import ucf
 
 from autoee_components.mounting_hole import mounting_hole
 from autoee_components.wire_terminal import wire_terminal
@@ -16,7 +17,7 @@ from autoee_components.molex import _71430, _1050281001
 from autoee_components.sunex import CMT821
 from autoee_components.stmicroelectronics.STM32F103TB import STM32F103TB
 from autoee_components.texas_instruments.DS10BR150 import DS10BR150TSD
-from autoee_components.xilinx.XC2C128 import XC2C128_6VQG100C
+from autoee_components.xilinx.XC2C128 import XC2C128_6VQG100C, _XC2C128_6VQG100C_pin_names
 from autoee_components.vishay_semiconductors.VSMY7850X01 import VSMY7850X01
 from autoee_components.rohm_semiconductor import BUxxTD3WG
 from autoee_components.linear_technology.LT3476 import LT3476
@@ -55,9 +56,9 @@ class LeptonHarness(object):
         self.vddc = Net(prefix+'_vddc') if vddc is None else vddc
         self.vdd = Net(prefix+'_vdd') if vdd is None else vdd
         self.vddio = Net(prefix+'_vddio') if vddio is None else vddio
-        self.video_spi_bus = harnesses.SPIBus.new(prefix) if video_spi_bus is None else video_spi_bus
+        self.video_spi_bus = harnesses.SPIBus.new(prefix+'_') if video_spi_bus is None else video_spi_bus
         self.video_ss_n = Net(prefix + '_ss_n') if video_ss_n is None else video_ss_n
-        self.i2c_bus = harnesses.I2CBus.new(prefix) if i2c_bus is None else i2c_bus
+        self.i2c_bus = harnesses.I2CBus.new(prefix+'_') if i2c_bus is None else i2c_bus
         self.pwr_dwn_l = Net(prefix+'_pwr_dwn_l') if pwr_dwn_l is None else pwr_dwn_l
         self.reset_l = Net(prefix+'_reset_l') if reset_l is None else reset_l
         self.master_clk = Net(prefix+'_master_clk') if master_clk is None else master_clk
@@ -85,18 +86,18 @@ class CameraHarness(object):
             spi_bus=None, ss_n=None, 
             clock_in=None, clock=None, douts=None, sync=None,
             triggers=None, monitors=None, reset_n=None):
-        self.spi_bus = harnesses.SPIBus.new(prefix) if spi_bus is None else spi_bus
+        self.spi_bus = harnesses.SPIBus.new(prefix+'_') if spi_bus is None else spi_bus
         self.ss_n = Net(prefix + '_ss_n') if ss_n is None else ss_n
         self.clock_in = harnesses.LVDSPair.new(prefix + '_clock_in') if clock_in is None else clock_in
         self.clock = harnesses.LVDSPair.new(prefix + '_clock') if clock is None else clock
         self.douts = [harnesses.LVDSPair.new(prefix + '_dout%i' % (i,)) for i in xrange(4)] if douts is None else list(douts)
         assert len(self.douts) == 4
         self.sync = harnesses.LVDSPair.new(prefix + '_sync') if sync is None else sync
-        self.triggers = [Net(prefix+'trigger%i' % (i,)) for i in xrange(3)] if triggers is None else list(triggers)
+        self.triggers = [Net(prefix+'_trigger%i' % (i,)) for i in xrange(3)] if triggers is None else list(triggers)
         assert len(self.triggers) == 3
-        self.monitors = [Net(prefix+'monitor%i' % (i,)) for i in xrange(2)] if monitors is None else list(monitors)
+        self.monitors = [Net(prefix+'_monitor%i' % (i,)) for i in xrange(2)] if monitors is None else list(monitors)
         assert len(self.monitors) == 2
-        self.reset_n = Net(prefix+'reset_n') if reset_n is None else reset_n
+        self.reset_n = Net(prefix+'_reset_n') if reset_n is None else reset_n
 
 @util.listify
 def camera(prefix, gnd, vcc3_3, vcc3_3_pix, vcc1_8, harness):
@@ -218,35 +219,35 @@ def main():
     vcc1_2_1 = Net('vcc1_2_1') # thermal 1 (110mA)
     vcc1_2_2 = Net('vcc1_2_2') # thermal 2 (110mA)
     vcc1_8 = Net('vcc1_8') # CPLD (40mA)
-    vcc1_8_1 = Net('vcc1_8_1') # CMOS (75mA) - switched
-    vcc1_8_1_en = Net('vcc1_8_1_en') # XXX connect to CPLD
-    vcc1_8_2 = Net('vcc1_8_2') # CMOS (75mA) - switched
-    vcc1_8_2_en = Net('vcc1_8_2_en') # XXX connect to CPLD
+    C1_vcc1_8 = Net('C1_vcc1_8') # CMOS (75mA) - switched
+    C1_vcc1_8_en = Net('C1_vcc1_8_en') # XXX connect to CPLD
+    C2_vcc1_8 = Net('C2_vcc1_8') # CMOS (75mA) - switched
+    C2_vcc1_8_en = Net('C2_vcc1_8_en') # XXX connect to CPLD
     vcc2_8_1 = Net('vcc2_8_1') # thermal (16mA)
     vcc2_8_2 = Net('vcc2_8_2') # thermal (16mA)
     vcc3_0 = Net('vcc3_0') # CPLD, thermal (4mA*2), ARM
-    vcc3_0_1a = Net('vcc3_0_1a') # CMOS (130mA) - switched
-    vcc3_0_1a_en = Net('vcc3_0_1a_en') # XXX connect to CPLD
-    vcc3_0_1b = Net('vcc3_0_1b') # CMOS (2.5mA) - switched
-    vcc3_0_1b_en = Net('vcc3_0_1b_en') # XXX connect to CPLD
-    vcc3_0_2a = Net('vcc3_0_2a') # CMOS (130mA) - switched
-    vcc3_0_2a_en = Net('vcc3_0_2a_en') # XXX connect to CPLD
-    vcc3_0_2b = Net('vcc3_0_2b') # CMOS (2.5mA) - switched
-    vcc3_0_2b_en = Net('vcc3_0_2b_en') # XXX connect to CPLD
+    C1_vcc3_0_main = Net('C1_vcc3_0_main') # CMOS (130mA) - switched
+    C1_vcc3_0_main_en = Net('C1_vcc3_0_main_en') # XXX connect to CPLD
+    C1_vcc3_0_pix = Net('C1_vcc3_0_pix') # CMOS (2.5mA) - switched
+    C1_vcc3_0_pix_en = Net('C1_vcc3_0_pix_en') # XXX connect to CPLD
+    C2_vcc3_0_main = Net('C2_vcc3_0_main') # CMOS (130mA) - switched
+    C2_vcc3_0_main_en = Net('C2_vcc3_0_main_en') # XXX connect to CPLD
+    C2_vcc3_0_pix = Net('C2_vcc3_0_pix') # CMOS (2.5mA) - switched
+    C2_vcc3_0_pix_en = Net('C2_vcc3_0_pix_en') # XXX connect to CPLD
     
     for n, v, en in [
         (vcc1_2_1 , 1.2, None),
         (vcc1_2_2 , 1.2, None),
         (vcc1_8   , 1.8, None),
-        (vcc1_8_1 , 1.8, vcc1_8_1_en),
-        (vcc1_8_2 , 1.8, vcc1_8_2_en),
+        (C1_vcc1_8 , 1.8, C1_vcc1_8_en),
+        (C2_vcc1_8 , 1.8, C2_vcc1_8_en),
         (vcc2_8_1 , 2.8, None),
         (vcc2_8_2 , 2.8, None),
         (vcc3_0   , 3.0, None),
-        (vcc3_0_1a, 3.0, vcc3_0_1a_en),
-        (vcc3_0_1b, 3.0, vcc3_0_1b_en),
-        (vcc3_0_2a, 3.0, vcc3_0_2a_en),
-        (vcc3_0_2b, 3.0, vcc3_0_2b_en),
+        (C1_vcc3_0_main, 3.0, C1_vcc3_0_main_en),
+        (C1_vcc3_0_pix, 3.0, C1_vcc3_0_pix_en),
+        (C2_vcc3_0_main, 3.0, C2_vcc3_0_main_en),
+        (C2_vcc3_0_pix, 3.0, C2_vcc3_0_pix_en),
     ]:
         if v != 1.2:
             yield NCP702.by_voltage[v](n.name + 'U',
@@ -328,9 +329,9 @@ def main():
     )
     yield camera('C1',
         gnd=gnd,
-        vcc1_8=vcc1_8_1,
-        vcc3_3=vcc3_0_1a,
-        vcc3_3_pix=vcc3_0_1b,
+        vcc1_8=C1_vcc1_8,
+        vcc3_3=C1_vcc3_0_main,
+        vcc3_3_pix=C1_vcc3_0_pix,
         harness=C1_harness,
     )
     
@@ -342,9 +343,9 @@ def main():
     )
     yield camera('C2',
         gnd=gnd,
-        vcc1_8=vcc1_8_2,
-        vcc3_3=vcc3_0_2a,
-        vcc3_3_pix=vcc3_0_2b,
+        vcc1_8=C2_vcc1_8,
+        vcc3_3=C2_vcc3_0_main,
+        vcc3_3_pix=C2_vcc3_0_pix,
         harness=C2_harness,
     )
     
@@ -494,13 +495,13 @@ def main():
         IO2_90=lepton2.i2c_bus.SDA,
         IO2_89=lepton2.i2c_bus.SCL,
         
-        IO1_35=vcc1_8_1_en,
-        IO1_36=vcc3_0_1a_en,
-        IO1_37=vcc3_0_1b_en,
+        IO1_35=C1_vcc1_8_en,
+        IO1_36=C1_vcc3_0_main_en,
+        IO1_37=C1_vcc3_0_pix_en,
         
-        IO2_13=vcc3_0_2b_en,
-        IO2_12=vcc3_0_2a_en,
-        IO2_11=vcc1_8_2_en,
+        IO2_13=C2_vcc3_0_pix_en,
+        IO2_12=C2_vcc3_0_main_en,
+        IO2_11=C2_vcc1_8_en,
         
         IO2_70=baro_spi_bus.SCLK,
         IO2_71=baro_spi_bus.MOSI,
@@ -607,3 +608,7 @@ def micro(prefix, gnd, vcc3_0):
 desc = main()
 kicad.generate(desc, 'kicad')
 bom.generate(desc, 'bom')
+ucf.generate(
+    util.find(list(util.flatten(desc)), lambda part: part.name == 'U2'),
+    [p for p, n in _XC2C128_6VQG100C_pin_names if n.startswith('IO')],
+    'cpld.ucf')

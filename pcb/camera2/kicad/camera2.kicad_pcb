@@ -320,20 +320,20 @@
   (net 216 _SU2_17_NC)
   (net 217 _SU2_16_NC)
   (net 218 _SU2_19_RESV_19)
-  (net 219 vcc3_0_2b_en)
-  (net 220 vcc3_0_2b)
+  (net 219 C2_vcc3_0_pix_en)
+  (net 220 C2_vcc3_0_pix)
   (net 221 vcc1_2_1)
   (net 222 vcc1_2_2)
-  (net 223 vcc1_8_1_en)
-  (net 224 vcc1_8_1)
-  (net 225 vcc1_8_2_en)
-  (net 226 vcc1_8_2)
-  (net 227 vcc3_0_1a_en)
-  (net 228 vcc3_0_1a)
-  (net 229 vcc3_0_1b_en)
-  (net 230 vcc3_0_1b)
-  (net 231 vcc3_0_2a_en)
-  (net 232 vcc3_0_2a)
+  (net 223 C1_vcc1_8_en)
+  (net 224 C1_vcc1_8)
+  (net 225 C2_vcc1_8_en)
+  (net 226 C2_vcc1_8)
+  (net 227 C1_vcc3_0_main_en)
+  (net 228 C1_vcc3_0_main)
+  (net 229 C1_vcc3_0_pix_en)
+  (net 230 C1_vcc3_0_pix)
+  (net 231 C2_vcc3_0_main_en)
+  (net 232 C2_vcc3_0_main)
   (net 233 _U2_86_IO2_86)
   (net 234 _U2_87_IO2_87)
   (net 235 _U2_85_IO2_85)
@@ -568,21 +568,21 @@
     (add_net vcc1_2_1)
     (add_net vcc1_2_2)
     (add_net vcc1_8)
-    (add_net vcc1_8_1)
-    (add_net vcc1_8_1_en)
-    (add_net vcc1_8_2)
-    (add_net vcc1_8_2_en)
+    (add_net C1_vcc1_8)
+    (add_net C1_vcc1_8_en)
+    (add_net C2_vcc1_8)
+    (add_net C2_vcc1_8_en)
     (add_net vcc2_8_1)
     (add_net vcc2_8_2)
     (add_net vcc3_0)
-    (add_net vcc3_0_1a)
-    (add_net vcc3_0_1a_en)
-    (add_net vcc3_0_1b)
-    (add_net vcc3_0_1b_en)
-    (add_net vcc3_0_2a)
-    (add_net vcc3_0_2a_en)
-    (add_net vcc3_0_2b)
-    (add_net vcc3_0_2b_en)
+    (add_net C1_vcc3_0_main)
+    (add_net C1_vcc3_0_main_en)
+    (add_net C1_vcc3_0_pix)
+    (add_net C1_vcc3_0_pix_en)
+    (add_net C2_vcc3_0_main)
+    (add_net C2_vcc3_0_main_en)
+    (add_net C2_vcc3_0_pix)
+    (add_net C2_vcc3_0_pix_en)
     (add_net vcc3_3in)
     (add_net vcc5in)
   )
@@ -1117,7 +1117,7 @@
     (fp_line (start -0.2 -0.25) (end -0.2 -0.25) (layer F.SilkS) (width 0.15))
     (fp_line (start -0.2 -0.25) (end 0.2 -0.25) (layer F.SilkS) (width 0.15))
     (pad 1 smd rect (at -0.512483 0) (size 0.775033 0.55) (layers F.Cu F.Paste F.Mask)
-      (net 224 vcc1_8_1))
+      (net 224 C1_vcc1_8))
     (pad 2 smd rect (at 0.512483 0) (size 0.775033 0.55) (layers F.Cu F.Paste F.Mask)
       (net 1 gnd))
     (model ${KIPRJMOD}/gen.pretty/19056136a91a1bf7994f1c456f1a827b5de8acfda9580051fc9bfa20411feea4.x3d
@@ -1153,7 +1153,7 @@
     (fp_line (start -0.2 -0.25) (end -0.2 -0.25) (layer F.SilkS) (width 0.15))
     (fp_line (start -0.2 -0.25) (end 0.2 -0.25) (layer F.SilkS) (width 0.15))
     (pad 1 smd rect (at -0.512483 0) (size 0.775033 0.55) (layers F.Cu F.Paste F.Mask)
-      (net 224 vcc1_8_1))
+      (net 224 C1_vcc1_8))
     (pad 2 smd rect (at 0.512483 0) (size 0.775033 0.55) (layers F.Cu F.Paste F.Mask)
       (net 1 gnd))
     (model ${KIPRJMOD}/gen.pretty/19056136a91a1bf7994f1c456f1a827b5de8acfda9580051fc9bfa20411feea4.x3d
@@ -1189,7 +1189,7 @@
     (fp_line (start -0.2 0.25) (end -0.2 0.25) (layer B.SilkS) (width 0.15))
     (fp_line (start -0.2 0.25) (end 0.2 0.25) (layer B.SilkS) (width 0.15))
     (pad 1 smd rect (at -0.512483 0 180) (size 0.775033 0.55) (layers B.Cu B.Paste B.Mask)
-      (net 224 vcc1_8_1))
+      (net 224 C1_vcc1_8))
     (pad 2 smd rect (at 0.512483 0 180) (size 0.775033 0.55) (layers B.Cu B.Paste B.Mask)
       (net 1 gnd))
     (model ${KIPRJMOD}/gen.pretty/19056136a91a1bf7994f1c456f1a827b5de8acfda9580051fc9bfa20411feea4.x3d
@@ -1225,7 +1225,7 @@
     (fp_line (start -0.2 -0.25) (end -0.2 -0.25) (layer F.SilkS) (width 0.15))
     (fp_line (start -0.2 -0.25) (end 0.2 -0.25) (layer F.SilkS) (width 0.15))
     (pad 1 smd rect (at -0.512483 0 180) (size 0.775033 0.55) (layers F.Cu F.Paste F.Mask)
-      (net 224 vcc1_8_1))
+      (net 224 C1_vcc1_8))
     (pad 2 smd rect (at 0.512483 0 180) (size 0.775033 0.55) (layers F.Cu F.Paste F.Mask)
       (net 1 gnd))
     (model ${KIPRJMOD}/gen.pretty/19056136a91a1bf7994f1c456f1a827b5de8acfda9580051fc9bfa20411feea4.x3d
@@ -1261,7 +1261,7 @@
     (fp_line (start -0.2 0.25) (end -0.2 0.25) (layer B.SilkS) (width 0.15))
     (fp_line (start -0.2 0.25) (end 0.2 0.25) (layer B.SilkS) (width 0.15))
     (pad 1 smd rect (at -0.512483 0 180) (size 0.775033 0.55) (layers B.Cu B.Paste B.Mask)
-      (net 224 vcc1_8_1))
+      (net 224 C1_vcc1_8))
     (pad 2 smd rect (at 0.512483 0 180) (size 0.775033 0.55) (layers B.Cu B.Paste B.Mask)
       (net 1 gnd))
     (model ${KIPRJMOD}/gen.pretty/19056136a91a1bf7994f1c456f1a827b5de8acfda9580051fc9bfa20411feea4.x3d
@@ -1297,7 +1297,7 @@
     (fp_line (start -0.2 -0.25) (end -0.2 -0.25) (layer F.SilkS) (width 0.15))
     (fp_line (start -0.2 -0.25) (end 0.2 -0.25) (layer F.SilkS) (width 0.15))
     (pad 1 smd rect (at -0.512483 0 180) (size 0.775033 0.55) (layers F.Cu F.Paste F.Mask)
-      (net 228 vcc3_0_1a))
+      (net 228 C1_vcc3_0_main))
     (pad 2 smd rect (at 0.512483 0 180) (size 0.775033 0.55) (layers F.Cu F.Paste F.Mask)
       (net 1 gnd))
     (model ${KIPRJMOD}/gen.pretty/19056136a91a1bf7994f1c456f1a827b5de8acfda9580051fc9bfa20411feea4.x3d
@@ -1333,7 +1333,7 @@
     (fp_line (start -0.2 -0.25) (end -0.2 -0.25) (layer F.SilkS) (width 0.15))
     (fp_line (start -0.2 -0.25) (end 0.2 -0.25) (layer F.SilkS) (width 0.15))
     (pad 1 smd rect (at -0.512483 0 180) (size 0.775033 0.55) (layers F.Cu F.Paste F.Mask)
-      (net 228 vcc3_0_1a))
+      (net 228 C1_vcc3_0_main))
     (pad 2 smd rect (at 0.512483 0 180) (size 0.775033 0.55) (layers F.Cu F.Paste F.Mask)
       (net 1 gnd))
     (model ${KIPRJMOD}/gen.pretty/19056136a91a1bf7994f1c456f1a827b5de8acfda9580051fc9bfa20411feea4.x3d
@@ -1369,7 +1369,7 @@
     (fp_line (start -0.2 -0.25) (end -0.2 -0.25) (layer F.SilkS) (width 0.15))
     (fp_line (start -0.2 -0.25) (end 0.2 -0.25) (layer F.SilkS) (width 0.15))
     (pad 1 smd rect (at -0.512483 0 90) (size 0.775033 0.55) (layers F.Cu F.Paste F.Mask)
-      (net 228 vcc3_0_1a))
+      (net 228 C1_vcc3_0_main))
     (pad 2 smd rect (at 0.512483 0 90) (size 0.775033 0.55) (layers F.Cu F.Paste F.Mask)
       (net 1 gnd))
     (model ${KIPRJMOD}/gen.pretty/19056136a91a1bf7994f1c456f1a827b5de8acfda9580051fc9bfa20411feea4.x3d
@@ -1405,7 +1405,7 @@
     (fp_line (start -0.2 -0.25) (end -0.2 -0.25) (layer F.SilkS) (width 0.15))
     (fp_line (start -0.2 -0.25) (end 0.2 -0.25) (layer F.SilkS) (width 0.15))
     (pad 1 smd rect (at -0.512483 0 180) (size 0.775033 0.55) (layers F.Cu F.Paste F.Mask)
-      (net 228 vcc3_0_1a))
+      (net 228 C1_vcc3_0_main))
     (pad 2 smd rect (at 0.512483 0 180) (size 0.775033 0.55) (layers F.Cu F.Paste F.Mask)
       (net 1 gnd))
     (model ${KIPRJMOD}/gen.pretty/19056136a91a1bf7994f1c456f1a827b5de8acfda9580051fc9bfa20411feea4.x3d
@@ -1441,7 +1441,7 @@
     (fp_line (start -0.2 -0.25) (end -0.2 -0.25) (layer F.SilkS) (width 0.15))
     (fp_line (start -0.2 -0.25) (end 0.2 -0.25) (layer F.SilkS) (width 0.15))
     (pad 1 smd rect (at -0.512483 0 90) (size 0.775033 0.55) (layers F.Cu F.Paste F.Mask)
-      (net 228 vcc3_0_1a))
+      (net 228 C1_vcc3_0_main))
     (pad 2 smd rect (at 0.512483 0 90) (size 0.775033 0.55) (layers F.Cu F.Paste F.Mask)
       (net 1 gnd))
     (model ${KIPRJMOD}/gen.pretty/19056136a91a1bf7994f1c456f1a827b5de8acfda9580051fc9bfa20411feea4.x3d
@@ -1477,7 +1477,7 @@
     (fp_line (start -0.2 -0.25) (end -0.2 -0.25) (layer F.SilkS) (width 0.15))
     (fp_line (start -0.2 -0.25) (end 0.2 -0.25) (layer F.SilkS) (width 0.15))
     (pad 1 smd rect (at -0.512483 0) (size 0.775033 0.55) (layers F.Cu F.Paste F.Mask)
-      (net 228 vcc3_0_1a))
+      (net 228 C1_vcc3_0_main))
     (pad 2 smd rect (at 0.512483 0) (size 0.775033 0.55) (layers F.Cu F.Paste F.Mask)
       (net 1 gnd))
     (model ${KIPRJMOD}/gen.pretty/19056136a91a1bf7994f1c456f1a827b5de8acfda9580051fc9bfa20411feea4.x3d
@@ -1513,7 +1513,7 @@
     (fp_line (start -0.2 -0.25) (end -0.2 -0.25) (layer F.SilkS) (width 0.15))
     (fp_line (start -0.2 -0.25) (end 0.2 -0.25) (layer F.SilkS) (width 0.15))
     (pad 1 smd rect (at -0.512483 0 90) (size 0.775033 0.55) (layers F.Cu F.Paste F.Mask)
-      (net 228 vcc3_0_1a))
+      (net 228 C1_vcc3_0_main))
     (pad 2 smd rect (at 0.512483 0 90) (size 0.775033 0.55) (layers F.Cu F.Paste F.Mask)
       (net 1 gnd))
     (model ${KIPRJMOD}/gen.pretty/19056136a91a1bf7994f1c456f1a827b5de8acfda9580051fc9bfa20411feea4.x3d
@@ -1549,7 +1549,7 @@
     (fp_line (start -0.2 0.25) (end -0.2 0.25) (layer B.SilkS) (width 0.15))
     (fp_line (start -0.2 0.25) (end 0.2 0.25) (layer B.SilkS) (width 0.15))
     (pad 1 smd rect (at -0.512483 0 180) (size 0.775033 0.55) (layers B.Cu B.Paste B.Mask)
-      (net 228 vcc3_0_1a))
+      (net 228 C1_vcc3_0_main))
     (pad 2 smd rect (at 0.512483 0 180) (size 0.775033 0.55) (layers B.Cu B.Paste B.Mask)
       (net 1 gnd))
     (model ${KIPRJMOD}/gen.pretty/19056136a91a1bf7994f1c456f1a827b5de8acfda9580051fc9bfa20411feea4.x3d
@@ -1729,7 +1729,7 @@
     (fp_line (start -0.25 0.25) (end -0.25 0.25) (layer B.SilkS) (width 0.15))
     (fp_line (start -0.25 0.25) (end 0.25 0.25) (layer B.SilkS) (width 0.15))
     (pad 1 smd rect (at -0.523461 0 180) (size 0.753078 0.55) (layers B.Cu B.Paste B.Mask)
-      (net 230 vcc3_0_1b))
+      (net 230 C1_vcc3_0_pix))
     (pad 2 smd rect (at 0.523461 0 180) (size 0.753078 0.55) (layers B.Cu B.Paste B.Mask)
       (net 194 C1vdd_pix))
     (model ${KIPRJMOD}/gen.pretty/d9260fa3ec93c9108de7ba8561e42adcd089c8f5e6d915aa7710d60a372a5891.x3d
@@ -1905,7 +1905,7 @@
     (fp_line (start -0.2 -0.25) (end -0.2 -0.25) (layer F.SilkS) (width 0.15))
     (fp_line (start -0.2 -0.25) (end 0.2 -0.25) (layer F.SilkS) (width 0.15))
     (pad 1 smd rect (at -0.512483 0) (size 0.775033 0.55) (layers F.Cu F.Paste F.Mask)
-      (net 226 vcc1_8_2))
+      (net 226 C2_vcc1_8))
     (pad 2 smd rect (at 0.512483 0) (size 0.775033 0.55) (layers F.Cu F.Paste F.Mask)
       (net 1 gnd))
     (model ${KIPRJMOD}/gen.pretty/19056136a91a1bf7994f1c456f1a827b5de8acfda9580051fc9bfa20411feea4.x3d
@@ -1941,7 +1941,7 @@
     (fp_line (start -0.2 -0.25) (end -0.2 -0.25) (layer F.SilkS) (width 0.15))
     (fp_line (start -0.2 -0.25) (end 0.2 -0.25) (layer F.SilkS) (width 0.15))
     (pad 1 smd rect (at -0.512483 0) (size 0.775033 0.55) (layers F.Cu F.Paste F.Mask)
-      (net 226 vcc1_8_2))
+      (net 226 C2_vcc1_8))
     (pad 2 smd rect (at 0.512483 0) (size 0.775033 0.55) (layers F.Cu F.Paste F.Mask)
       (net 1 gnd))
     (model ${KIPRJMOD}/gen.pretty/19056136a91a1bf7994f1c456f1a827b5de8acfda9580051fc9bfa20411feea4.x3d
@@ -1977,7 +1977,7 @@
     (fp_line (start -0.2 -0.25) (end -0.2 -0.25) (layer F.SilkS) (width 0.15))
     (fp_line (start -0.2 -0.25) (end 0.2 -0.25) (layer F.SilkS) (width 0.15))
     (pad 1 smd rect (at -0.512483 0 180) (size 0.775033 0.55) (layers F.Cu F.Paste F.Mask)
-      (net 226 vcc1_8_2))
+      (net 226 C2_vcc1_8))
     (pad 2 smd rect (at 0.512483 0 180) (size 0.775033 0.55) (layers F.Cu F.Paste F.Mask)
       (net 1 gnd))
     (model ${KIPRJMOD}/gen.pretty/19056136a91a1bf7994f1c456f1a827b5de8acfda9580051fc9bfa20411feea4.x3d
@@ -2013,7 +2013,7 @@
     (fp_line (start -0.2 -0.25) (end -0.2 -0.25) (layer F.SilkS) (width 0.15))
     (fp_line (start -0.2 -0.25) (end 0.2 -0.25) (layer F.SilkS) (width 0.15))
     (pad 1 smd rect (at -0.512483 0 180) (size 0.775033 0.55) (layers F.Cu F.Paste F.Mask)
-      (net 226 vcc1_8_2))
+      (net 226 C2_vcc1_8))
     (pad 2 smd rect (at 0.512483 0 180) (size 0.775033 0.55) (layers F.Cu F.Paste F.Mask)
       (net 1 gnd))
     (model ${KIPRJMOD}/gen.pretty/19056136a91a1bf7994f1c456f1a827b5de8acfda9580051fc9bfa20411feea4.x3d
@@ -2049,7 +2049,7 @@
     (fp_line (start -0.2 -0.25) (end -0.2 -0.25) (layer F.SilkS) (width 0.15))
     (fp_line (start -0.2 -0.25) (end 0.2 -0.25) (layer F.SilkS) (width 0.15))
     (pad 1 smd rect (at -0.512483 0) (size 0.775033 0.55) (layers F.Cu F.Paste F.Mask)
-      (net 226 vcc1_8_2))
+      (net 226 C2_vcc1_8))
     (pad 2 smd rect (at 0.512483 0) (size 0.775033 0.55) (layers F.Cu F.Paste F.Mask)
       (net 1 gnd))
     (model ${KIPRJMOD}/gen.pretty/19056136a91a1bf7994f1c456f1a827b5de8acfda9580051fc9bfa20411feea4.x3d
@@ -2085,7 +2085,7 @@
     (fp_line (start -0.2 -0.25) (end -0.2 -0.25) (layer F.SilkS) (width 0.15))
     (fp_line (start -0.2 -0.25) (end 0.2 -0.25) (layer F.SilkS) (width 0.15))
     (pad 1 smd rect (at -0.512483 0 180) (size 0.775033 0.55) (layers F.Cu F.Paste F.Mask)
-      (net 232 vcc3_0_2a))
+      (net 232 C2_vcc3_0_main))
     (pad 2 smd rect (at 0.512483 0 180) (size 0.775033 0.55) (layers F.Cu F.Paste F.Mask)
       (net 1 gnd))
     (model ${KIPRJMOD}/gen.pretty/19056136a91a1bf7994f1c456f1a827b5de8acfda9580051fc9bfa20411feea4.x3d
@@ -2121,7 +2121,7 @@
     (fp_line (start -0.2 -0.25) (end -0.2 -0.25) (layer F.SilkS) (width 0.15))
     (fp_line (start -0.2 -0.25) (end 0.2 -0.25) (layer F.SilkS) (width 0.15))
     (pad 1 smd rect (at -0.512483 0 180) (size 0.775033 0.55) (layers F.Cu F.Paste F.Mask)
-      (net 232 vcc3_0_2a))
+      (net 232 C2_vcc3_0_main))
     (pad 2 smd rect (at 0.512483 0 180) (size 0.775033 0.55) (layers F.Cu F.Paste F.Mask)
       (net 1 gnd))
     (model ${KIPRJMOD}/gen.pretty/19056136a91a1bf7994f1c456f1a827b5de8acfda9580051fc9bfa20411feea4.x3d
@@ -2157,7 +2157,7 @@
     (fp_line (start -0.2 -0.25) (end -0.2 -0.25) (layer F.SilkS) (width 0.15))
     (fp_line (start -0.2 -0.25) (end 0.2 -0.25) (layer F.SilkS) (width 0.15))
     (pad 1 smd rect (at -0.512483 0 90) (size 0.775033 0.55) (layers F.Cu F.Paste F.Mask)
-      (net 232 vcc3_0_2a))
+      (net 232 C2_vcc3_0_main))
     (pad 2 smd rect (at 0.512483 0 90) (size 0.775033 0.55) (layers F.Cu F.Paste F.Mask)
       (net 1 gnd))
     (model ${KIPRJMOD}/gen.pretty/19056136a91a1bf7994f1c456f1a827b5de8acfda9580051fc9bfa20411feea4.x3d
@@ -2193,7 +2193,7 @@
     (fp_line (start -0.2 -0.25) (end -0.2 -0.25) (layer F.SilkS) (width 0.15))
     (fp_line (start -0.2 -0.25) (end 0.2 -0.25) (layer F.SilkS) (width 0.15))
     (pad 1 smd rect (at -0.512483 0 180) (size 0.775033 0.55) (layers F.Cu F.Paste F.Mask)
-      (net 232 vcc3_0_2a))
+      (net 232 C2_vcc3_0_main))
     (pad 2 smd rect (at 0.512483 0 180) (size 0.775033 0.55) (layers F.Cu F.Paste F.Mask)
       (net 1 gnd))
     (model ${KIPRJMOD}/gen.pretty/19056136a91a1bf7994f1c456f1a827b5de8acfda9580051fc9bfa20411feea4.x3d
@@ -2229,7 +2229,7 @@
     (fp_line (start -0.2 -0.25) (end -0.2 -0.25) (layer F.SilkS) (width 0.15))
     (fp_line (start -0.2 -0.25) (end 0.2 -0.25) (layer F.SilkS) (width 0.15))
     (pad 1 smd rect (at -0.512483 0 90) (size 0.775033 0.55) (layers F.Cu F.Paste F.Mask)
-      (net 232 vcc3_0_2a))
+      (net 232 C2_vcc3_0_main))
     (pad 2 smd rect (at 0.512483 0 90) (size 0.775033 0.55) (layers F.Cu F.Paste F.Mask)
       (net 1 gnd))
     (model ${KIPRJMOD}/gen.pretty/19056136a91a1bf7994f1c456f1a827b5de8acfda9580051fc9bfa20411feea4.x3d
@@ -2265,7 +2265,7 @@
     (fp_line (start -0.2 0.25) (end -0.2 0.25) (layer B.SilkS) (width 0.15))
     (fp_line (start -0.2 0.25) (end 0.2 0.25) (layer B.SilkS) (width 0.15))
     (pad 1 smd rect (at -0.512483 0 180) (size 0.775033 0.55) (layers B.Cu B.Paste B.Mask)
-      (net 232 vcc3_0_2a))
+      (net 232 C2_vcc3_0_main))
     (pad 2 smd rect (at 0.512483 0 180) (size 0.775033 0.55) (layers B.Cu B.Paste B.Mask)
       (net 1 gnd))
     (model ${KIPRJMOD}/gen.pretty/19056136a91a1bf7994f1c456f1a827b5de8acfda9580051fc9bfa20411feea4.x3d
@@ -2301,7 +2301,7 @@
     (fp_line (start -0.2 -0.25) (end -0.2 -0.25) (layer F.SilkS) (width 0.15))
     (fp_line (start -0.2 -0.25) (end 0.2 -0.25) (layer F.SilkS) (width 0.15))
     (pad 1 smd rect (at -0.512483 0 90) (size 0.775033 0.55) (layers F.Cu F.Paste F.Mask)
-      (net 232 vcc3_0_2a))
+      (net 232 C2_vcc3_0_main))
     (pad 2 smd rect (at 0.512483 0 90) (size 0.775033 0.55) (layers F.Cu F.Paste F.Mask)
       (net 1 gnd))
     (model ${KIPRJMOD}/gen.pretty/19056136a91a1bf7994f1c456f1a827b5de8acfda9580051fc9bfa20411feea4.x3d
@@ -2337,7 +2337,7 @@
     (fp_line (start -0.2 0.25) (end -0.2 0.25) (layer B.SilkS) (width 0.15))
     (fp_line (start -0.2 0.25) (end 0.2 0.25) (layer B.SilkS) (width 0.15))
     (pad 1 smd rect (at -0.512483 0 180) (size 0.775033 0.55) (layers B.Cu B.Paste B.Mask)
-      (net 232 vcc3_0_2a))
+      (net 232 C2_vcc3_0_main))
     (pad 2 smd rect (at 0.512483 0 180) (size 0.775033 0.55) (layers B.Cu B.Paste B.Mask)
       (net 1 gnd))
     (model ${KIPRJMOD}/gen.pretty/19056136a91a1bf7994f1c456f1a827b5de8acfda9580051fc9bfa20411feea4.x3d
@@ -2517,7 +2517,7 @@
     (fp_line (start -0.25 0.25) (end -0.25 0.25) (layer B.SilkS) (width 0.15))
     (fp_line (start -0.25 0.25) (end 0.25 0.25) (layer B.SilkS) (width 0.15))
     (pad 1 smd rect (at -0.523461 0 180) (size 0.753078 0.55) (layers B.Cu B.Paste B.Mask)
-      (net 220 vcc3_0_2b))
+      (net 220 C2_vcc3_0_pix))
     (pad 2 smd rect (at 0.523461 0 180) (size 0.753078 0.55) (layers B.Cu B.Paste B.Mask)
       (net 195 C2vdd_pix))
     (model ${KIPRJMOD}/gen.pretty/d9260fa3ec93c9108de7ba8561e42adcd089c8f5e6d915aa7710d60a372a5891.x3d
@@ -3091,11 +3091,11 @@
     (pad 30 smd rect (at -4 7.7 225) (size 0.27 1.4) (layers F.Cu F.Paste F.Mask)
       (net 45 pair8N))
     (pad 37 smd rect (at -0.5 7.7 225) (size 0.27 1.4) (layers F.Cu F.Paste F.Mask)
-      (net 229 vcc3_0_1b_en))
+      (net 229 C1_vcc3_0_pix_en))
     (pad 36 smd rect (at -1 7.7 225) (size 0.27 1.4) (layers F.Cu F.Paste F.Mask)
-      (net 227 vcc3_0_1a_en))
+      (net 227 C1_vcc3_0_main_en))
     (pad 35 smd rect (at -1.5 7.7 225) (size 0.27 1.4) (layers F.Cu F.Paste F.Mask)
-      (net 223 vcc1_8_1_en))
+      (net 223 C1_vcc1_8_en))
     (pad 34 smd rect (at -2 7.7 225) (size 0.27 1.4) (layers F.Cu F.Paste F.Mask)
       (net 236 _U2_34_IO1_34))
     (pad 60 smd rect (at 7.7 1.5 225) (size 1.4 0.27) (layers F.Cu F.Paste F.Mask)
@@ -3143,13 +3143,13 @@
     (pad 96 smd rect (at -4 -7.7 225) (size 0.27 1.4) (layers F.Cu F.Paste F.Mask)
       (net 116 T2_pwr_dwn_l))
     (pad 11 smd rect (at -7.7 -1 225) (size 1.4 0.27) (layers F.Cu F.Paste F.Mask)
-      (net 225 vcc1_8_2_en))
+      (net 225 C2_vcc1_8_en))
     (pad 10 smd rect (at -7.7 -1.5 225) (size 1.4 0.27) (layers F.Cu F.Paste F.Mask)
       (net 17 C2trigger0))
     (pad 13 smd rect (at -7.7 0 225) (size 1.4 0.27) (layers F.Cu F.Paste F.Mask)
-      (net 219 vcc3_0_2b_en))
+      (net 219 C2_vcc3_0_pix_en))
     (pad 12 smd rect (at -7.7 -0.5 225) (size 1.4 0.27) (layers F.Cu F.Paste F.Mask)
-      (net 231 vcc3_0_2a_en))
+      (net 231 C2_vcc3_0_main_en))
     (pad 15 smd rect (at -7.7 1 225) (size 1.4 0.27) (layers F.Cu F.Paste F.Mask)
       (net 237 _U2_15_IO1_15))
     (pad 14 smd rect (at -7.7 0.5 225) (size 1.4 0.27) (layers F.Cu F.Paste F.Mask)
@@ -3722,7 +3722,7 @@
   (module gen:15aef6ed4df9f5d238c1130cb8f0958fd2b96be76bbd888f3ba8bd3f59a98fb9 (layer B.Cu) (tedit 54AB9214) (tstamp 54ABD05B)
     (at 118.745 95.25 90)
     (path /530B7A40)
-    (fp_text reference vcc1_8_1C1 (at 0 0 90) (layer B.SilkS) hide
+    (fp_text reference C1_vcc1_8C1 (at 0 0 90) (layer B.SilkS) hide
       (effects (font (size 0.508 0.508) (thickness 0.0508)) (justify mirror))
     )
     (fp_text value "" (at 0 0 90) (layer B.Adhes) hide
@@ -3758,7 +3758,7 @@
   (module gen:15aef6ed4df9f5d238c1130cb8f0958fd2b96be76bbd888f3ba8bd3f59a98fb9 (layer B.Cu) (tedit 54AB9214) (tstamp 54ABD070)
     (at 123.825 95.25 90)
     (path /530B7A40)
-    (fp_text reference vcc1_8_1C2 (at 0 0 90) (layer B.SilkS) hide
+    (fp_text reference C1_vcc1_8C2 (at 0 0 90) (layer B.SilkS) hide
       (effects (font (size 0.508 0.508) (thickness 0.0508)) (justify mirror))
     )
     (fp_text value "" (at 0 0 90) (layer B.Adhes) hide
@@ -3781,7 +3781,7 @@
     (fp_line (start -0.2 0.25) (end -0.2 0.25) (layer B.SilkS) (width 0.15))
     (fp_line (start -0.2 0.25) (end 0.2 0.25) (layer B.SilkS) (width 0.15))
     (pad 1 smd rect (at -0.512483 0 90) (size 0.775033 0.55) (layers B.Cu B.Paste B.Mask)
-      (net 224 vcc1_8_1))
+      (net 224 C1_vcc1_8))
     (pad 2 smd rect (at 0.512483 0 90) (size 0.775033 0.55) (layers B.Cu B.Paste B.Mask)
       (net 1 gnd))
     (model ${KIPRJMOD}/gen.pretty/19056136a91a1bf7994f1c456f1a827b5de8acfda9580051fc9bfa20411feea4.x3d
@@ -3794,7 +3794,7 @@
   (module gen:15aef6ed4df9f5d238c1130cb8f0958fd2b96be76bbd888f3ba8bd3f59a98fb9 (layer B.Cu) (tedit 54AB9214) (tstamp 54ABD0A5)
     (at 185.928 103.124 180)
     (path /530B7A40)
-    (fp_text reference vcc1_8_2C1 (at 0 0 180) (layer B.SilkS) hide
+    (fp_text reference C2_vcc1_8C1 (at 0 0 180) (layer B.SilkS) hide
       (effects (font (size 0.508 0.508) (thickness 0.0508)) (justify mirror))
     )
     (fp_text value "" (at 0 0 180) (layer B.Adhes) hide
@@ -3830,7 +3830,7 @@
   (module gen:15aef6ed4df9f5d238c1130cb8f0958fd2b96be76bbd888f3ba8bd3f59a98fb9 (layer B.Cu) (tedit 54AB9214) (tstamp 54ABD0BA)
     (at 185.928 98.044 180)
     (path /530B7A40)
-    (fp_text reference vcc1_8_2C2 (at 0 0 180) (layer B.SilkS) hide
+    (fp_text reference C2_vcc1_8C2 (at 0 0 180) (layer B.SilkS) hide
       (effects (font (size 0.508 0.508) (thickness 0.0508)) (justify mirror))
     )
     (fp_text value "" (at 0 0 180) (layer B.Adhes) hide
@@ -3853,7 +3853,7 @@
     (fp_line (start -0.2 0.25) (end -0.2 0.25) (layer B.SilkS) (width 0.15))
     (fp_line (start -0.2 0.25) (end 0.2 0.25) (layer B.SilkS) (width 0.15))
     (pad 1 smd rect (at -0.512483 0 180) (size 0.775033 0.55) (layers B.Cu B.Paste B.Mask)
-      (net 226 vcc1_8_2))
+      (net 226 C2_vcc1_8))
     (pad 2 smd rect (at 0.512483 0 180) (size 0.775033 0.55) (layers B.Cu B.Paste B.Mask)
       (net 1 gnd))
     (model ${KIPRJMOD}/gen.pretty/19056136a91a1bf7994f1c456f1a827b5de8acfda9580051fc9bfa20411feea4.x3d
@@ -3938,7 +3938,7 @@
   (module gen:15aef6ed4df9f5d238c1130cb8f0958fd2b96be76bbd888f3ba8bd3f59a98fb9 (layer B.Cu) (tedit 54AB9214) (tstamp 54ABD183)
     (at 120.015 98.425 270)
     (path /530B7A40)
-    (fp_text reference vcc3_0_1aC1 (at 0 0 270) (layer B.SilkS) hide
+    (fp_text reference C1_vcc3_0_mainC1 (at 0 0 270) (layer B.SilkS) hide
       (effects (font (size 0.508 0.508) (thickness 0.0508)) (justify mirror))
     )
     (fp_text value "" (at 0 0 270) (layer B.Adhes) hide
@@ -3974,7 +3974,7 @@
   (module gen:15aef6ed4df9f5d238c1130cb8f0958fd2b96be76bbd888f3ba8bd3f59a98fb9 (layer B.Cu) (tedit 54AB9214) (tstamp 54ABD198)
     (at 114.935 98.425 270)
     (path /530B7A40)
-    (fp_text reference vcc3_0_1aC2 (at 0 0 270) (layer B.SilkS) hide
+    (fp_text reference C1_vcc3_0_mainC2 (at 0 0 270) (layer B.SilkS) hide
       (effects (font (size 0.508 0.508) (thickness 0.0508)) (justify mirror))
     )
     (fp_text value "" (at 0 0 270) (layer B.Adhes) hide
@@ -3997,7 +3997,7 @@
     (fp_line (start -0.2 0.25) (end -0.2 0.25) (layer B.SilkS) (width 0.15))
     (fp_line (start -0.2 0.25) (end 0.2 0.25) (layer B.SilkS) (width 0.15))
     (pad 1 smd rect (at -0.512483 0 270) (size 0.775033 0.55) (layers B.Cu B.Paste B.Mask)
-      (net 228 vcc3_0_1a))
+      (net 228 C1_vcc3_0_main))
     (pad 2 smd rect (at 0.512483 0 270) (size 0.775033 0.55) (layers B.Cu B.Paste B.Mask)
       (net 1 gnd))
     (model ${KIPRJMOD}/gen.pretty/19056136a91a1bf7994f1c456f1a827b5de8acfda9580051fc9bfa20411feea4.x3d
@@ -4010,7 +4010,7 @@
   (module gen:15aef6ed4df9f5d238c1130cb8f0958fd2b96be76bbd888f3ba8bd3f59a98fb9 (layer B.Cu) (tedit 54AB9214) (tstamp 54ABD1CD)
     (at 122.555 101.6 270)
     (path /530B7A40)
-    (fp_text reference vcc3_0_1bC1 (at 0 0 270) (layer B.SilkS) hide
+    (fp_text reference C1_vcc3_0_pixC1 (at 0 0 270) (layer B.SilkS) hide
       (effects (font (size 0.508 0.508) (thickness 0.0508)) (justify mirror))
     )
     (fp_text value "" (at 0 0 270) (layer B.Adhes) hide
@@ -4046,7 +4046,7 @@
   (module gen:15aef6ed4df9f5d238c1130cb8f0958fd2b96be76bbd888f3ba8bd3f59a98fb9 (layer B.Cu) (tedit 54AB9214) (tstamp 54ABD1E2)
     (at 117.475 101.6 270)
     (path /530B7A40)
-    (fp_text reference vcc3_0_1bC2 (at 0 0 270) (layer B.SilkS) hide
+    (fp_text reference C1_vcc3_0_pixC2 (at 0 0 270) (layer B.SilkS) hide
       (effects (font (size 0.508 0.508) (thickness 0.0508)) (justify mirror))
     )
     (fp_text value "" (at 0 0 270) (layer B.Adhes) hide
@@ -4069,7 +4069,7 @@
     (fp_line (start -0.2 0.25) (end -0.2 0.25) (layer B.SilkS) (width 0.15))
     (fp_line (start -0.2 0.25) (end 0.2 0.25) (layer B.SilkS) (width 0.15))
     (pad 1 smd rect (at -0.512483 0 270) (size 0.775033 0.55) (layers B.Cu B.Paste B.Mask)
-      (net 230 vcc3_0_1b))
+      (net 230 C1_vcc3_0_pix))
     (pad 2 smd rect (at 0.512483 0 270) (size 0.775033 0.55) (layers B.Cu B.Paste B.Mask)
       (net 1 gnd))
     (model ${KIPRJMOD}/gen.pretty/19056136a91a1bf7994f1c456f1a827b5de8acfda9580051fc9bfa20411feea4.x3d
@@ -4082,7 +4082,7 @@
   (module gen:15aef6ed4df9f5d238c1130cb8f0958fd2b96be76bbd888f3ba8bd3f59a98fb9 (layer B.Cu) (tedit 54AB9214) (tstamp 54ABD217)
     (at 188.214 92.964 270)
     (path /530B7A40)
-    (fp_text reference vcc3_0_2aC1 (at 0 0 270) (layer B.SilkS) hide
+    (fp_text reference C2_vcc3_0_mainC1 (at 0 0 270) (layer B.SilkS) hide
       (effects (font (size 0.508 0.508) (thickness 0.0508)) (justify mirror))
     )
     (fp_text value "" (at 0 0 270) (layer B.Adhes) hide
@@ -4118,7 +4118,7 @@
   (module gen:15aef6ed4df9f5d238c1130cb8f0958fd2b96be76bbd888f3ba8bd3f59a98fb9 (layer B.Cu) (tedit 54AB9214) (tstamp 54ABD22C)
     (at 183.134 92.964 270)
     (path /530B7A40)
-    (fp_text reference vcc3_0_2aC2 (at 0 0 270) (layer B.SilkS) hide
+    (fp_text reference C2_vcc3_0_mainC2 (at 0 0 270) (layer B.SilkS) hide
       (effects (font (size 0.508 0.508) (thickness 0.0508)) (justify mirror))
     )
     (fp_text value "" (at 0 0 270) (layer B.Adhes) hide
@@ -4141,7 +4141,7 @@
     (fp_line (start -0.2 0.25) (end -0.2 0.25) (layer B.SilkS) (width 0.15))
     (fp_line (start -0.2 0.25) (end 0.2 0.25) (layer B.SilkS) (width 0.15))
     (pad 1 smd rect (at -0.512483 0 270) (size 0.775033 0.55) (layers B.Cu B.Paste B.Mask)
-      (net 232 vcc3_0_2a))
+      (net 232 C2_vcc3_0_main))
     (pad 2 smd rect (at 0.512483 0 270) (size 0.775033 0.55) (layers B.Cu B.Paste B.Mask)
       (net 1 gnd))
     (model ${KIPRJMOD}/gen.pretty/19056136a91a1bf7994f1c456f1a827b5de8acfda9580051fc9bfa20411feea4.x3d
@@ -4154,7 +4154,7 @@
   (module gen:15aef6ed4df9f5d238c1130cb8f0958fd2b96be76bbd888f3ba8bd3f59a98fb9 (layer B.Cu) (tedit 54AB9214) (tstamp 54ABD261)
     (at 181.102 99.06 180)
     (path /530B7A40)
-    (fp_text reference vcc3_0_2bC1 (at 0 0 180) (layer B.SilkS) hide
+    (fp_text reference C2_vcc3_0_pixC1 (at 0 0 180) (layer B.SilkS) hide
       (effects (font (size 0.508 0.508) (thickness 0.0508)) (justify mirror))
     )
     (fp_text value "" (at 0 0 180) (layer B.Adhes) hide
@@ -4190,7 +4190,7 @@
   (module gen:15aef6ed4df9f5d238c1130cb8f0958fd2b96be76bbd888f3ba8bd3f59a98fb9 (layer B.Cu) (tedit 54AB9214) (tstamp 54ABD276)
     (at 180.848 93.472)
     (path /530B7A40)
-    (fp_text reference vcc3_0_2bC2 (at 0 0) (layer B.SilkS) hide
+    (fp_text reference C2_vcc3_0_pixC2 (at 0 0) (layer B.SilkS) hide
       (effects (font (size 0.508 0.508) (thickness 0.0508)) (justify mirror))
     )
     (fp_text value "" (at 0 0) (layer B.Adhes) hide
@@ -4213,7 +4213,7 @@
     (fp_line (start -0.2 0.25) (end -0.2 0.25) (layer B.SilkS) (width 0.15))
     (fp_line (start -0.2 0.25) (end 0.2 0.25) (layer B.SilkS) (width 0.15))
     (pad 1 smd rect (at -0.512483 0) (size 0.775033 0.55) (layers B.Cu B.Paste B.Mask)
-      (net 220 vcc3_0_2b))
+      (net 220 C2_vcc3_0_pix))
     (pad 2 smd rect (at 0.512483 0) (size 0.775033 0.55) (layers B.Cu B.Paste B.Mask)
       (net 1 gnd))
     (model ${KIPRJMOD}/gen.pretty/19056136a91a1bf7994f1c456f1a827b5de8acfda9580051fc9bfa20411feea4.x3d
@@ -5815,13 +5815,13 @@
     (pad 48 smd rect (at -0.8591 -6.525012 180) (size 0.59 1.611377) (layers F.Cu F.Paste F.Mask)
       (net 1 gnd))
     (pad 29 smd rect (at 3.2049 6.883612 180) (size 0.59 1.611377) (layers F.Cu F.Paste F.Mask)
-      (net 228 vcc3_0_1a))
+      (net 228 C1_vcc3_0_main))
     (pad 24 smd rect (at -1.8751 6.883612 180) (size 0.59 1.611377) (layers F.Cu F.Paste F.Mask)
       (net 59 out1N))
     (pad 25 smd rect (at -0.8591 6.883612 180) (size 0.59 1.611377) (layers F.Cu F.Paste F.Mask)
       (net 1 gnd))
     (pad 26 smd rect (at 0.1569 6.883612 180) (size 0.59 1.611377) (layers F.Cu F.Paste F.Mask)
-      (net 224 vcc1_8_1))
+      (net 224 C1_vcc1_8))
     (pad 27 smd rect (at 1.1729 6.883612 180) (size 0.59 1.611377) (layers F.Cu F.Paste F.Mask)
       (net 1 gnd))
     (pad 20 smd rect (at -5.9391 6.883612 180) (size 0.59 1.611377) (layers F.Cu F.Paste F.Mask)
@@ -5829,7 +5829,7 @@
     (pad 21 smd rect (at -4.9231 6.883612 180) (size 0.59 1.611377) (layers F.Cu F.Paste F.Mask)
       (net 1 gnd))
     (pad 22 smd rect (at -3.9071 6.883612 180) (size 0.59 1.611377) (layers F.Cu F.Paste F.Mask)
-      (net 224 vcc1_8_1))
+      (net 224 C1_vcc1_8))
     (pad 23 smd rect (at -2.8911 6.883612 180) (size 0.59 1.611377) (layers F.Cu F.Paste F.Mask)
       (net 58 out1P))
     (pad 46 smd rect (at 1.1729 -6.525012 180) (size 0.59 1.611377) (layers F.Cu F.Paste F.Mask)
@@ -5849,7 +5849,7 @@
     (pad 41 smd rect (at 5.337212 -4.3927 180) (size 1.611377 0.59) (layers F.Cu F.Paste F.Mask)
       (net 10 C1trigger0))
     (pad 1 smd rect (at -1.8751 -6.525012 180) (size 0.59 1.611377) (layers F.Cu F.Paste F.Mask)
-      (net 228 vcc3_0_1a))
+      (net 228 C1_vcc3_0_main))
     (pad 3 smd rect (at -3.9071 -6.525012 180) (size 0.59 1.611377) (layers F.Cu F.Paste F.Mask)
       (net 95 C1MISO))
     (pad 2 smd rect (at -2.8911 -6.525012 180) (size 0.59 1.611377) (layers F.Cu F.Paste F.Mask)
@@ -5861,7 +5861,7 @@
     (pad 7 smd rect (at -8.1398 -5.4087 180) (size 1.4746 0.59) (layers F.Cu F.Paste F.Mask)
       (net 70 out10N))
     (pad 6 smd rect (at -6.9551 -6.5934 180) (size 0.59 1.4746) (layers F.Cu F.Paste F.Mask)
-      (net 224 vcc1_8_1))
+      (net 224 C1_vcc1_8))
     (pad 9 smd rect (at -8.071412 -3.3767 180) (size 1.611377 0.59) (layers F.Cu F.Paste F.Mask)
       (net 68 out6N))
     (pad 8 smd rect (at -8.071412 -4.3927 180) (size 1.611377 0.59) (layers F.Cu F.Paste F.Mask)
@@ -5897,13 +5897,13 @@
     (pad 37 smd rect (at 5.337212 -0.3287 180) (size 1.611377 0.59) (layers F.Cu F.Paste F.Mask)
       (net 1 gnd))
     (pad 36 smd rect (at 5.337212 0.6873 180) (size 1.611377 0.59) (layers F.Cu F.Paste F.Mask)
-      (net 228 vcc3_0_1a))
+      (net 228 C1_vcc3_0_main))
     (pad 35 smd rect (at 5.337212 1.7033 180) (size 1.611377 0.59) (layers F.Cu F.Paste F.Mask)
       (net 1 gnd))
     (pad 34 smd rect (at 5.337212 2.7193 180) (size 1.611377 0.59) (layers F.Cu F.Paste F.Mask)
       (net 1 gnd))
     (pad 19 smd rect (at -6.9551 6.952 180) (size 0.59 1.4746) (layers F.Cu F.Paste F.Mask)
-      (net 228 vcc3_0_1a))
+      (net 228 C1_vcc3_0_main))
     (pad 18 smd rect (at -8.1398 5.7673 180) (size 1.4746 0.59) (layers F.Cu F.Paste F.Mask)
       (net 60 out2N))
     (model ${KIPRJMOD}/gen.pretty/6441f76a7641e8c69bcec7dda91db72ac962f70d5a2447749573e877d2f30683.x3d
@@ -5951,13 +5951,13 @@
     (pad 48 smd rect (at -0.8591 -6.525012 180) (size 0.59 1.611377) (layers F.Cu F.Paste F.Mask)
       (net 1 gnd))
     (pad 29 smd rect (at 3.2049 6.883612 180) (size 0.59 1.611377) (layers F.Cu F.Paste F.Mask)
-      (net 232 vcc3_0_2a))
+      (net 232 C2_vcc3_0_main))
     (pad 24 smd rect (at -1.8751 6.883612 180) (size 0.59 1.611377) (layers F.Cu F.Paste F.Mask)
       (net 85 out20P))
     (pad 25 smd rect (at -0.8591 6.883612 180) (size 0.59 1.611377) (layers F.Cu F.Paste F.Mask)
       (net 1 gnd))
     (pad 26 smd rect (at 0.1569 6.883612 180) (size 0.59 1.611377) (layers F.Cu F.Paste F.Mask)
-      (net 226 vcc1_8_2))
+      (net 226 C2_vcc1_8))
     (pad 27 smd rect (at 1.1729 6.883612 180) (size 0.59 1.611377) (layers F.Cu F.Paste F.Mask)
       (net 1 gnd))
     (pad 20 smd rect (at -5.9391 6.883612 180) (size 0.59 1.611377) (layers F.Cu F.Paste F.Mask)
@@ -5965,7 +5965,7 @@
     (pad 21 smd rect (at -4.9231 6.883612 180) (size 0.59 1.611377) (layers F.Cu F.Paste F.Mask)
       (net 1 gnd))
     (pad 22 smd rect (at -3.9071 6.883612 180) (size 0.59 1.611377) (layers F.Cu F.Paste F.Mask)
-      (net 226 vcc1_8_2))
+      (net 226 C2_vcc1_8))
     (pad 23 smd rect (at -2.8911 6.883612 180) (size 0.59 1.611377) (layers F.Cu F.Paste F.Mask)
       (net 84 out20N))
     (pad 46 smd rect (at 1.1729 -6.525012 180) (size 0.59 1.611377) (layers F.Cu F.Paste F.Mask)
@@ -5985,7 +5985,7 @@
     (pad 41 smd rect (at 5.337212 -4.3927 180) (size 1.611377 0.59) (layers F.Cu F.Paste F.Mask)
       (net 17 C2trigger0))
     (pad 1 smd rect (at -1.8751 -6.525012 180) (size 0.59 1.611377) (layers F.Cu F.Paste F.Mask)
-      (net 232 vcc3_0_2a))
+      (net 232 C2_vcc3_0_main))
     (pad 3 smd rect (at -3.9071 -6.525012 180) (size 0.59 1.611377) (layers F.Cu F.Paste F.Mask)
       (net 98 C2MISO))
     (pad 2 smd rect (at -2.8911 -6.525012 180) (size 0.59 1.611377) (layers F.Cu F.Paste F.Mask)
@@ -5997,7 +5997,7 @@
     (pad 7 smd rect (at -8.1398 -5.4087 180) (size 1.4746 0.59) (layers F.Cu F.Paste F.Mask)
       (net 72 out11N))
     (pad 6 smd rect (at -6.9551 -6.5934 180) (size 0.59 1.4746) (layers F.Cu F.Paste F.Mask)
-      (net 226 vcc1_8_2))
+      (net 226 C2_vcc1_8))
     (pad 9 smd rect (at -8.071412 -3.3767 180) (size 1.611377 0.59) (layers F.Cu F.Paste F.Mask)
       (net 75 out15N))
     (pad 8 smd rect (at -8.071412 -4.3927 180) (size 1.611377 0.59) (layers F.Cu F.Paste F.Mask)
@@ -6033,13 +6033,13 @@
     (pad 37 smd rect (at 5.337212 -0.3287 180) (size 1.611377 0.59) (layers F.Cu F.Paste F.Mask)
       (net 1 gnd))
     (pad 36 smd rect (at 5.337212 0.6873 180) (size 1.611377 0.59) (layers F.Cu F.Paste F.Mask)
-      (net 232 vcc3_0_2a))
+      (net 232 C2_vcc3_0_main))
     (pad 35 smd rect (at 5.337212 1.7033 180) (size 1.611377 0.59) (layers F.Cu F.Paste F.Mask)
       (net 1 gnd))
     (pad 34 smd rect (at 5.337212 2.7193 180) (size 1.611377 0.59) (layers F.Cu F.Paste F.Mask)
       (net 1 gnd))
     (pad 19 smd rect (at -6.9551 6.952 180) (size 0.59 1.4746) (layers F.Cu F.Paste F.Mask)
-      (net 232 vcc3_0_2a))
+      (net 232 C2_vcc3_0_main))
     (pad 18 smd rect (at -8.1398 5.7673 180) (size 1.4746 0.59) (layers F.Cu F.Paste F.Mask)
       (net 83 out19P))
     (model ${KIPRJMOD}/gen.pretty/6441f76a7641e8c69bcec7dda91db72ac962f70d5a2447749573e877d2f30683.x3d
@@ -6630,7 +6630,7 @@
   (module gen:f79de117b335608548e97da47262534f56142781502afae22ef8dc1049ab96bb (layer B.Cu) (tedit 54B02A82) (tstamp 54B2C76B)
     (at 121.285 95.25)
     (path /530B7A40)
-    (fp_text reference vcc1_8_1U (at 0 0) (layer B.SilkS) hide
+    (fp_text reference C1_vcc1_8U (at 0 0) (layer B.SilkS) hide
       (effects (font (size 0.508 0.508) (thickness 0.0508)) (justify mirror))
     )
     (fp_text value "" (at 0 0) (layer B.Adhes) hide
@@ -6663,11 +6663,11 @@
     (pad 1 smd rect (at -1.2375 0.95) (size 1.075 0.5) (layers B.Cu B.Paste B.Mask)
       (net 91 vcc3_3in))
     (pad 3 smd rect (at -1.2375 -0.95) (size 1.075 0.5) (layers B.Cu B.Paste B.Mask)
-      (net 223 vcc1_8_1_en))
+      (net 223 C1_vcc1_8_en))
     (pad 2 smd rect (at -1.2375 0) (size 1.075 0.5) (layers B.Cu B.Paste B.Mask)
       (net 1 gnd))
     (pad 5 smd rect (at 1.2375 0.95) (size 1.075 0.5) (layers B.Cu B.Paste B.Mask)
-      (net 224 vcc1_8_1))
+      (net 224 C1_vcc1_8))
     (pad 4 smd rect (at 1.2375 -0.95) (size 1.075 0.5) (layers B.Cu B.Paste B.Mask)
       (net 1 gnd))
     (model ${KIPRJMOD}/gen.pretty/4a353a87581fe670343c862c9b2862c7ebf2e31ef7f554057bd92a32b6f7c349.x3d
@@ -6680,7 +6680,7 @@
   (module gen:f79de117b335608548e97da47262534f56142781502afae22ef8dc1049ab96bb (layer B.Cu) (tedit 54B02A82) (tstamp 54B2C78B)
     (at 185.928 100.584 90)
     (path /530B7A40)
-    (fp_text reference vcc1_8_2U (at 0 0 90) (layer B.SilkS) hide
+    (fp_text reference C2_vcc1_8U (at 0 0 90) (layer B.SilkS) hide
       (effects (font (size 0.508 0.508) (thickness 0.0508)) (justify mirror))
     )
     (fp_text value "" (at 0 0 90) (layer B.Adhes) hide
@@ -6713,11 +6713,11 @@
     (pad 1 smd rect (at -1.2375 0.95 90) (size 1.075 0.5) (layers B.Cu B.Paste B.Mask)
       (net 91 vcc3_3in))
     (pad 3 smd rect (at -1.2375 -0.95 90) (size 1.075 0.5) (layers B.Cu B.Paste B.Mask)
-      (net 225 vcc1_8_2_en))
+      (net 225 C2_vcc1_8_en))
     (pad 2 smd rect (at -1.2375 0 90) (size 1.075 0.5) (layers B.Cu B.Paste B.Mask)
       (net 1 gnd))
     (pad 5 smd rect (at 1.2375 0.95 90) (size 1.075 0.5) (layers B.Cu B.Paste B.Mask)
-      (net 226 vcc1_8_2))
+      (net 226 C2_vcc1_8))
     (pad 4 smd rect (at 1.2375 -0.95 90) (size 1.075 0.5) (layers B.Cu B.Paste B.Mask)
       (net 1 gnd))
     (model ${KIPRJMOD}/gen.pretty/4a353a87581fe670343c862c9b2862c7ebf2e31ef7f554057bd92a32b6f7c349.x3d
@@ -6880,7 +6880,7 @@
   (module gen:ee49539b4768e16b760bb3db5724cf4fe93de8625e4a25570e978d3eae534d52 (layer B.Cu) (tedit 54B02A82) (tstamp 54B2C80B)
     (at 117.475 98.425 180)
     (path /530B7A40)
-    (fp_text reference vcc3_0_1aU (at 0 0 180) (layer B.SilkS) hide
+    (fp_text reference C1_vcc3_0_mainU (at 0 0 180) (layer B.SilkS) hide
       (effects (font (size 0.508 0.508) (thickness 0.0508)) (justify mirror))
     )
     (fp_text value "" (at 0 0 180) (layer B.Adhes) hide
@@ -6913,11 +6913,11 @@
     (pad 1 smd rect (at -1.2375 0.95 180) (size 1.075 0.5) (layers B.Cu B.Paste B.Mask)
       (net 91 vcc3_3in))
     (pad 3 smd rect (at -1.2375 -0.95 180) (size 1.075 0.5) (layers B.Cu B.Paste B.Mask)
-      (net 227 vcc3_0_1a_en))
+      (net 227 C1_vcc3_0_main_en))
     (pad 2 smd rect (at -1.2375 0 180) (size 1.075 0.5) (layers B.Cu B.Paste B.Mask)
       (net 1 gnd))
     (pad 5 smd rect (at 1.2375 0.95 180) (size 1.075 0.5) (layers B.Cu B.Paste B.Mask)
-      (net 228 vcc3_0_1a))
+      (net 228 C1_vcc3_0_main))
     (pad 4 smd rect (at 1.2375 -0.95 180) (size 1.075 0.5) (layers B.Cu B.Paste B.Mask)
       (net 1 gnd))
     (model ${KIPRJMOD}/gen.pretty/835d27756b25ed38c701a4b97a3f6d08bd5c0f0a6896b698d2a7faa0f17ad814.x3d
@@ -6930,7 +6930,7 @@
   (module gen:ee49539b4768e16b760bb3db5724cf4fe93de8625e4a25570e978d3eae534d52 (layer B.Cu) (tedit 54B02A82) (tstamp 54B2C82B)
     (at 120.015 101.6 180)
     (path /530B7A40)
-    (fp_text reference vcc3_0_1bU (at 0 0 180) (layer B.SilkS) hide
+    (fp_text reference C1_vcc3_0_pixU (at 0 0 180) (layer B.SilkS) hide
       (effects (font (size 0.508 0.508) (thickness 0.0508)) (justify mirror))
     )
     (fp_text value "" (at 0 0 180) (layer B.Adhes) hide
@@ -6963,11 +6963,11 @@
     (pad 1 smd rect (at -1.2375 0.95 180) (size 1.075 0.5) (layers B.Cu B.Paste B.Mask)
       (net 91 vcc3_3in))
     (pad 3 smd rect (at -1.2375 -0.95 180) (size 1.075 0.5) (layers B.Cu B.Paste B.Mask)
-      (net 229 vcc3_0_1b_en))
+      (net 229 C1_vcc3_0_pix_en))
     (pad 2 smd rect (at -1.2375 0 180) (size 1.075 0.5) (layers B.Cu B.Paste B.Mask)
       (net 1 gnd))
     (pad 5 smd rect (at 1.2375 0.95 180) (size 1.075 0.5) (layers B.Cu B.Paste B.Mask)
-      (net 230 vcc3_0_1b))
+      (net 230 C1_vcc3_0_pix))
     (pad 4 smd rect (at 1.2375 -0.95 180) (size 1.075 0.5) (layers B.Cu B.Paste B.Mask)
       (net 1 gnd))
     (model ${KIPRJMOD}/gen.pretty/835d27756b25ed38c701a4b97a3f6d08bd5c0f0a6896b698d2a7faa0f17ad814.x3d
@@ -6980,7 +6980,7 @@
   (module gen:ee49539b4768e16b760bb3db5724cf4fe93de8625e4a25570e978d3eae534d52 (layer B.Cu) (tedit 54B02A82) (tstamp 54B2C84B)
     (at 185.674 92.964 180)
     (path /530B7A40)
-    (fp_text reference vcc3_0_2aU (at 0 0 180) (layer B.SilkS) hide
+    (fp_text reference C2_vcc3_0_mainU (at 0 0 180) (layer B.SilkS) hide
       (effects (font (size 0.508 0.508) (thickness 0.0508)) (justify mirror))
     )
     (fp_text value "" (at 0 0 180) (layer B.Adhes) hide
@@ -7013,11 +7013,11 @@
     (pad 1 smd rect (at -1.2375 0.95 180) (size 1.075 0.5) (layers B.Cu B.Paste B.Mask)
       (net 91 vcc3_3in))
     (pad 3 smd rect (at -1.2375 -0.95 180) (size 1.075 0.5) (layers B.Cu B.Paste B.Mask)
-      (net 231 vcc3_0_2a_en))
+      (net 231 C2_vcc3_0_main_en))
     (pad 2 smd rect (at -1.2375 0 180) (size 1.075 0.5) (layers B.Cu B.Paste B.Mask)
       (net 1 gnd))
     (pad 5 smd rect (at 1.2375 0.95 180) (size 1.075 0.5) (layers B.Cu B.Paste B.Mask)
-      (net 232 vcc3_0_2a))
+      (net 232 C2_vcc3_0_main))
     (pad 4 smd rect (at 1.2375 -0.95 180) (size 1.075 0.5) (layers B.Cu B.Paste B.Mask)
       (net 1 gnd))
     (model ${KIPRJMOD}/gen.pretty/835d27756b25ed38c701a4b97a3f6d08bd5c0f0a6896b698d2a7faa0f17ad814.x3d
@@ -7030,7 +7030,7 @@
   (module gen:ee49539b4768e16b760bb3db5724cf4fe93de8625e4a25570e978d3eae534d52 (layer B.Cu) (tedit 54B02A82) (tstamp 54B2C86B)
     (at 180.848 96.774 90)
     (path /530B7A40)
-    (fp_text reference vcc3_0_2bU (at 0 0 90) (layer B.SilkS) hide
+    (fp_text reference C2_vcc3_0_pixU (at 0 0 90) (layer B.SilkS) hide
       (effects (font (size 0.508 0.508) (thickness 0.0508)) (justify mirror))
     )
     (fp_text value "" (at 0 0 90) (layer B.Adhes) hide
@@ -7063,11 +7063,11 @@
     (pad 1 smd rect (at -1.2375 0.95 90) (size 1.075 0.5) (layers B.Cu B.Paste B.Mask)
       (net 91 vcc3_3in))
     (pad 3 smd rect (at -1.2375 -0.95 90) (size 1.075 0.5) (layers B.Cu B.Paste B.Mask)
-      (net 219 vcc3_0_2b_en))
+      (net 219 C2_vcc3_0_pix_en))
     (pad 2 smd rect (at -1.2375 0 90) (size 1.075 0.5) (layers B.Cu B.Paste B.Mask)
       (net 1 gnd))
     (pad 5 smd rect (at 1.2375 0.95 90) (size 1.075 0.5) (layers B.Cu B.Paste B.Mask)
-      (net 220 vcc3_0_2b))
+      (net 220 C2_vcc3_0_pix))
     (pad 4 smd rect (at 1.2375 -0.95 90) (size 1.075 0.5) (layers B.Cu B.Paste B.Mask)
       (net 1 gnd))
     (model ${KIPRJMOD}/gen.pretty/835d27756b25ed38c701a4b97a3f6d08bd5c0f0a6896b698d2a7faa0f17ad814.x3d
