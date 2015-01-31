@@ -18,8 +18,10 @@ end entity video_overlay;
 architecture RTL of video_overlay is
 
 begin
-    process(video_over, video_under)
+    process (video_sync.pixel_clk) is
     begin
+        video_out.sync.pixel_clk <= video_sync.pixel_clk;
+        
         if rising_edge(video_sync.pixel_clk) then
             video_out.sync.frame_rst <= video_sync.frame_rst;
             video_out.sync.valid <= video_sync.valid;
