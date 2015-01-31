@@ -25,9 +25,7 @@ package camera is
     
     type camera_output is record
         clock       : std_logic;
-        data        : std_logic_vector(7 downto 0);
-        data_valid  : std_logic;
-        frame_valid : std_logic;
+        data        : std_logic_vector(24 downto 0);
     end record;
 
     constant CAMERA_WIDTH : integer := 1600;

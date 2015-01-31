@@ -64,19 +64,3 @@ NET "right_camera_in_data3_n" LOC = V12 | IOSTANDARD = LVDS_33 | DIFF_TERM = TRU
 
 NET "right_camera_in_clock_p" LOC = R10 | IOSTANDARD = LVDS_33 | DIFF_TERM = TRUE;
 NET "right_camera_in_clock_n" LOC = T10 | IOSTANDARD = LVDS_33 | DIFF_TERM = TRUE;
-
-NET "left_camera_in_clock_p" LOC = U10 | IOSTANDARD = LVDS_33 | DIFF_TERM = TRUE;
-NET "left_camera_in_clock_n" LOC = V10 | IOSTANDARD = LVDS_33 | DIFF_TERM = TRUE;
-
-NET "left_camera_in_data3_p" LOC = U7 | IOSTANDARD = LVDS_33 | DIFF_TERM = TRUE;
-NET "left_camera_in_data3_n" LOC = V7 | IOSTANDARD = LVDS_33 | DIFF_TERM = TRUE;
-NET "left_camera_in_data2_p" LOC = N7 | IOSTANDARD = LVDS_33 | DIFF_TERM = TRUE;
-NET "left_camera_in_data2_n" LOC = P8 | IOSTANDARD = LVDS_33 | DIFF_TERM = TRUE;
-NET "left_camera_in_data1_p" LOC = T6 | IOSTANDARD = LVDS_33 | DIFF_TERM = TRUE;
-NET "left_camera_in_data1_n" LOC = V6 | IOSTANDARD = LVDS_33 | DIFF_TERM = TRUE;
-NET "left_camera_in_data0_p" LOC = R7 | IOSTANDARD = LVDS_33 | DIFF_TERM = TRUE;
-NET "left_camera_in_data0_n" LOC = T7 | IOSTANDARD = LVDS_33 | DIFF_TERM = TRUE;
-NET "left_camera_in_sync_p" LOC = N6 | IOSTANDARD = LVDS_33 | DIFF_TERM = TRUE;
-NET "left_camera_in_sync_n" LOC = P7 | IOSTANDARD = LVDS_33 | DIFF_TERM = TRUE;
-NET "left_camera_out_clock_p" LOC = U5 | IOSTANDARD = LVDS_33 | DIFF_TERM = TRUE;
-NET "left_camera_out_clock_n" LOC = V5 | IOSTANDARD = LVDS_33 | DIFF_TERM = TRUE;

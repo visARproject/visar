@@ -62,4 +62,7 @@ begin
         
         DEBUG_IN => "00",
         DEBUG_OUT => open);
+    
+    output.clock <= deserializer_clock;
+    output.data <= deserializer_out;
 end architecture;
