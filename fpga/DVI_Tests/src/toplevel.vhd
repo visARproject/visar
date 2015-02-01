@@ -59,7 +59,10 @@ architecture RTL of toplevel is
     signal reset          : std_logic;
     signal clk_100MHz_buf : std_logic;
     signal clk_132MHz     : std_logic;
-    signal clk_310MHz      : std_logic;
+    signal clk_310MHz     : std_logic;
+    signal clk_620MHz     : std_logic;
+    signal clk_124MHz     : std_logic;
+    signal clk_locked     : std_logic;
 
     signal left_camera_output, right_camera_output : camera_output;
 
@@ -118,14 +121,19 @@ begin
 
     U_PIXEL_CLK_GEN : entity work.pixel_clk_gen port map (
         CLK_IN_100MHz     => clk_100MHz_buf,
+        CLK_OUT_124MHz    => clk_124MHz,
         CLK_OUT_132MHz    => clk_132MHz,
         CLK_OUT_310MHz    => clk_310MHz,
+        CLK_OUT_620MHz    => clk_620MHz,
         RESET             => '0',
-        LOCKED            => open);
+        LOCKED            => clk_locked);
     
 
     --U_LEFT_CAMERA_WRAPPER : entity work.camera_wrapper port map (
+    --    clock_620MHz => clk_620MHz,
     --    clock_310MHz => clk_310MHz,
+    --    clock_124MHz => clk_124MHz,
+    --    clock_locked => clk_locked,
     --    reset        => reset,
     --    
     --    camera_out => left_camera_out,
@@ -134,7 +142,10 @@ begin
     --    output => left_camera_output);
     
     U_RIGHT_CAMERA_WRAPPER : entity work.camera_wrapper port map (
+        clock_620MHz => clk_620MHz,
         clock_310MHz => clk_310MHz,
+        clock_124MHz => clk_124MHz,
+        clock_locked => clk_locked,
         reset        => reset,
         
         camera_out => right_camera_out,

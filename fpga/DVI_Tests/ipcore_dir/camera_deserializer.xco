@@ -1,7 +1,7 @@
 ##############################################################
 #
 # Xilinx Core Generator version 14.4
-# Date: Sun Feb  1 16:43:53 2015
+# Date: Sun Feb  1 19:04:20 2015
 #
 ##############################################################
 #
@@ -39,7 +39,7 @@ SET vhdlsim = true
 SELECT SelectIO_Interface_Wizard xilinx.com:ip:selectio_wiz:4.1
 # END Select
 # BEGIN Parameters
-CSET active_edge=BOTH_RISE_FALL
+CSET active_edge=RISING
 CSET bus_dir=INPUTS
 CSET bus_in_delay=FIXED
 CSET bus_in_tap=0
@@ -49,7 +49,7 @@ CSET bus_out_tap=0
 CSET bus_sig_type=DIFF
 CSET bus_tap_reset=NOT_APP
 CSET bus_tap_wrap=NOT_APP
-CSET clk_buf=BUFIO2
+CSET clk_buf=BUFPLL
 CSET clk_delay=FIXED
 CSET clk_fwd=false
 CSET clk_io_std=LVCMOS33
@@ -85,4 +85,4 @@ CSET v6_oddr_alignment=SAME_EDGE
 MISC pkg_timestamp=2012-03-26T12:54:40Z
 # END Extra information
 GENERATE
-# CRC: bdfe71eb
+# CRC: f841abff

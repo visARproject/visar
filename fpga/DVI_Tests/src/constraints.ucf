@@ -62,5 +62,5 @@ NET "right_camera_in_data2_n" LOC = T11 | IOSTANDARD = LVDS_33 | DIFF_TERM = TRU
 NET "right_camera_in_data3_p" LOC = T12 | IOSTANDARD = LVDS_33 | DIFF_TERM = TRUE;
 NET "right_camera_in_data3_n" LOC = V12 | IOSTANDARD = LVDS_33 | DIFF_TERM = TRUE;
 
-NET "right_camera_in_clock_p" LOC = R10 | IOSTANDARD = LVDS_33 | DIFF_TERM = TRUE;
-NET "right_camera_in_clock_n" LOC = T10 | IOSTANDARD = LVDS_33 | DIFF_TERM = TRUE;
+#NET "right_camera_in_clock_p" LOC = R10 | IOSTANDARD = LVDS_33 | DIFF_TERM = TRUE;
+#NET "right_camera_in_clock_n" LOC = T10 | IOSTANDARD = LVDS_33 | DIFF_TERM = TRUE;
