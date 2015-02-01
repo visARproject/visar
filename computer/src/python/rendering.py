@@ -25,9 +25,7 @@ uniform sampler2D texture;
 varying vec2 v_texcoord;
 
 void main(){
-    vec4 color = texture2D(texture, v_texcoord);
-    if(gl_FragColor.a == 0) discard;
-    else gl_FragColor = color;
+    gl_FragColor = texture2D(texture, v_texcoord);
 }"""
 
 # full renderable 2D area
