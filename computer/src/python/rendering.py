@@ -1,5 +1,6 @@
 # NOTES: FPS is not very good, need to find a better backend
 #  Research: collections and scene canvases seem like alternatives
+import vispy
 
 import numpy as np
 from vispy.gloo import Program, gl
