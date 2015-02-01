@@ -29,6 +29,19 @@ entity toplevel is
         left_camera_in   : in  camera_in;
         right_camera_out : out camera_out;
         right_camera_in  : in  camera_in;
+        
+        pair7N:  inout std_logic;
+        pair7P:  inout std_logic;
+        pair8N:  inout std_logic;
+        pair8P:  inout std_logic;
+        pair9N:  inout std_logic;
+        pair9P:  inout std_logic;
+        pair12N: inout std_logic;
+        pair12P: inout std_logic;
+        pair13N: inout std_logic;
+        pair13P: inout std_logic;
+        pair14N: inout std_logic;
+        pair14P: inout std_logic;
 
         uart_tx : out std_logic;
         uart_rx : in std_logic;
