@@ -1,7 +1,7 @@
 ##############################################################
 #
 # Xilinx Core Generator version 14.4
-# Date: Fri Jan 30 18:20:47 2015
+# Date: Sun Feb  1 16:43:53 2015
 #
 ##############################################################
 #
@@ -52,8 +52,8 @@ CSET bus_tap_wrap=NOT_APP
 CSET clk_buf=BUFIO2
 CSET clk_delay=FIXED
 CSET clk_fwd=false
-CSET clk_io_std=LVDS_33
-CSET clk_sig_type=DIFF
+CSET clk_io_std=LVCMOS33
+CSET clk_sig_type=SINGLE
 CSET clk_tap=0
 CSET component_name=camera_deserializer
 CSET ddr_alignment=C0
@@ -85,4 +85,4 @@ CSET v6_oddr_alignment=SAME_EDGE
 MISC pkg_timestamp=2012-03-26T12:54:40Z
 # END Extra information
 GENERATE
-# CRC: 6de52cd9
+# CRC: bdfe71eb

@@ -77,24 +77,20 @@ port
   DEBUG_OUT               : out   std_logic_vector ((3*sys_w)+5 downto 0); -- Ouput debug data. Leave NC if not required
   BITSLIP                 : in    std_logic;
 -- Clock and reset signals
-  CLK_IN_P                : in    std_logic;                    -- Differential fast clock from IOB
-  CLK_IN_N                : in    std_logic;
+  CLK_IN                  : in    std_logic;                    -- Single ended Fast clock from IOB
   CLK_DIV_OUT             : out   std_logic;                    -- Slow clock output
   IO_RESET                : in    std_logic);                   -- Reset signal for IO circuit
 end camera_deserializer;
 
 architecture xilinx of camera_deserializer is
   attribute CORE_GENERATION_INFO            : string;
-  attribute CORE_GENERATION_INFO of xilinx  : architecture is "camera_deserializer,selectio_wiz_v4_1,{component_name=camera_deserializer,bus_dir=INPUTS,bus_sig_type=DIFF,bus_io_std=LVDS_33,use_serialization=true,use_phase_detector=false,serialization_factor=5,enable_bitslip=true,enable_train=false,system_data_width=5,bus_in_delay=FIXED,bus_out_delay=NONE,clk_sig_type=DIFF,clk_io_std=LVDS_33,clk_buf=BUFIO2,active_edge=BOTH_RISE_FALL,clk_delay=FIXED,v6_bus_in_delay=NONE,v6_bus_out_delay=NONE,v6_clk_buf=BUFIO,v6_active_edge=NOT_APP,v6_ddr_alignment=SAME_EDGE_PIPELINED,v6_oddr_alignment=SAME_EDGE,ddr_alignment=C0,v6_interface_type=NETWORKING,interface_type=RETIMED,v6_bus_in_tap=0,v6_bus_out_tap=0,v6_clk_io_std=LVCMOS18,v6_clk_sig_type=DIFF}";
+  attribute CORE_GENERATION_INFO of xilinx  : architecture is "camera_deserializer,selectio_wiz_v4_1,{component_name=camera_deserializer,bus_dir=INPUTS,bus_sig_type=DIFF,bus_io_std=LVDS_33,use_serialization=true,use_phase_detector=false,serialization_factor=5,enable_bitslip=true,enable_train=false,system_data_width=5,bus_in_delay=FIXED,bus_out_delay=NONE,clk_sig_type=SINGLE,clk_io_std=LVCMOS33,clk_buf=BUFIO2,active_edge=BOTH_RISE_FALL,clk_delay=FIXED,v6_bus_in_delay=NONE,v6_bus_out_delay=NONE,v6_clk_buf=BUFIO,v6_active_edge=NOT_APP,v6_ddr_alignment=SAME_EDGE_PIPELINED,v6_oddr_alignment=SAME_EDGE,ddr_alignment=C0,v6_interface_type=NETWORKING,interface_type=RETIMED,v6_bus_in_tap=0,v6_bus_out_tap=0,v6_clk_io_std=LVCMOS18,v6_clk_sig_type=DIFF}";
   constant clock_enable            : std_logic := '1';
   signal unused : std_logic;
   signal clk_in_int                : std_logic;
-  signal clk_in_int_p              : std_logic;
-  signal clk_in_int_n              : std_logic;
   signal clk_div                   : std_logic;
   signal clk_div_int               : std_logic;
   signal clk_in_int_buf            : std_logic;
-  signal clk_in_int_p_delay        : std_logic;
   signal clk_in_int_delay          : std_logic;
   signal clk_in_int_inv            : std_logic;
   signal clk_in_int_n_delay        : std_logic;
@@ -152,14 +148,12 @@ begin
 
 
   -- Create the clock logic
-  ibufds_clk_inst : IBUFGDS_DIFF_OUT
+  ibufg_clk_inst : IBUFG
     generic map (
-      IOSTANDARD => "LVDS_33")
+      IOSTANDARD => "LVCMOS33")
     port map (
-      I          => CLK_IN_P,
-      IB         => CLK_IN_N,
-      O          => clk_in_int_p,
-      OB         => clk_in_int_n);
+      I          => CLK_IN,
+      O          => clk_in_int);
 
   -- delay the input clock
   iodelay2_clk : IODELAY2
@@ -225,15 +219,17 @@ begin
      
 
   -- Set up the clock for use in the serdes
-  bufio2_inst : BUFIO2_2CLK
+  bufio2_inst : BUFIO2
     generic map (
+      DIVIDE_BYPASS => FALSE,
+      I_INVERT      => FALSE,
+      USE_DOUBLER   => TRUE,
       DIVIDE        => 5)
     port map (
       DIVCLK       => clk_div,
       IOCLK        => clk_in_int_buf,
       SERDESSTROBE => serdesstrobe,
-      I            => clk_in_int_p_delay,
-      IB           => clk_in_int_n_delay);
+      I            => clk_in_int_delay);
 
   -- also generated the inverted clock
   bufio2_inv_inst : BUFIO2
