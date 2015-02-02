@@ -8,7 +8,7 @@ from vispy import app, gloo
 import threading
 
 HUD_DEPTH = 0.2 # minimum depth
-FPS = 60 # (not doing anything, seems to be fixed here anyway)
+FPS = 60 # Maximum FPS (how often needs_update is checked)
 
 VERT_SHADER_TEX = """ //texture vertex shader
 attribute vec3 position;
@@ -124,7 +124,7 @@ class Renderer(app.Canvas): # canvas is a GUI object
     if (target == 'keys'):
       self.key_listener = listener
       
-  # callback funciton for FPS
+  # callback funciton for FPS (prints update() calls / second)
   def print_fps(self, fps):
     print ('FPS: %.2f' % fps)
 

@@ -44,7 +44,7 @@ def move_stuff():
   while True:
     renderer.measure_fps(1, renderer.print_fps)
     count += 1
-    time.sleep(1/FPS)
+    time.sleep(1.0/FPS)
     
     # change the verticies in the first image (use setVerticies)
     d1.setVerticies([[random.uniform(-1,1),random.uniform(-1,1)],
