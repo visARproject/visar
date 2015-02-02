@@ -8,8 +8,6 @@ import vispy
 
 from PIL import Image, ImageFont, ImageDraw
 from vispy import app, scene
-from vispy.color import ColorArray
-from vispy.scene.visuals import Text
 
 class Menu():
   def __init__(self):
@@ -114,7 +112,7 @@ class Menu():
     draw = ImageDraw.Draw(img)
 
     ## rotate the finished product
-    img = np.rot90(img, 3)
+    img = img.rotate(270)
 
     b.render.setTexture(img)
 

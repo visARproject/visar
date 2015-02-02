@@ -11,44 +11,75 @@ from vispy import app, scene
 
 class Overlay():
   def __init__(self):
+    ## dictionary that will hold all of the arrows; first key is color, followed by direction
+    self.arrows = {}
+
     ## pre-loaded images for red arrows
-    arrow_red_up = Image.open("./images/Red_Arrow.png")
-    arrow_red_left = arrow_red_up.rotate(90)
-    arrow_red_down = arrow_red_up.rotate(180)
-    arrow_red_right = arrow_red_up.rotate(270)
+    self.arrows['red'] = {}
+    self.arrows['red']['r'] = Image.open("./images/Red_Arrow.png")
+    self.arrows['red']['ur'] = self.arrows['red']['r'].rotate(45)
+    self.arrows['red']['u'] = self.arrows['red']['r'].rotate(90)
+    self.arrows['red']['ul'] = self.arrows['red']['r'].rotate(135)
+    self.arrows['red']['l'] = self.arrows['red']['r'].rotate(180)
+    self.arrows['red']['dl'] = self.arrows['red']['r'].rotate(225)
+    self.arrows['red']['d'] = self.arrows['red']['r'].rotate(270)
+    self.arrows['red']['dr'] = self.arrows['red']['r'].rotate(315)
 
     ## pre-loaded images for blue arrows
-    arrow_blue_up = Image.open("./images/Blue_Arrow.png")
-    arrow_blue_left = arrow_blue_up.rotate(90)
-    arrow_blue_down = arrow_blue_up.rotate(180)
-    arrow_blue_right = arrow_blue_up.rotate(270)
+    self.arrows['blue'] = {}
+    self.arrows['blue']['r'] = Image.open("./images/Blue_Arrow.png")
+    self.arrows['blue']['ur'] = self.arrows['blue']['r'].rotate(45)
+    self.arrows['blue']['u'] = self.arrows['blue']['r'].rotate(90)
+    self.arrows['blue']['ul'] = self.arrows['blue']['r'].rotate(135)
+    self.arrows['blue']['l'] = self.arrows['blue']['r'].rotate(180)
+    self.arrows['blue']['dl'] = self.arrows['blue']['r'].rotate(225)
+    self.arrows['blue']['d'] = self.arrows['blue']['r'].rotate(270)
+    self.arrows['blue']['dr'] = self.arrows['blue']['r'].rotate(315)
 
     ## pre-loaded images for green arrows
-    arrow_green_up = Image.open("./images/Green_Arrow.png")
-    arrow_green_left = arrow_green_up.rotate(90)
-    arrow_green_down = arrow_green_up.rotate(180)
-    arrow_green_right = arrow_green_up.rotate(270)
+    self.arrows['green'] = {}
+    self.arrows['green']['r'] = Image.open("./images/Green_Arrow.png")
+    self.arrows['green']['ur'] = self.arrows['green']['r'].rotate(45)
+    self.arrows['green']['u'] = self.arrows['green']['r'].rotate(90)
+    self.arrows['green']['ul'] = self.arrows['green']['r'].rotate(135)
+    self.arrows['green']['l'] = self.arrows['green']['r'].rotate(180)
+    self.arrows['green']['dl'] = self.arrows['green']['r'].rotate(225)
+    self.arrows['green']['d'] = self.arrows['green']['r'].rotate(270)
+    self.arrows['green']['dr'] = self.arrows['green']['r'].rotate(315)
 
     ## pre-loaded images for yellow arrows
-    arrow_yellow_up = Image.open("./images/Yellow_Arrow.png")
-    arrow_yellow_left = arrow_yellow_up.rotate(90)
-    arrow_yellow_down = arrow_yellow_up.rotate(180)
-    arrow_yellow_right = arrow_yellow_up.rotate(270)
-
-    render1 = rendering.Drawable()
-    render1.setTexture(arrow_red_up)
-    render1.setVerticies([[-1,-1],[0,-1],[-1,0],[0,0]])
-
-    render2 = rendering.Drawable()
-    render2.setTexture(arrow_red_right)
-    render2.setVerticies([[-1,0],[0,0],[-1,1],[0,1]])
-
-    render3 = rendering.Drawable()
-    render3.setTexture(arrow_red_down)
-    render3.setVerticies([[0,0],[1,0],[0,1],[1,1]])
-
-    render4 = rendering.Drawable()
-    render4.setTexture(arrow_red_left)
-    render4.setVerticies([[0,-1],[1,-1],[0,0],[1,0]])
+    self.arrows['yellow'] = {}
+    self.arrows['yellow']['r'] = Image.open("./images/Yellow_Arrow.png")
+    self.arrows['yellow']['ur'] = self.arrows['yellow']['r'].rotate(45)
+    self.arrows['yellow']['u'] = self.arrows['yellow']['r'].rotate(90)
+    self.arrows['yellow']['ul'] = self.arrows['yellow']['r'].rotate(135)
+    self.arrows['yellow']['l'] = self.arrows['yellow']['r'].rotate(180)
+    self.arrows['yellow']['dl'] = self.arrows['yellow']['r'].rotate(225)
+    self.arrows['yellow']['d'] = self.arrows['yellow']['r'].rotate(270)
+    self.arrows['yellow']['dr'] = self.arrows['yellow']['r'].rotate(315)
 
     self.border = .1 ## the rendering border around the screen
+
+    # r = rendering.Drawable()
+    # r.setTexture(self.arrows['yellow']['ur'])
+    # r.setVerticies([[-1,-1],[-1,1],[1,-1],[1,1]])
+
+    test_gps = np.array([2.0, 2.0, 2.0, 1.0])
+    matrix = np.array([[1.0, 0, 0, 0],[0, 1.0, 0, 0],[0, 0, -1001/999, -2000/999],[0, 0, -1.0, 0]])
+
+    points = test_gps*matrix
+
+    a1 = rendering.Drawable()
+    a1.setTexture(self.arrows['blue']['d'])
+    a1.setVerticies([[.25,.25],[.25,.3],[.3,.25],[.3,.3]])
+
+    a2 = rendering.Drawable()
+    a2.setTexture(self.arrows['blue']['d'])
+    a2.setVerticies([[-.45,-.45],[-.45,-.1],[-.1,-.45],[-.1,-.1]])
+
+    ## gps coord (x,y,z,1) * matrix
+
+class Target():
+  def __init__(self, type="ally", pos=np.array([0,0,0])):
+    self.type = "ally"
+    self.pos = pos
