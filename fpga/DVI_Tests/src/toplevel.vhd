@@ -30,18 +30,18 @@ entity toplevel is
         right_camera_out : out camera_out;
         right_camera_in  : in  camera_in;
         
-        pair7N:  inout std_logic;
         pair7P:  inout std_logic;
-        pair8N:  inout std_logic;
+        pair7N:  inout std_logic;
         pair8P:  inout std_logic;
-        pair9N:  inout std_logic;
+        pair8N:  inout std_logic;
         pair9P:  inout std_logic;
-        pair12N: inout std_logic;
+        pair9N:  inout std_logic;
         pair12P: inout std_logic;
-        pair13N: inout std_logic;
+        pair12N: inout std_logic;
         pair13P: inout std_logic;
-        pair14N: inout std_logic;
+        pair13N: inout std_logic;
         pair14P: inout std_logic;
+        pair14N: inout std_logic;
 
         uart_tx : out std_logic;
         uart_rx : in std_logic;
@@ -400,7 +400,7 @@ begin
 
     U_UART : entity work.uart_transmitter
         generic map(
-            CLOCK_FREQUENCY => 132000000.0,
+            CLOCK_FREQUENCY => 124000000.0,
             BAUD_RATE => 4000000.0)
         port map (
             clock => clk_132MHz,
@@ -412,7 +412,7 @@ begin
 
     U_UART2 : entity work.uart_receiver
         generic map(
-            CLOCK_FREQUENCY => 132000000.0,
+            CLOCK_FREQUENCY => 124000000.0,
             BAUD_RATE => 4000000.0)
         port map (
             clock => clk_132MHz,
@@ -431,5 +431,17 @@ begin
             uart_tx_data => uart_tx_data,
             uart_tx_write => uart_tx_write,
             uart_rx_valid => uart_rx_valid,
-            uart_rx_data => uart_rx_data);
+            uart_rx_data => uart_rx_data,
+            pair7P => pair7P,
+            pair7N => pair7N,
+            pair8P => pair8P,
+            pair8N => pair8N,
+            pair9P => pair9P,
+            pair9N => pair9N,
+            pair12P => pair12P,
+            pair12N => pair12N,
+            pair13P => pair13P,
+            pair13N => pair13N,
+            pair14P => pair14P,
+            pair14N => pair14N);
 end architecture RTL;

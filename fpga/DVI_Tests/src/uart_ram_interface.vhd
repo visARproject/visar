@@ -17,12 +17,55 @@ entity uart_ram_interface is
         uart_tx_write : out std_logic;
         
         uart_rx_valid : in std_logic;
-        uart_rx_data  : in std_logic_vector(7 downto 0));
+        uart_rx_data  : in std_logic_vector(7 downto 0);
+        
+        pair7P:  inout std_logic;
+        pair7N:  inout std_logic;
+        pair8P:  inout std_logic;
+        pair8N:  inout std_logic;
+        pair9P:  inout std_logic;
+        pair9N:  inout std_logic;
+        pair12P: inout std_logic;
+        pair12N: inout std_logic;
+        pair13P: inout std_logic;
+        pair13N: inout std_logic;
+        pair14P: inout std_logic;
+        pair14N: inout std_logic);
 end entity;
 
 architecture arc of uart_ram_interface is
+    signal debug_in : std_logic_vector(31 downto 0);
+    signal debug_out : std_logic_vector(31 downto 0);
+    signal debug_en : std_logic_vector(31 downto 0) := (others => '0');
+    signal debug_real_out : std_logic_vector(31 downto 0);
 begin
-    process(clock, reset, uart_rx_valid, uart_rx_data)
+    process (debug_out, debug_en) is
+    begin
+        for i in 0 to 31 loop
+            if debug_en(i) = '1' then
+                debug_real_out(i) <= debug_out(i);
+            else
+                debug_real_out(i) <= 'Z';
+            end if;
+        end loop;
+    end process;
+    
+    pair7P  <= debug_real_out( 0);
+    pair7N  <= debug_real_out( 1);
+    pair8P  <= debug_real_out( 2);
+    pair8N  <= debug_real_out( 3);
+    pair9P  <= debug_real_out( 4);
+    pair9N  <= debug_real_out( 5);
+    pair12P <= debug_real_out( 6);
+    pair12N <= debug_real_out( 7);
+    pair13P <= debug_real_out( 8);
+    pair13N <= debug_real_out( 9);
+    pair14P <= debug_real_out(10);
+    pair14N <= debug_real_out(11);
+    
+    debug_in <= "00000000000000000000" & pair14N & pair14P & pair13N & pair13P & pair12N & pair12P & pair9N & pair9P & pair8N & pair8P & pair7N & pair7P;
+    
+    process(clock, reset, uart_rx_valid, uart_rx_data, debug_in)
         type StateType is (IDLE, READ, EXEC);
         variable state, next_state : StateType;
         variable pos, next_pos : integer range 0 to 8;
@@ -59,7 +102,11 @@ begin
                     if next_command(7 downto 0) = x"00" then -- read
                     else
                         ram_in.wr.en <= '1';
-                        ram_in.wr.data <= next_command(71 downto 40);
+                        if command(39 downto 8) = x"FFFFFFFC" then
+                            ram_in.wr.data <= debug_in;
+                        else
+                            ram_in.wr.data <= next_command(71 downto 40);
+                        end if;
                         ram_in.wr.mask <= (others => '0');
                     end if;
                     next_state := EXEC;
@@ -78,6 +125,12 @@ begin
         end if;
         
         if rising_edge(clock) then
+            if state = EXEC and command(39 downto 8) = x"FFFFFFF4" and command(7 downto 0) /= x"00" then
+                debug_out <= command(71 downto 40);
+            end if;
+            if state = EXEC and command(39 downto 8) = x"FFFFFFF8" and command(7 downto 0) /= x"00" then
+                debug_en <= command(71 downto 40);
+            end if;
             state := next_state;
             pos := next_pos;
             command := next_command;

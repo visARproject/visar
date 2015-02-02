@@ -47,18 +47,18 @@ entity toplevel is
         imu_SCLK:    out std_logic;
         imu_spi_nCS: out std_logic := '1';
         
-        pair7N:  inout std_logic;
         pair7P:  inout std_logic;
-        pair8N:  inout std_logic;
+        pair7N:  inout std_logic;
         pair8P:  inout std_logic;
-        pair9N:  inout std_logic; -- GCK
+        pair8N:  inout std_logic;
         pair9P:  inout std_logic;
-        pair12N: inout std_logic;
+        pair9N:  inout std_logic; -- GCK
         pair12P: inout std_logic; -- GCK
-        pair13N: inout std_logic;
+        pair12N: inout std_logic;
         pair13P: inout std_logic; -- GCK
-        pair14N: inout std_logic;
+        pair13N: inout std_logic;
         pair14P: inout std_logic;
+        pair14N: inout std_logic;
         
         T1_master_clk: out   std_logic;
         T1_MISO:       in    std_logic;
@@ -83,20 +83,21 @@ end toplevel;
 
 architecture arc of toplevel is
     signal MISO, MOSI, SCLK, nCS : std_logic;
+    signal my_MISO : std_logic;
     signal data_in : std_logic_vector(9 downto 0);
     signal data_out : std_logic_vector(9 downto 0);
 begin
-    --pair13N <= MISO;
+    pair13N <= MISO;
     SCLK <= pair13P;
     MOSI <= pair14N;
     nCS  <= pair14P;
     
-    --MISO <= C1_MISO;
+    pair8N <= C1_MISO;
     C1_MOSI <= MOSI;
     C1_SCLK <= SCLK;
     C1_ss_n <= pair7N;
     
-    --MISO <= C2_MISO;
+    pair8P <= C2_MISO;
     C2_MOSI <= MOSI;
     C2_SCLK <= SCLK;
     C2_ss_n <= pair7P;
@@ -123,11 +124,11 @@ begin
             data_in <= data_in(data_in'length-2 downto 0) & MOSI;
         end if;
         
-        --if nCS = '1' then
-        --    data_out <= XXX;
-        --elsif falling_edge(SCLK) then
-        --    MISO <= data_out(data_out'length-1);
-        --    data_out <= data_out(data_out'length-2 downto 0) & '-';
-        --end if;
+        if nCS = '1' then
+            data_out <= "1010011001";
+        elsif falling_edge(SCLK) then
+            MISO <= data_out(data_out'length-1);
+            data_out <= data_out(data_out'length-2 downto 0) & '-';
+        end if;
     end process;
 end arc;

@@ -18,7 +18,7 @@ end entity;
 architecture arc of camera_writer is
 begin
     process (camera_output) is
-        variable dest, next_dest : integer range BUFFER_ADDRESS to BUFFER_ADDRESS + 16#2000000# := BUFFER_ADDRESS;
+        variable dest, next_dest : integer range 0 to 32*1024*1024 := 0;
         variable state, next_state : integer range 0 to 15 := 0;
     begin
         ram_in.cmd.clk <= camera_output.clock;
@@ -42,9 +42,13 @@ begin
             ram_in.cmd.en <= '1';
             ram_in.cmd.instr <= WRITE_PRECHARGE_COMMAND;
             ram_in.cmd.bl <= std_logic_vector(to_unsigned(32-1, ram_in.cmd.bl'length));
-            ram_in.cmd.byte_addr <= std_logic_vector(to_unsigned(dest, ram_in.cmd.byte_addr'length));
+            ram_in.cmd.byte_addr <= std_logic_vector(to_unsigned(BUFFER_ADDRESS + dest, ram_in.cmd.byte_addr'length));
             
-            next_dest := dest + 16*4;
+            if next_dest + 16*4 >= 32*1024*1024 then
+                next_dest := 0;
+            else
+                next_dest := dest + 16*4;
+            end if;
             next_state := 0;
         else
             next_dest := dest;
