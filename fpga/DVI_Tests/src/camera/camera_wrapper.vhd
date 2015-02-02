@@ -49,19 +49,17 @@ begin
             O  => camera_out.clock_p,
             OB => camera_out.clock_n);
     
-    deserializer_clock <= clock_124MHz;
     DESERIALIZER : entity work.camera_deserializer port map (
         IO_RESET => reset,
         
-        CLK_IN => clock_620MHz,
-        CLK_DIV_IN => clock_124MHz,
-        LOCKED_IN => clock_locked,
+        CLK_IN_P => camera_in.clock_p,
+        CLK_IN_N => camera_in.clock_n,
         DATA_IN_FROM_PINS_P => camera_in.sync_p & camera_in.data0_p &
             camera_in.data1_p & camera_in.data2_p & camera_in.data3_p,
         DATA_IN_FROM_PINS_N => camera_in.sync_n & camera_in.data0_n &
             camera_in.data1_n & camera_in.data2_n & camera_in.data3_n,
         
-        LOCKED_OUT => open,
+        CLK_DIV_OUT => deserializer_clock,
         DATA_IN_TO_DEVICE => deserializer_out,
         BITSLIP => '0',
         
