@@ -7,8 +7,8 @@ import vispy
 import rendering
 import keyboard
 
-im1 = np.flipud(np.fliplr(io.imread('im.jpg')))
-# im2 = np.flipud(np.fliplr(io.imread('Blue_Apple.jpg')))
+im1 = np.flipud(np.fliplr(io.imread('images/Red_Apple.jpg')))
+im2 = np.flipud(np.fliplr(io.imread('images/Blue_Apple.jpg')))
 FPS = 10
 
 renderer = rendering.getRenderer() # init the renderer
@@ -24,13 +24,14 @@ d2 = rendering.Drawable()
 d2.setTexture(im1)
 d2.setVerticies([[-.2,-.2,0],[1,-.2,0],[-.2,1,0],[1,1,0]]) # has depth=0
 
-# d3 = rendering.Drawable()
-# d3.setTexture(im2)
-# d3.setVerticies([[-.2,-.2,0],[1,-.2,0],[-.2,1,0],[1,1,0]]) # has depth=0
+d3 = rendering.Drawable()
+d3.setTexture(im2)
+d3.setVerticies([[-.2,-.2,0],[1,-.2,0],[-.2,1,0],[1,1,0]]) # has depth=0
 
 # keyboard listner, prints keypresses/releases
 def key_stuff(event, direction):
-  print event.text
+  if(direction == 'down' and not event.text == ''): 
+    print event.text
   if(event.key == vispy.keys.ESCAPE): exit()
 
 # create keyboard listener and add a callback
@@ -43,7 +44,7 @@ def move_stuff():
   while True:
     renderer.measure_fps(1, renderer.print_fps)
     count += 1
-    time.sleep(1/FPS)
+    time.sleep(1.0/FPS)
     
     # change the verticies in the first image (use setVerticies)
     d1.setVerticies([[random.uniform(-1,1),random.uniform(-1,1)],
@@ -63,7 +64,7 @@ def move_stuff():
   
 # start thread to move stuff
 t = threading.Thread(target=move_stuff)
-t.daemon = True # not good behavior, too lazy to implement things properly
+t.daemon = True # not good behavior, too lazy to implement things properly for test
 t.start()
 print 'Note: The spastic apple is actually correct behavior.'
 

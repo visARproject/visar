@@ -8,7 +8,7 @@ from vispy import app, gloo
 import threading
 
 HUD_DEPTH = 0.2 # minimum depth
-FPS = 60 # hopefully not too optimistic (not doing anything)
+FPS = 60 # Maximum FPS (how often needs_update is checked)
 
 VERT_SHADER_TEX = """ //texture vertex shader
 attribute vec3 position;
@@ -25,7 +25,9 @@ uniform sampler2D texture;
 varying vec2 v_texcoord;
 
 void main(){
-    gl_FragColor = texture2D(texture, v_texcoord);
+     vec4 color = texture2D(texture, v_texcoord);
+     if(color.a == 0) discard; //manually handle alphas
+     gl_FragColor = color;
 }"""
 
 # full renderable 2D area
@@ -48,7 +50,7 @@ def renderLock(func):
   return locked
                       
 class Renderer(app.Canvas): # canvas is a GUI object
-  def __init__(self, size=(1600,900)):    
+  def __init__(self, size=((720,480))):    
     self.renderList = [] # list of modules to render
     self.key_listener = None
     self.needs_update = False
@@ -122,7 +124,7 @@ class Renderer(app.Canvas): # canvas is a GUI object
     if (target == 'keys'):
       self.key_listener = listener
       
-  # callback funciton for FPS
+  # callback funciton for FPS (prints update() calls / second)
   def print_fps(self, fps):
     print ('FPS: %.2f' % fps)
 
@@ -146,13 +148,17 @@ class Drawable:
     self.updates = [] # list of updates to perform
     renderer.renderList.append(self) # add to render stack
   
-  # set the texture
+  # set the texture, can use either data array or prerendered texture
   @renderLock
-  def setTexture(self, data):
+  def setTexture(self, data=None, texture=None):
+    if(data is None and texture is None): 
+      print 'Error: setTexture called with no valid data'
+      return # no useful data
     # create new program to avoid conflicts
     new_program = gloo.Program(VERT_SHADER_TEX, FRAG_SHADER_TEX)
     new_program['texcoord'] = gloo.VertexBuffer(vTexcoord_full) # assume full usage
-    new_program['texture'] = data
+    if(data is not None): new_program['texture'] = data
+    else: new_program['texture'] = texture
     if self.positioned: 
       new_program['position'] = self.position
     self.program = new_program
