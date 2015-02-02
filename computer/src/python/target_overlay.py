@@ -1,5 +1,6 @@
 import cv2
 import keyboard
+import math
 import numpy as np
 import PIL
 import rendering
@@ -10,7 +11,14 @@ from PIL import Image
 from vispy import app, scene
 
 class Overlay():
-  def __init__(self):
+  def __init__(self, size):
+    self.ratio = float(size[1]) / size[0] ## aspect ratio
+    print self.ratio
+    fov = 100 ## field of view
+    self.focal = 1 / math.tan(fov/2)
+    self.near = 1 ## near boundary
+    self.far = 1000 ## far boundary
+
     ## dictionary that will hold all of the arrows; first key is color, followed by direction
     self.arrows = {}
 
@@ -65,17 +73,19 @@ class Overlay():
     # r.setVerticies([[-1,-1],[-1,1],[1,-1],[1,1]])
 
     test_gps = np.array([2.0, 2.0, 2.0, 1.0])
-    matrix = np.array([[1.0, 0, 0, 0],[0, 1.0, 0, 0],[0, 0, -1001/999, -2000/999],[0, 0, -1.0, 0]])
+    matrix = np.array([[self.focal, 0, 0, 0],[0, self.focal/self.ratio, 0, 0],[0, 0, -(self.far+self.near)/(self.far-self.near), -(2*self.far*self.near)/(self.far-self.near)],[0, 0, -1.0, 0]])
 
     points = test_gps*matrix
 
-    a1 = rendering.Drawable()
-    a1.setTexture(self.arrows['blue']['d'])
-    a1.setVerticies([[.25,.25],[.25,.3],[.3,.25],[.3,.3]])
+    print points
 
-    a2 = rendering.Drawable()
-    a2.setTexture(self.arrows['blue']['d'])
-    a2.setVerticies([[-.45,-.45],[-.45,-.1],[-.1,-.45],[-.1,-.1]])
+    # a1 = rendering.Drawable()
+    # a1.setTexture(self.arrows['blue']['d'])
+    # a1.setVerticies([[.25,.25],[.25,.3],[.3,.25],[.3,.3]])
+
+    # a2 = rendering.Drawable()
+    # a2.setTexture(self.arrows['blue']['d'])
+    # a2.setVerticies([[-.45,-.45],[-.45,-.1],[-.1,-.45],[-.1,-.1]])
 
     ## gps coord (x,y,z,1) * matrix
 

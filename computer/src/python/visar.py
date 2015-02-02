@@ -8,7 +8,7 @@ renderer = rendering.getRenderer() # init the renderer
 
 #Add modules here
 m = menu.Menu()
-overlay = target_overlay.Overlay()
+overlay = target_overlay.Overlay(renderer.size)
 
 # keyboard listner, prints keypresses/releases
 def key_stuff(event, direction):
