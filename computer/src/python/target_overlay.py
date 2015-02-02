@@ -12,10 +12,11 @@ from vispy import app, scene
 
 class Overlay():
   def __init__(self, size):
-    self.ratio = float(size[1]) / size[0] ## aspect ratio
-    print self.ratio
-    fov = 100 ## field of view
-    self.focal = 1 / math.tan(fov/2)
+    print size
+    self.ratio = float(size[0]) / size[1] ## aspect ratio
+    fovx = 100 ## field of view
+    self.fovy = fovx / self.ratio
+    self.focal = 1 / math.tan((self.fovy/2) * (3.14/180))
     self.near = 1 ## near boundary
     self.far = 1000 ## far boundary
 
@@ -72,10 +73,14 @@ class Overlay():
     # r.setTexture(self.arrows['yellow']['ur'])
     # r.setVerticies([[-1,-1],[-1,1],[1,-1],[1,1]])
 
-    test_gps = np.array([2.0, 2.0, 2.0, 1.0])
-    matrix = np.array([[self.focal, 0, 0, 0],[0, self.focal/self.ratio, 0, 0],[0, 0, -(self.far+self.near)/(self.far-self.near), -(2*self.far*self.near)/(self.far-self.near)],[0, 0, -1.0, 0]])
+    test_gps = np.array([.5, .5, 0, 1.0])
+    matrix = np.array([[self.focal/self.ratio, 0, 0, 0],[0, self.focal, 0, 0],[0, 0, (self.far+self.near)/(self.near-self.far), (2*self.far*self.near)/(self.near-self.far)],[0, 0, -1.0, 0]])
 
-    points = test_gps*matrix
+    points = test_gps.dot(matrix)
+
+    self.depth = points[0]
+    self.y = points[3]
+    self.x = points[1]
 
     print points
 
@@ -91,5 +96,8 @@ class Overlay():
 
 class Target():
   def __init__(self, type="ally", pos=np.array([0,0,0])):
-    self.type = "ally"
+    type = "ally"
+    if type == "ally":
+        self.color = "red"
+
     self.pos = pos

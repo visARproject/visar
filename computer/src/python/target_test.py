@@ -4,9 +4,9 @@ import rendering
 
 renderer = rendering.getRenderer() ## init the renderer
 
-overlay = target_overlay.Overlay()
+overlay = target_overlay.Overlay(renderer.size)
 
-# # keyboard listener, prints keypresses/releases
+# ## keyboard listener, prints keypresses/releases
 # def key_stuff(event, direction):
 #   if direction == "down":
 #     if event.text == "w":
@@ -18,7 +18,7 @@ overlay = target_overlay.Overlay()
 #     elif event.text == "d":
 #       m.change_keys("forward")
 
-# # create keyboard listener and add a callback
+# ## create keyboard listener and add a callback
 # key = keyboard.KeyboardListener(renderer)
 # key.add_callback(key_stuff)
 
