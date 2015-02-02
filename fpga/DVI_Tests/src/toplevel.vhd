@@ -123,6 +123,8 @@ architecture RTL of toplevel is
     constant               RIGHT_CAMERA_MEMORY_LOCATION : integer := 32*1024*1024;
     constant DISTORTER_PREFETCHER_TABLE_MEMORY_LOCATION : integer := 64*1024*1024;
     constant              DISTORTER_MAP_MEMORY_LOCATION : integer := 96*1024*1024;
+    
+    signal right_camera_inhibit : std_logic;
 begin
     reset <= not rst_n;
 
@@ -180,6 +182,8 @@ begin
             BUFFER_ADDRESS => RIGHT_CAMERA_MEMORY_LOCATION)
         port map (
             camera_output => right_camera_output,
+            
+            inhibit => right_camera_inhibit,
             
             ram_in  => c3_p5_in,
             ram_out => c3_p5_out);
@@ -443,5 +447,6 @@ begin
             pair13P => pair13P,
             pair13N => pair13N,
             pair14P => pair14P,
-            pair14N => pair14N);
+            pair14N => pair14N,
+            right_camera_inhibit => right_camera_inhibit);
 end architecture RTL;

@@ -30,12 +30,14 @@ entity uart_ram_interface is
         pair13P: inout std_logic;
         pair13N: inout std_logic;
         pair14P: inout std_logic;
-        pair14N: inout std_logic);
+        pair14N: inout std_logic;
+        
+        right_camera_inhibit: out std_logic);
 end entity;
 
 architecture arc of uart_ram_interface is
     signal debug_in : std_logic_vector(31 downto 0);
-    signal debug_out : std_logic_vector(31 downto 0);
+    signal debug_out : std_logic_vector(31 downto 0) := (others => '0');
     signal debug_en : std_logic_vector(31 downto 0) := (others => '0');
     signal debug_real_out : std_logic_vector(31 downto 0);
 begin
@@ -62,6 +64,8 @@ begin
     pair13N <= debug_real_out( 9);
     pair14P <= debug_real_out(10);
     pair14N <= debug_real_out(11);
+    
+    right_camera_inhibit <= debug_out(31);
     
     debug_in <= "00000000000000000000" & pair14N & pair14P & pair13N & pair13P & pair12N & pair12P & pair9N & pair9P & pair8N & pair8P & pair7N & pair7P;
     

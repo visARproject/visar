@@ -11,13 +11,15 @@ entity camera_writer is
     port (
         camera_output : in camera_output;
         
+        inhibit : in std_logic;
+        
         ram_in  : out ram_wr_port_in;
         ram_out : in  ram_wr_port_out);
 end entity;
 
 architecture arc of camera_writer is
 begin
-    process (camera_output) is
+    process (camera_output, inhibit) is
         variable dest, next_dest : integer range 0 to 32*1024*1024 := 0;
         variable state, next_state : integer range 0 to 15 := 0;
     begin
@@ -44,8 +46,12 @@ begin
             ram_in.cmd.bl <= std_logic_vector(to_unsigned(32-1, ram_in.cmd.bl'length));
             ram_in.cmd.byte_addr <= std_logic_vector(to_unsigned(BUFFER_ADDRESS + dest, ram_in.cmd.byte_addr'length));
             
-            if next_dest + 16*4 >= 32*1024*1024 then
-                next_dest := 0;
+            if dest + 16*4 >= 32*1024*1024 then
+                if inhibit = '0' then
+                    next_dest := 0;
+                else
+                    next_dest := dest;
+                end if;
             else
                 next_dest := dest + 16*4;
             end if;

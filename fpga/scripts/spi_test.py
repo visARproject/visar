@@ -6,6 +6,7 @@ class SPIer(object):
     def __init__(self):
         self._r = ram_test.RAMPoker()
         self._drive = 0b110100000011
+        self._drive |= 1<<31
         self._pins = 0b110100000011
         self._r.write(0xFFFFFFF4, self._pins)
         self._r.write(0xFFFFFFF8, self._drive)
@@ -189,7 +190,16 @@ camera_write(96, 0)
 print camera_read(96), 'b'
 camera_write(96, 1)
 print camera_read(96), 'c'
-while True:
-    print list_to_int(camera_read(97)), '{0:025b}'.format(s._r.read(32*1024*1024))
-    import time
-    time.sleep(.1)
+for i in xrange(1500):
+    print i, list_to_int(camera_read(97)), '{0:025b}'.format(s._r.read(32*1024*1024))
+    if i == 1000:
+        s.set_pin(31)
+    #import time
+    #time.sleep(.1)
+
+import struct
+with open('dump', 'wb') as f:
+    for i in xrange(16*1024*1024//4):
+        x = s._r.read(32*1024*1024+i*4)
+        f.write(struct.pack('>I', x))
+        if i % 1000 == 0: print i//1000
