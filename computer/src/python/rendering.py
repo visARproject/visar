@@ -164,7 +164,7 @@ class Drawable:
     self.program = new_program
     self.textured = True
     if self.positioned: self.rendering = True
-    renderer.needs_update = True
+    if self.rendering:  renderer.needs_update = True
   
   # set the verticies, make sure they're 3d and less than the hud depth
   @renderLock
@@ -172,7 +172,8 @@ class Drawable:
     self.position = verticies
     self.program['position'] = verticies
     self.positioned = True  
-    if self.textured: self.rendering = True
+    if self.textured:   self.rendering = True
+    if self.rendering:  renderer.needs_update = True
     renderer.needs_update = True
   
   # pull render off of stack (would put in destructor, but wouldn't get called)

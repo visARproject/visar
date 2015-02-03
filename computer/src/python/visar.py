@@ -10,6 +10,7 @@ renderer = rendering.getRenderer() # init the renderer
 m = menu.Menu()
 overlay = target_overlay.Overlay(renderer.size)
 
+# VAL: put this in the menu class
 # keyboard listner, prints keypresses/releases
 def key_stuff(event, direction):
   # if(event.key == vispy.keys.ESCAPE): exit()
