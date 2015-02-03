@@ -116,6 +116,18 @@ class Menu():
 
     b.render.setTexture(img)
 
+  def key_stuff(self, event, direction):
+    # if(event.key == vispy.keys.ESCAPE): exit()
+    if direction == "down":
+      if event.text == "w":
+        self.change_keys("up")
+      elif event.text == "s":
+        self.change_keys("down")
+      elif event.text == "a":
+        self.change_keys("back")
+      elif event.text == "d":
+        self.change_keys("forward")
+
   def change_keys(self, dir):
     if dir == "up": ## go if 'w' is pressed; go up in the list
       i = self.current.index(self.active)
