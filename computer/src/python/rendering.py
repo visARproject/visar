@@ -6,6 +6,8 @@ import numpy as np
 from vispy.gloo import Program, gl
 from vispy import app, gloo
 import threading
+from libVisar.OpenGL.shaders import make_distortion
+
 
 HUD_DEPTH = 0.2 # minimum depth
 FPS = 60 # Maximum FPS (how often needs_update is checked)
@@ -50,7 +52,7 @@ def renderLock(func):
   return locked
                       
 class Renderer(app.Canvas): # canvas is a GUI object
-  def __init__(self, size=((720,480))):    
+  def __init__(self, size=(1600, 900)):    
     self.renderList = [] # list of modules to render
     self.key_listener = None
     self.needs_update = False
@@ -61,21 +63,18 @@ class Renderer(app.Canvas): # canvas is a GUI object
             
     # create texture to render modules to
     shape = self.size[1], self.size[0]
-    self._rendertex = gloo.Texture2D(shape=shape+(3,))
+    self.left_eye_tex = gloo.Texture2D(shape=(4096, 4096) + (3,))
   
     # create Frame Buffer Object, attach color/depth buffers
-    self._fbo = gloo.FrameBuffer(self._rendertex, gloo.RenderBuffer(shape))
+    self.left_eye_buffer = gloo.FrameBuffer(self.left_eye_tex, gloo.RenderBuffer(shape))
     
     # create texture rendering program
     self.tex_program = gloo.Program(VERT_SHADER_TEX, FRAG_SHADER_TEX)
   
     # create program to render the results (TEST ONLY, same as before)
-    # JAKE: replace this with your shaders
-    self._program2 = gloo.Program(VERT_SHADER_TEX, FRAG_SHADER_TEX)
-    self._program2['position'] = gloo.VertexBuffer(vPosition_full)
-    self._program2['texcoord'] = gloo.VertexBuffer(vTexcoord_full)
-    self._program2['texture']  = self._rendertex
-    
+
+    self.left_eye_program, self.left_eye_indices = make_distortion(self.left_eye_tex)
+
     # set an update timer to run every FPS
     self.interval = 1/FPS
     self._timer = app.Timer('auto',connect=self.on_timer, start=True)
@@ -86,7 +85,7 @@ class Renderer(app.Canvas): # canvas is a GUI object
     
   def on_draw(self, event):
     # draw scene to FBO instead of output buffer
-    with self._fbo:
+    with self.left_eye_buffer:
       gloo.set_clear_color('black')
       gloo.clear(color=True, depth=True)
       gloo.set_viewport(0,0, *self.size)
@@ -96,9 +95,9 @@ class Renderer(app.Canvas): # canvas is a GUI object
           module.program.draw('triangle_strip')     # draw the module
     
     # draw to full screen
-    gloo.set_clear_color('black')
+    # gloo.set_clear_color('black')
     gloo.clear(color=True,depth=True)
-    self._program2.draw('triangle_strip')
+    self.left_eye_program.draw('triangles', self.left_eye_indices)
   
   # update the display
   @renderLock  
