@@ -1,5 +1,8 @@
 # coding=utf-8
 
+import struct
+import time
+
 import ram_test
 
 class SPIer(object):
@@ -24,7 +27,7 @@ class SPIer(object):
     def read_pin(self, n):
         assert not ((self._drive >> n) & 1)
         return (self._read_pins() >> n) & 1
-    def do_spi(self, nCS_pin, MISO_pin, bits):
+    def do_spi(self, nCS_pin, MISO_pin, bits, read=True):
         MOSI_pin = 11
         SCLK_pin = 8
         
@@ -37,12 +40,14 @@ class SPIer(object):
                 self.set_pin(MOSI_pin)
             else:
                 self.clear_pin(MOSI_pin)
-            res.append(self.read_pin(MISO_pin))
+            if read:
+                res.append(self.read_pin(MISO_pin))
             self.set_pin(SCLK_pin)
         self.set_pin(nCS_pin)
         
-        return res
-    def do_camera_spi(self, nCS_pin, MISO_pin, bits):
+        if read:
+            return res
+    def do_camera_spi(self, nCS_pin, MISO_pin, bits, read=True):
         MOSI_pin = 11
         SCLK_pin = 8
         
@@ -55,17 +60,18 @@ class SPIer(object):
             else:
                 self.clear_pin(MOSI_pin)
             self.set_pin(SCLK_pin)
-            res.append(self.read_pin(MISO_pin))
+            if read:
+                res.append(self.read_pin(MISO_pin))
             self.clear_pin(SCLK_pin)
         self.set_pin(nCS_pin)
         
-        return res
+        if read:
+            return res
 
 s = SPIer()
 assert s.do_spi(10, 9, [1, 0, 0, 0, 0, 0, 0, 0, 0, 0]) == [1, 0, 1, 0, 0, 1, 1, 0, 0, 1]
 '''while True:
     print '{0:025b}'.format(s._r.read(32*1024*1024))
-    import time
     time.sleep(.1)'''
 assert s.do_spi(10, 9, [1, 1, 0, 0, 0, 0, 0, 0, 0, 0]) == [1, 0, 1, 0, 0, 1, 1, 0, 0, 1]
 assert s.do_spi(10, 9, [1, 1, 1, 0, 0, 0, 0, 0, 0, 0]) == [1, 0, 1, 0, 0, 1, 1, 0, 0, 1]
@@ -94,7 +100,7 @@ def camera_read(addr):
     #print x
     return x[-16:]
 def camera_write(addr, value):
-    s.do_camera_spi(1, 3, int_to_list(addr, 9) + [1] + int_to_list(value, 16))
+    s.do_camera_spi(1, 3, int_to_list(addr, 9) + [1] + int_to_list(value, 16), read=False)
 
 assert camera_read(0) == int_to_list(0x560D, 16)
 
@@ -184,22 +190,33 @@ camera_write(192, list_to_int(camera_read(192)) | 0b1)
 
 
 
-print camera_read(97)
+''''print camera_read(97)
 print camera_read(96), 'a'
 camera_write(96, 0)
 print camera_read(96), 'b'
 camera_write(96, 1)
-print camera_read(96), 'c'
+print camera_read(96), 'c' '''
+
 for i in xrange(1500):
     print i, list_to_int(camera_read(97)), '{0:025b}'.format(s._r.read(32*1024*1024))
     if i == 1000:
         s.set_pin(31)
-    #import time
-    #time.sleep(.1)
 
-import struct
+'''s.set_pin(31)
+time.sleep(3)
+x = list_to_int(camera_read(192)) | 0b1
+time1 = time.time()
+s.clear_pin(31)
+s.set_pin(31)
+camera_write(192, x)
+time2 = time.time()
+print time2 - time1
+
+time.sleep(3)'''
+
+
 with open('dump', 'wb') as f:
-    for i in xrange(16*1024*1024//4):
+    for i in xrange(int(16*1024*1024//4)):
         x = s._r.read(32*1024*1024+i*4)
         f.write(struct.pack('>I', x))
         if i % 1000 == 0: print i//1000

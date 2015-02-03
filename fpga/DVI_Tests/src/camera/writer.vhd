@@ -18,11 +18,20 @@ entity camera_writer is
 end entity;
 
 architecture arc of camera_writer is
+    constant BURST_LENGTH : integer := 32;
 begin
     process (camera_output, inhibit) is
-        variable dest, next_dest : integer range 0 to 32*1024*1024 := 0;
-        variable state, next_state : integer range 0 to 15 := 0;
+        variable dest, next_dest : integer range 0 to 32*1024*1024-1 := 0;
+        variable state, next_state : integer range 0 to BURST_LENGTH-1 := 0;
+        variable real_inhibit : std_logic;
     begin
+        if dest >= 31*1024*1024 and inhibit = '1' then
+            real_inhibit := '1';
+        else
+            real_inhibit := '0';
+        end if;
+        
+        
         ram_in.cmd.clk <= camera_output.clock;
         ram_in.cmd.en <= '0';
         ram_in.cmd.instr <= (others => '-');
@@ -34,31 +43,31 @@ begin
         ram_in.wr.mask <= (others => '-');
         ram_in.wr.data <= (others => '-');
         
-        if true then
-            ram_in.wr.en <= '1';
-            ram_in.wr.mask <= (others => '0');
-            ram_in.wr.data <= "0000000" & camera_output.data;
-        end if;
+        next_dest := dest;
+        next_state := state;
         
-        if state = 15 then
-            ram_in.cmd.en <= '1';
-            ram_in.cmd.instr <= WRITE_PRECHARGE_COMMAND;
-            ram_in.cmd.bl <= std_logic_vector(to_unsigned(32-1, ram_in.cmd.bl'length));
-            ram_in.cmd.byte_addr <= std_logic_vector(to_unsigned(BUFFER_ADDRESS + dest, ram_in.cmd.byte_addr'length));
+        if real_inhibit = '0' then
+            if true then
+                ram_in.wr.en <= '1';
+                ram_in.wr.mask <= (others => '0');
+                ram_in.wr.data <= "0000000" & camera_output.data;
+            end if;
             
-            if dest + 16*4 >= 32*1024*1024 then
-                if inhibit = '0' then
+            if state = BURST_LENGTH-1 then
+                ram_in.cmd.en <= '1';
+                ram_in.cmd.instr <= WRITE_PRECHARGE_COMMAND;
+                ram_in.cmd.bl <= std_logic_vector(to_unsigned(BURST_LENGTH-1, ram_in.cmd.bl'length));
+                ram_in.cmd.byte_addr <= std_logic_vector(to_unsigned(BUFFER_ADDRESS + dest, ram_in.cmd.byte_addr'length));
+                
+                if dest + BURST_LENGTH*4 >= 32*1024*1024 then
                     next_dest := 0;
                 else
-                    next_dest := dest;
+                    next_dest := dest + BURST_LENGTH*4;
                 end if;
+                next_state := 0;
             else
-                next_dest := dest + 16*4;
+                next_state := state + 1;
             end if;
-            next_state := 0;
-        else
-            next_dest := dest;
-            next_state := state + 1;
         end if;
         
         if rising_edge(camera_output.clock) then
