@@ -24,8 +24,17 @@ begin
         variable dest, next_dest : integer range 0 to 32*1024*1024-1 := 0;
         variable state, next_state : integer range 0 to BURST_LENGTH-1 := 0;
         variable real_inhibit : std_logic;
+        variable inhibit1, inhibit2 : std_logic;
     begin
-        if dest >= 31*1024*1024 and inhibit = '1' then
+        if rising_edge(camera_output.clock) then
+            dest := next_dest;
+            state := next_state;
+            
+            inhibit1 := inhibit;
+            inhibit2 := inhibit1;
+        end if;
+        
+        if dest >= 31*1024*1024 and inhibit2 = '1' then
             real_inhibit := '1';
         else
             real_inhibit := '0';
@@ -68,11 +77,6 @@ begin
             else
                 next_state := state + 1;
             end if;
-        end if;
-        
-        if rising_edge(camera_output.clock) then
-            dest := next_dest;
-            state := next_state;
         end if;
     end process;
 end architecture;

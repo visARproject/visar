@@ -31,6 +31,7 @@ valid = map(int, '{0:010b}'.format(0x035))
 crc   = map(int, '{0:010b}'.format(0x059))
 
 p = 0
+badcount = 0
 while sync[p:p+10]:
     if sync[p:p+10] == train:
         print 'train good'
@@ -65,8 +66,11 @@ while sync[p:p+10]:
         print 'crc'
         p += 10
     else:
-        print 'bad', sync[p:p+10]
+        badcount += 1
+        print 'bad', sync[p:p+10], badcount
         p += 1
+        continue
+    badcount = 0
 
 #for i in xrange(0, len(d), 2):
 #    print '{0:025b} {1:025b}'.format(d[i], d[i+1])

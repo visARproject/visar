@@ -23,6 +23,7 @@ class RAMPoker(object):
         self._s.write('\xda' + cmd)
     
     def read(self, addr):
+        assert not self._s.read(self._s.inWaiting())
         self._run(struct.pack('<BIQ' if wide else '<BII', 0, addr, 0))
         res, = struct.unpack('<Q' if wide else '<I', self._read(8 if wide else 4))
         return res
