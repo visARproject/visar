@@ -1,0 +1,13 @@
+glReadPixels - Read pixels from the FBO
+
+
+def rotate_to_body(body, inv=False):
+    R = body.getRotation()
+    p = body.getPosition()
+    rot = [[R[0], R[3], R[6], 0.],
+        [R[1], R[4], R[7], 0.],
+        [R[2], R[5], R[8], 0.],
+        [p[0], p[1], p[2], 1.]]
+    if inv:
+        rot = numpy.linalg.inv(rot)
+    rot = list(rot[0])+list(rot[1])+list(rot[2])+list(rot[3])
