@@ -69,8 +69,8 @@ NET "pair8N" LOC = N9  | IOSTANDARD = LVCMOS33;
 NET "pair9P" LOC = U11 | IOSTANDARD = LVCMOS33;
 NET "pair9N" LOC = V11 | IOSTANDARD = LVCMOS33;
 
-NET "right_camera_in_clock_p" LOC = R10 | IOSTANDARD = LVDS_33 | DIFF_TERM = TRUE;
-NET "right_camera_in_clock_n" LOC = T10 | IOSTANDARD = LVDS_33 | DIFF_TERM = TRUE;
+#NET "right_camera_in_clock_p" LOC = R10 | IOSTANDARD = LVDS_33 | DIFF_TERM = TRUE;
+#NET "right_camera_in_clock_n" LOC = T10 | IOSTANDARD = LVDS_33 | DIFF_TERM = TRUE;
 
 #NET "left_camera_in_clock_p" LOC = U10 | IOSTANDARD = LVDS_33 | DIFF_TERM = TRUE;
 #NET "left_camera_in_clock_n" LOC = V10 | IOSTANDARD = LVDS_33 | DIFF_TERM = TRUE;
@@ -94,6 +94,3 @@ NET "pair14N" LOC = V8 | IOSTANDARD = LVCMOS33;
 #NET "left_camera_in_sync_n"   LOC = P7 | IOSTANDARD = LVDS_33 | DIFF_TERM = TRUE;
 #NET "left_camera_out_clock_p" LOC = U5 | IOSTANDARD = LVDS_33 | DIFF_TERM = TRUE;
 #NET "left_camera_out_clock_n" LOC = V5 | IOSTANDARD = LVDS_33 | DIFF_TERM = TRUE;
-
-NET "right_camera_in_clock_p" TNM_NET = "right_camera_in_clock_p";
-TIMESPEC "TS_right_camera_in_clock_p" = PERIOD "right_camera_in_clock_p" 3.2258ns HIGH 50% INPUT_JITTER 100ps;
