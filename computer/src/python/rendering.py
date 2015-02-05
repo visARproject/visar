@@ -10,14 +10,16 @@ import threading
 HUD_DEPTH = 0.2 # minimum depth
 FPS = 60 # Maximum FPS (how often needs_update is checked)
 
+# test shaders
 VERT_SHADER_TEX = """ //texture vertex shader
+uniform   mat4 model;
 attribute vec3 position;
 attribute vec2 texcoord;
-varying vec2 v_texcoord;
+varying   vec2 v_texcoord;
 
 void main(void){
     v_texcoord = texcoord; //send tex coordinates
-    gl_Position = vec4(position.xyz, 1.0);
+    gl_Position = model * vec4(position.xyz, 1.0);
 }"""
 
 FRAG_SHADER_TEX = """ // texture fragment shader
@@ -35,6 +37,7 @@ vPosition_full = np.array([[-1.0, -1.0, 0.0], [+1.0, -1.0, 0.0],
                            [-1.0, +1.0, 0.0], [+1.0, +1.0, 0.0]], np.float32)
 vTexcoord_full = np.array([[0.0, 0.0], [0.0, 1.0],
                            [1.0, 0.0], [1.0, 1.0]], np.float32)
+
 
 renderer = None # singleton, don't reference this or declare an instance of the class
                       
@@ -58,23 +61,9 @@ class Renderer(app.Canvas): # canvas is a GUI object
     # initialize gloo context
     app.Canvas.__init__(self, keys='interactive')
     self.size = size # get the size
-            
-    # create texture to render modules to
-    shape = self.size[1], self.size[0]
-    self._rendertex = gloo.Texture2D(shape=shape+(3,))
-  
-    # create Frame Buffer Object, attach color/depth buffers
-    self._fbo = gloo.FrameBuffer(self._rendertex, gloo.RenderBuffer(shape))
     
     # create texture rendering program
     self.tex_program = gloo.Program(VERT_SHADER_TEX, FRAG_SHADER_TEX)
-  
-    # create program to render the results (TEST ONLY, same as before)
-    # JAKE: replace this with your shaders
-    self._program2 = gloo.Program(VERT_SHADER_TEX, FRAG_SHADER_TEX)
-    self._program2['position'] = gloo.VertexBuffer(vPosition_full)
-    self._program2['texcoord'] = gloo.VertexBuffer(vTexcoord_full)
-    self._program2['texture']  = self._rendertex
     
     # set an update timer to run every FPS
     self.interval = 1/FPS
@@ -86,19 +75,13 @@ class Renderer(app.Canvas): # canvas is a GUI object
     
   def on_draw(self, event):
     # draw scene to FBO instead of output buffer
-    with self._fbo:
-      gloo.set_clear_color('black')
-      gloo.clear(color=True, depth=True)
-      gloo.set_viewport(0,0, *self.size)
-      # render each of the modules
-      for module in self.renderList:   
-        if(module.rendering):  # make sure it's ready
-          module.program.draw('triangle_strip')     # draw the module
-    
-    # draw to full screen
     gloo.set_clear_color('black')
-    gloo.clear(color=True,depth=True)
-    self._program2.draw('triangle_strip')
+    gloo.clear(color=True, depth=True)
+    gloo.set_viewport(0,0, *self.size)
+    # render each of the modules
+    for module in self.renderList:   
+      if(module.rendering):  # make sure it's ready
+        module.program.draw('triangle_strip')     # draw the module
   
   # update the display
   @renderLock  
@@ -138,43 +121,45 @@ def getRenderer():
 # class for texture rendering  
 class Drawable:
   @renderLock
-  def __init__(self):
+  # init must have verticies, and either a texture or the data for a texture
+  def __init__(self, verticies=None, texture=None, tex_data=None, position=None, UI=False):
     self.program = gloo.Program(VERT_SHADER_TEX, FRAG_SHADER_TEX)
     self.program['texcoord'] = gloo.VertexBuffer(vTexcoord_full) # assume full usage
-    self.position = None
-    self.textured = False
-    self.positioned = False
-    self.rendering = False
-    self.updates = [] # list of updates to perform
+    
+    # set the verticies
+    if(verticies is None): # check for valid input
+      print 'Error: drawable created with no valid texture'
+      return None # no useful data
+    for row in verticies: # force vertecies to 3d shape
+      if len(row) < 3:
+        row.append(HUD_DEPTH)
+    self.program['position'] = gloo.VertexBuffer(verticies)
+    
+    # set the texture
+    self.program['texcoord'] = gloo.VertexBuffer(vTexcoord_full) # assume full usage
+    if(texture is not None): self.program['texture'] = texture
+    elif(tex_data is not None): self.program['texture'] = gloo.Texture2D(tex_data)
+    else:
+      print 'Error: drawable created with no valid texture'
+      return None # no useful data
+    self.program['texture'].interpolation = 'linear'
+    
+    # model position matrix
+    if(position is not None): self.position = position
+    else: self.position = np.eye(4, dtype=np.float32)
+    self.program['model'] = self.position
+
+    self.is_UI = UI
+    self.rendering = True
     renderer.renderList.append(self) # add to render stack
+    renderer.needs_update = True # notify renderer to redraw
   
-  # set the texture, can use either data array or prerendered texture
+  # move an object
   @renderLock
-  def setTexture(self, data=None, texture=None):
-    if(data is None and texture is None): 
-      print 'Error: setTexture called with no valid data'
-      return # no useful data
-    # create new program to avoid conflicts
-    new_program = gloo.Program(VERT_SHADER_TEX, FRAG_SHADER_TEX)
-    new_program['texcoord'] = gloo.VertexBuffer(vTexcoord_full) # assume full usage
-    if(data is not None): new_program['texture'] = data
-    else: new_program['texture'] = texture
-    if self.positioned: 
-      new_program['position'] = self.position
-    self.program = new_program
-    self.textured = True
-    if self.positioned: self.rendering = True
-    if self.rendering:  renderer.needs_update = True
-  
-  # set the verticies, make sure they're 3d and less than the hud depth
-  @renderLock
-  def setVerticies(self, verticies):
-    self.position = verticies
-    self.program['position'] = verticies
-    self.positioned = True  
-    if self.textured:   self.rendering = True
-    if self.rendering:  renderer.needs_update = True
-    renderer.needs_update = True
+  def setPosition(self, position):
+    self.position = position
+    self.program['model'] = position
+    renderer.needs_update = True # notify renderer to redraw
   
   # pull render off of stack (would put in destructor, but wouldn't get called)
   @renderLock
@@ -182,9 +167,13 @@ class Drawable:
     self.rendering = False
     renderer.needs_update = True
   
+  # resume a paused render
   @renderLock
   def resumeRender(self):
     self.rendering = True
     renderer.needs_update = True
-  
-  
+
+  # stop rendering this module, cannot be restarted
+  @renderLock
+  def stopRender(self):
+    renderer.renderList.remove(self)

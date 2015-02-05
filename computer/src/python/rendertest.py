@@ -9,24 +9,16 @@ import keyboard
 
 im1 = np.flipud(np.fliplr(io.imread('images/Red_Apple.jpg')))
 im2 = np.flipud(np.fliplr(io.imread('images/Blue_Apple.jpg')))
-FPS = 10
+FPS = 60
 
 renderer = rendering.getRenderer() # init the renderer
 
 # create two modules (using a test image)
-d1 = rendering.Drawable() 
-d1.setTexture(im1)
-d1.setVerticies([[-1,-1],[0,-1],[-1,0],[0,0]]) # no depth (automatically set at min)
+d1 = rendering.Drawable(verticies=[[-1,-1],[0,-1],[-1,0],[0,0]], tex_data=im1)
 
 # d2/d3 alternate between apple textures
-# swapping prebuilt drawables is SIGNIFICANTLY more efficent than changing textures
-d2 = rendering.Drawable()
-d2.setTexture(im1)
-d2.setVerticies([[-.2,-.2,0],[1,-.2,0],[-.2,1,0],[1,1,0]]) # has depth=0
-
-d3 = rendering.Drawable()
-d3.setTexture(im2)
-d3.setVerticies([[-.2,-.2,0],[1,-.2,0],[-.2,1,0],[1,1,0]]) # has depth=0
+d2 = rendering.Drawable([[-.2,-.2],[1,-.2],[-.2,1],[1,1]], tex_data=im1)
+d3 = rendering.Drawable([[-.2,-.2],[1,-.2],[-.2,1],[1,1]], tex_data=im2)
 
 # keyboard listner, prints keypresses/releases
 def key_stuff(event, direction):
@@ -47,10 +39,7 @@ def move_stuff():
     time.sleep(1.0/FPS)
     
     # change the verticies in the first image (use setVerticies)
-    d1.setVerticies([[random.uniform(-1,1),random.uniform(-1,1)],
-      [random.uniform(-1,1),random.uniform(-1,1)],
-      [random.uniform(-1,1),random.uniform(-1,1)],
-      [random.uniform(-1,1),random.uniform(-1,1)]])
+    d1.setPosition(np.random.ranf([4,4]))
 
     # swap the second image every 5 frames
     # Note: Use multiple drawables instead of setTexture for efficency
