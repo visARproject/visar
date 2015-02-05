@@ -18,7 +18,7 @@ d1 = rendering.Drawable(verticies=[[-1,-1],[0,-1],[-1,0],[0,0]], tex_data=im1)
 
 # d2/d3 alternate between apple textures
 d2 = rendering.Drawable([[-.2,-.2],[1,-.2],[-.2,1],[1,1]], tex_data=im1)
-d3 = rendering.Drawable([[-.2,-.2],[1,-.2],[-.2,1],[1,1]], tex_data=im2)
+d3 = rendering.Drawable([[-.2,-.2],[1,-.2],[-.2,1],[1,1]], tex_data=im2, start=False)
 
 # keyboard listner, prints keypresses/releases
 def key_stuff(event, direction):

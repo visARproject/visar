@@ -122,7 +122,7 @@ def getRenderer():
 class Drawable:
   @renderLock
   # init must have verticies, and either a texture or the data for a texture
-  def __init__(self, verticies=None, texture=None, tex_data=None, position=None, UI=False):
+  def __init__(self, verticies=None, texture=None, tex_data=None, position=None, UI=False, start=True):
     self.program = gloo.Program(VERT_SHADER_TEX, FRAG_SHADER_TEX)
     self.program['texcoord'] = gloo.VertexBuffer(vTexcoord_full) # assume full usage
     
@@ -133,7 +133,7 @@ class Drawable:
     for row in verticies: # force vertecies to 3d shape
       if len(row) < 3:
         row.append(HUD_DEPTH)
-    self.program['position'] = gloo.VertexBuffer(verticies)
+    self.program['position'] = gloo.VertexBuffer(verticies)    
     
     # set the texture
     self.program['texcoord'] = gloo.VertexBuffer(vTexcoord_full) # assume full usage
@@ -150,7 +150,7 @@ class Drawable:
     self.program['model'] = self.position
 
     self.is_UI = UI
-    self.rendering = True
+    self.rendering = start
     renderer.renderList.append(self) # add to render stack
     renderer.needs_update = True # notify renderer to redraw
   
@@ -160,7 +160,7 @@ class Drawable:
     self.position = position
     self.program['model'] = position
     renderer.needs_update = True # notify renderer to redraw
-  
+    
   # pull render off of stack (would put in destructor, but wouldn't get called)
   @renderLock
   def pauseRender(self):
