@@ -25,14 +25,14 @@ void lcd_string(char* str){
     }
 }
 
-inline void lcd_command(uint8_t cmd)
+void lcd_command(uint8_t cmd)
 {
     lcd_write_byte(cmd, false);
     delay_us(40);    
     //lcd_poll_busy();
 }
 
-inline void lcd_data(uint8_t data)
+void lcd_data(uint8_t data)
 {
     lcd_write_byte(data, true);
     delay_us(40);  
@@ -80,7 +80,3 @@ void lcd_poll_busy(void)
     // set R/W to "write"
     gpio_clear(GPIOE, GPIO1);
 }
-
-
-
-
