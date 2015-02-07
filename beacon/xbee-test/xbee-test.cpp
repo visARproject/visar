@@ -130,6 +130,7 @@ void usart2_isr(void)
             case XBEE_START:
                 if (xbee_tx_queue.isEmpty()) {
                     usart_disable_tx_interrupt(USART2);
+                    break;
                 } else { 
                     tx_pkt = xbee_tx_queue.dequeue();
                 }
