@@ -19,7 +19,8 @@ void lcd_init(void)
 
 }
 
-void lcd_string(char* str){
+void lcd_string(char* str)
+{
     while (*str != 0x00) {
         lcd_data(*str++);
     }
@@ -28,14 +29,14 @@ void lcd_string(char* str){
 void lcd_command(uint8_t cmd)
 {
     lcd_write_byte(cmd, false);
-    delay_us(40);    
+    delay_us(40);
     //lcd_poll_busy();
 }
 
 void lcd_data(uint8_t data)
 {
     lcd_write_byte(data, true);
-    delay_us(40);  
+    delay_us(40);
     //lcd_poll_busy(); // XXX: not working, replaced by above delay -- do I care?
 }
 
@@ -47,7 +48,7 @@ inline void lcd_write_byte(uint8_t b, bool rs_data)
     gpio_clear(GPIOE, GPIO1);
     // rs_data = true --> R/S = 1, else 0
     if (rs_data) {
-        gpio_set(GPIOE, GPIO2);    
+        gpio_set(GPIOE, GPIO2);
     } else {
         gpio_clear(GPIOE, GPIO2);
     }
@@ -70,7 +71,7 @@ void lcd_poll_busy(void)
     uint8_t res = 0;
     do {
         gpio_set(GPIOE, GPIO0); // set enable
-        res = gpio_port_read(GPIOD) & (1<<7); // read command register
+        res = gpio_port_read(GPIOD) & (1 << 7); // read command register
         delay_us(40); // wait between reads
         gpio_clear(GPIOE, GPIO0); // clear enable            
     } while (res != 0);

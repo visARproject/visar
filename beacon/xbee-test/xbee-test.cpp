@@ -76,8 +76,8 @@ void usart2_isr(void)
     static xbee_packet_t tx_pkt;
 
     // Check if we were called because of RXNE.
-    if (((USART_CR1(USART2) & USART_CR1_RXNEIE) != 0) &&
-        ((USART_SR(USART2) & USART_SR_RXNE) != 0)) {
+    if (((USART_CR1(USART2) & USART_CR1_RXNEIE) != 0)
+            && ((USART_SR(USART2) & USART_SR_RXNE) != 0)) {
 
         uint8_t data = usart_recv(USART2);
         static uint16_t rx_index = 0;
@@ -91,7 +91,7 @@ void usart2_isr(void)
                 }
                 break;
             case XBEE_LENGTH_HIGH:
-                rx_pkt.length = ((uint16_t)data << 8) & 0xFF00;
+                rx_pkt.length = ((uint16_t) data << 8) & 0xFF00;
                 xbee_rx_state = XBEE_LENGTH_LOW;
                 break;
             case XBEE_LENGTH_LOW:
@@ -107,22 +107,22 @@ void usart2_isr(void)
                 rx_pkt.payload[rx_index] = data;
                 rx_checksum += data;
                 ++rx_index;
-                if (rx_index == rx_pkt.length-1) {
+                if (rx_index == rx_pkt.length - 1) {
                     xbee_rx_state = XBEE_CHECKSUM;
                 }
                 break;
             case XBEE_CHECKSUM:
-                if (data == 0xFF-rx_checksum) {
+                if (data == 0xFF - rx_checksum) {
                     xbee_rx_queue.enqueue(rx_pkt);
                 }
                 xbee_rx_state = XBEE_START;
                 break;
         }
     }
-    
+
     // Check if we were called because of TXE.
-    if (((USART_CR1(USART2) & USART_CR1_TXEIE) != 0) &&
-        ((USART_SR(USART2) & USART_SR_TXE) != 0)) {
+    if (((USART_CR1(USART2) & USART_CR1_TXEIE) != 0)
+            && ((USART_SR(USART2) & USART_SR_TXE) != 0)) {
 
         static uint16_t tx_index = 0;
 
@@ -131,7 +131,7 @@ void usart2_isr(void)
                 if (xbee_tx_queue.isEmpty()) {
                     usart_disable_tx_interrupt(USART2);
                     break;
-                } else { 
+                } else {
                     tx_pkt = xbee_tx_queue.dequeue();
                 }
                 usart_send(USART2, 0x7E); // XBEE start
@@ -148,20 +148,20 @@ void usart2_isr(void)
                 xbee_tx_state = XBEE_TYPE;
                 break;
             case XBEE_TYPE:
-            	usart_send(USART2, tx_pkt.type);
-            	tx_checksum += tx_pkt.type;
+                usart_send(USART2, tx_pkt.type);
+                tx_checksum += tx_pkt.type;
                 xbee_tx_state = XBEE_MESSAGE;
                 break;
             case XBEE_MESSAGE:
                 usart_send(USART2, tx_pkt.payload[tx_index]);
                 tx_checksum += tx_pkt.payload[tx_index];
                 ++tx_index;
-                if (tx_index == tx_pkt.length-1) {
+                if (tx_index == tx_pkt.length - 1) {
                     xbee_tx_state = XBEE_CHECKSUM;
                 }
                 break;
             case XBEE_CHECKSUM:
-                usart_send(USART2, 0xFF-tx_checksum);
+                usart_send(USART2, 0xFF - tx_checksum);
                 xbee_tx_state = XBEE_START;
                 break;
         }

@@ -1,20 +1,21 @@
 #include <string.h>
 #include "xbee.h"
 
-void xbee_assemble_tx_packet(xbee_packet_t& tx_pkt, uint64_t addr64, uint16_t addr16, char* data, uint8_t data_len)
+void xbee_assemble_tx_packet(xbee_packet_t& tx_pkt, uint64_t addr64,
+        uint16_t addr16, char* data, uint8_t data_len)
 {
-    tx_pkt.type        = 0x10; // type = transmit request
-    tx_pkt.payload[0]  = 0x01; // XXX: FrameID 0x01 -- there ought to be a better thing to put here
-    tx_pkt.payload[1]  = (addr64 >> 56) & 0xFF;
-    tx_pkt.payload[2]  = (addr64 >> 48) & 0xFF;
-    tx_pkt.payload[3]  = (addr64 >> 40) & 0xFF;
-    tx_pkt.payload[4]  = (addr64 >> 32) & 0xFF;
-    tx_pkt.payload[5]  = (addr64 >> 24) & 0xFF;
-    tx_pkt.payload[6]  = (addr64 >> 16) & 0xFF;
-    tx_pkt.payload[7]  = (addr64 >> 8 ) & 0xFF;
-    tx_pkt.payload[8]  = (addr64      ) & 0xFF;
-    tx_pkt.payload[9]  = (addr16 >> 8 ) & 0xFF;
-    tx_pkt.payload[10] = (addr16      ) & 0xFF;
+    tx_pkt.type = 0x10; // type = transmit request
+    tx_pkt.payload[0] = 0x01; // XXX: FrameID 0x01 -- there ought to be a better thing to put here
+    tx_pkt.payload[1] = (addr64 >> 56) & 0xFF;
+    tx_pkt.payload[2] = (addr64 >> 48) & 0xFF;
+    tx_pkt.payload[3] = (addr64 >> 40) & 0xFF;
+    tx_pkt.payload[4] = (addr64 >> 32) & 0xFF;
+    tx_pkt.payload[5] = (addr64 >> 24) & 0xFF;
+    tx_pkt.payload[6] = (addr64 >> 16) & 0xFF;
+    tx_pkt.payload[7] = (addr64 >> 8) & 0xFF;
+    tx_pkt.payload[8] = (addr64) & 0xFF;
+    tx_pkt.payload[9] = (addr16 >> 8) & 0xFF;
+    tx_pkt.payload[10] = (addr16) & 0xFF;
     tx_pkt.payload[11] = 0x00; // radius
     tx_pkt.payload[12] = 0x00; // options
     memcpy(&(tx_pkt.payload[13]), data, data_len);
