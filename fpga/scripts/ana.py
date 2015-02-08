@@ -12,10 +12,13 @@ data = [[], [], [], []]
 
 for i, x in enumerate(d):
     if i % 10000 == 0: print i/len(d)
-    b = '{0:025b}'.format(x)
+    print i, x>>25, (x>>25)-i
+    b = '{0:032b}'.format(x)[7:]
     sync.extend(b[::5][::-1])
     #for i in xrange(4):
     #    data[i].extend(b[1+i::5][::-1])
+
+fdafa
 
 sync = [1-x for x in map(int, sync)]
 for i in xrange(4):

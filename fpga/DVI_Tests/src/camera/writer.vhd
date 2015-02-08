@@ -18,7 +18,7 @@ entity camera_writer is
 end entity;
 
 architecture arc of camera_writer is
-    constant BURST_LENGTH : integer := 16;
+    constant BURST_LENGTH : integer := 32;
 begin
     process (camera_output, inhibit) is
         variable dest, next_dest : integer range 0 to 32*1024*1024-1 := 0;
@@ -31,8 +31,8 @@ begin
             dest := next_dest;
             state := next_state;
             
-            inhibit1 := inhibit;
             inhibit2 := inhibit1;
+            inhibit1 := inhibit;
             
             count := count + 1;
         end if;
