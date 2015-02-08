@@ -75,16 +75,35 @@ class Mesh(object):
     varying float oVignette;
     void main() {
         gl_Position = vec4(pos.xy, 0.5, 1.0);
-        oRed_xy = (red_xy) / 2.0;
-        oGreen_xy = (green_xy) / 2.0;
-        oBlue_xy = (blue_xy) / 2.0;
+        oRed_xy = red_xy;
+        oRed_xy.y = 1 - oRed_xy.y;
+        oGreen_xy = green_xy;
+        oGreen_xy.y = 1 - oGreen_xy.y;
+        oBlue_xy = blue_xy;
+        oBlue_xy.y = 1 - oBlue_xy.y;
+        
+        oRed_xy = vec2(oRed_xy.x + 1.2, oRed_xy.y + 0.13);
+        oGreen_xy = vec2(oGreen_xy.x + 1.2, oGreen_xy.y + 0.13);
+        oBlue_xy = vec2(oBlue_xy.x + 1.2, oBlue_xy.y + 0.13);
+
+        // oRed_xy = vec2(oRed_xy.x + 1.2, oRed_xy.y + 0.13);
+        // oGreen_xy = vec2(oGreen_xy.x + 1.2, oGreen_xy.y + 0.13);
 
         oVignette = vignette;
+
+        // oRed_xy = red_xy;
+        // oRed_xy.y = 1.0 - oRed_xy.y;
+        // oGreen_xy = green_xy;
+        // oGreen_xy.y = 1.0 - oGreen_xy.y;
+        // oBlue_xy = blue_xy;
+        // oBlue_xy.y = 1.0 - oBlue_xy.y;
+
     }
     '''
 
     _frag_shader = '''
     #version 120
+    // -> Add capability for setting "enable-aberration, disable rift-projection"
     uniform sampler2D texture;
     varying vec2 oRed_xy;
     varying vec2 oGreen_xy;
@@ -92,41 +111,68 @@ class Mesh(object):
     varying float oVignette;
 
     void main() {
-        float r = texture2D(texture, oRed_xy).r;
-        float g = texture2D(texture, oGreen_xy).g;
-        float b = texture2D(texture, oBlue_xy).b;
-        gl_FragColor = vec4(vec3(r, g, b) * oVignette, 1);
+
+        int test = 0;
+        float tex_scale = 0.1;
+
+        float r = texture2D(texture, (oRed_xy * tex_scale)).r;
+        float g = texture2D(texture, (oGreen_xy * tex_scale)).g;
+        float b = texture2D(texture, (oBlue_xy * tex_scale)).b;
+        if (test == 1) {
+
+            r = 0.0;
+            g = 0.0;
+            b = 0.0;
+            if ((tex_scale * oBlue_xy.x) < 0.0) {
+                b = 0.9;
+            }
+            if ((tex_scale * oBlue_xy.x) > 1.0) {
+                b = 0.2;
+            }
+            if ((tex_scale * oBlue_xy.y) > 1.0) {
+                r = 0.9;
+            }
+            if ((tex_scale * oBlue_xy.y) < 0.0) {
+                r = 0.2;
+            }
+        }
+        gl_FragColor = vec4(r, g, b, 1);
+
+        if (test == 2) {
+            gl_FragColor = vec4(oRed_xy.x * tex_scale, oRed_xy.y * tex_scale, 1, 1);
+        }
+
+        //gl_FragColor = vec4(oGreen_xy.x * 2, oGreen_xy.y * 2, 1, 1);
         // gl_FragColor = vec4(1, 0.5, b, 1);
+
     }
     '''
 
     @classmethod
-    def make_left_eye(self, texture):
+    def make_eye(self, texture, eye):
         assert isinstance(texture, Texture2D), "texture not a texture 2D instance!"
+        assert eye in ['left', 'right'], eye + " is not a valid eye (Should be left or right)"
+
         program = Program(self._vert_shader, self._frag_shader)
         # v_buffer = VertexBuffer(self._v_buffers['left_buffer'])
-        i_buffer = IndexBuffer(self._i_buffers['left_indices'])
-        
-        _buffer = self._v_buffers['left_buffer']
-        print 'running pos'
+
+        i_buffer = self._i_buffers[eye + '_indices']
+        _buffer = self._v_buffers[eye + '_buffer']
+
+        print 'Loading pos -> GPU memory'
         program['pos'] = _buffer['pos']
-        print 'running red_xy'
+        print 'Loading red_xy -> GPU memory'
         program['red_xy'] = _buffer['red_xy']
-        print 'running green_xy'
+        print 'Loading green_xy -> GPU memory'
         program['green_xy'] = _buffer['green_xy']
-        print 'running blue_xy'
+        print 'Loading blue_xy -> GPU memory'
         program['blue_xy'] = _buffer['blue_xy']
         program['vignette'] = _buffer['vignette']
         program['texture'] = texture
 
-        print _buffer['red_xy'].shape
-        print _buffer['red_xy']
-        # program.bind(v_buffer)
-        # program['']
-        
-        
+        print _buffer['vignette']
 
-        return program, i_buffer
+        return program, IndexBuffer(i_buffer)
 
     @classmethod
     def make_right_eye(self, texture):
