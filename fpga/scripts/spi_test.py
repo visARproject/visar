@@ -188,14 +188,9 @@ camera_write(112, 0x0007)
 camera_write(192, list_to_int(camera_read(192)) | 0b1)
 
 
-
-
-''''print camera_read(97)
-print camera_read(96), 'a'
-camera_write(96, 0)
-print camera_read(96), 'b'
+# enable temperature sensor
 camera_write(96, 1)
-print camera_read(96), 'c' '''
+
 
 for i in xrange(1500):
     print i, list_to_int(camera_read(97)), '{0:025b}'.format(s._r.read(32*1024*1024))
