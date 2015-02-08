@@ -1,0 +1,30 @@
+The pose client (here the monolithic visAR program) will connect to the pose server (the Kalman filter) over TCP to a configurable host and port.
+
+The pose server will send one line per update, each terminated with \r\n (CR-LF). Updates are expected to be transmitted at 1000 Hz.
+
+Each line's contents will be of a serialized JSON object, consisting at least of:
+    
+    position_ecef: an object containing of x, y, and z numbers giving the position of the point of reference as an ECEF point
+    orientation_ecef: an object consisting of w, x, y, and z numbers giving the orientation of the local coordinate system of the point of reference as a quaternion that transforms points from the local coordinate system to the ECEF coordinate system
+    velocity_ecef: an object containing of x, y, and z numbers giving the velocity of the point of reference as an ECEF vector
+    angular_velocity_ecef: an object containing of x, y, and z numbers giving the angular velocity of the point of reference's local coordinate system as an ECEF vector
+
+The point of reference is currently defined as the point directly between the user's two pupils. The local coordinate system has +X being forward, +Y being towards the left eye, and +Z being towards the forehead.
+
+
+Example:
+    
+    {"position_ecef": {"x":738575.65, "y":-5498374.10, "z":3136355.42}, "orientation_ecef": {"x": 0.50155109,  "y": 0.03353513,  "z": 0.05767266, "w": 0.86255189}, "velocity_ecef": {"x": -0.06585217, "y": 0.49024074, "z": 0.8690958}, "angular_velocity_ecef": {"x": 0.11570315, "y": -0.86135956, "z": 0.4946438}}<CR><LF>
+    <another JSON object><CR><LF>
+    <another JSON object><CR><LF>
+    <...>
+
+This is someone standing near MIL at 0 altitude, facing directly east, moving directly north at exactly 1 m/s, and turning directly left at exactly 1 radian/s.
+
+
+References:
+    
+    https://en.wikipedia.org/wiki/JSON_Streaming
+    https://en.wikipedia.org/wiki/Line_Delimited_JSON
+    https://en.wikipedia.org/wiki/ECEF
+    https://en.wikipedia.org/wiki/Quaternions_and_spatial_rotation

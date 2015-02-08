@@ -18,6 +18,7 @@ from vispy.geometry import create_cube
 from vispy.util.transforms import perspective, translate, rotate
 from vispy.gloo import (Program, VertexBuffer, IndexBuffer, Texture2D, clear,
                         FrameBuffer, RenderBuffer, set_viewport, set_state)
+from vispy import gloo
 from .shaders import make_distortion
 from .rift_parameters import parameters
 
@@ -109,9 +110,9 @@ class Canvas(app.Canvas):
 
         # Build program
         # --------------------------------------
-        view = np.eye(4, dtype=np.float32)
+        self.view = np.eye(4, dtype=np.float32)
         model = np.eye(4, dtype=np.float32)
-        translate(view, 0, 0, -7)
+        translate(self.view, 0, 0, -7)
         self.phi, self.theta = 60, 20
         rotate(model, self.theta, 0, 0, 1)
         rotate(model, self.phi, 0, 1, 0)
@@ -121,11 +122,13 @@ class Canvas(app.Canvas):
         self.cube["texture"] = checkerboard()
         self.cube["texture"].interpolation = 'linear'
         self.cube['model'] = model
-        self.cube['view'] = view
+        self.cube['view'] = self.view
 
         l_eye = Texture2D((4096, 4096, 3), interpolation='linear')
-        # r_eye = Texture2D((4096, 4096, 3), interpolation='linear')
+        r_eye = Texture2D((4096, 4096, 3), interpolation='linear')
+
         self.left_eye_buffer = FrameBuffer(l_eye, RenderBuffer((4096, 4096)))
+        self.right_eye_buffer = FrameBuffer(r_eye, RenderBuffer((4096, 4096)))
 
         # Not 100% Sure I understand what 'count' does
         self.quad = Program(quad_vertex, quad_fragment, count=4)
@@ -133,7 +136,8 @@ class Canvas(app.Canvas):
         self.quad['position'] = [(-1, -1), (-1, +1), (+1, -1), (+1, +1)]
         self.quad['texture'] = l_eye
 
-        self.left_distortion, self.left_indices = make_distortion.Mesh.make_left_eye(l_eye)
+        self.left_distortion, self.left_indices = make_distortion.Mesh.make_eye(l_eye, 'left')
+        self.right_distortion, self.right_indices = make_distortion.Mesh.make_eye(r_eye, 'right')
 
         # OpenGL and Timer initalization
         # --------------------------------------
@@ -143,16 +147,28 @@ class Canvas(app.Canvas):
 
     def on_draw(self, event):
         with self.left_eye_buffer:
-            set_viewport(0, 0, 512, 512)
+            set_viewport(0, 0, 4096, 4096)
+            clear(color=True, depth=True)
+            set_state(depth_test=True)
+            self.cube.draw('triangles', self.indices)
+        with self.right_eye_buffer:
+            set_viewport(0, 0, 4096, 4096)
+            translate(self.view, 0, 4, 0)
+            self.cube['view'] = self.view
+
             clear(color=True, depth=True)
             set_state(depth_test=True)
             self.cube.draw('triangles', self.indices)
 
         set_viewport(0, 0, *self.size)
+
         clear(color=True)
+        # gloo.set_clear_color('white')
+
         set_state(depth_test=False)
-        # self.quad.draw('triangle_strip')
-        self.left_distortion.draw('triangles', self.left_indices)
+        self.quad.draw('triangle_strip')
+        # self.left_distortion.draw('triangles', indices=self.left_indices)
+        # self.right_distortion.draw('triangles', indices=self.right_indices)
 
     def on_resize(self, event):
         self._set_projection(event.size)
@@ -174,8 +190,8 @@ class Canvas(app.Canvas):
         # projection = perspective(30.0, width / float(height), 2.0, 10.0)
         projection = parameters.projection_left
         self.cube['projection'] = projection
-        view = parameters.ortho_left # Added
-        self.cube['view'] = view  # Added
+        # view = parameters.ortho_left # Added
+        # self.cube['view'] = view  # Added
 
     def on_timer(self, event):
         self.theta += .5

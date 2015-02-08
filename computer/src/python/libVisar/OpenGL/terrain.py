@@ -124,7 +124,7 @@ void main() {
 class Canvas(app.Canvas):
 
     def __init__(self):
-        app.Canvas.__init__(self, keys='interactive')
+        app.Canvas.__init__(self, keys='interactive', size=(1920, 1080))
 
         self.program = gloo.Program(VERT_SHADER, FRAG_SHADER)
         #Sets the view to an appropriate position over the terrain
@@ -146,11 +146,12 @@ class Canvas(app.Canvas):
         self.program['a_position'] = gloo.VertexBuffer(triangles)
 
         l_eye = Texture2D((4096, 4096, 3), interpolation='linear')
-        # r_eye = Texture2D((4096, 4096, 3), interpolation='linear')
         self.left_eye_buffer = FrameBuffer(l_eye, RenderBuffer((4096, 4096)))
+        self.left_distortion, self.left_indices = make_distortion.Mesh.make_eye(l_eye, 'left')
 
-        self.left_distortion, self.left_indices = make_distortion.Mesh.make_left_eye(l_eye)
-
+        r_eye = Texture2D((4096, 4096, 3), interpolation='linear')
+        self.right_eye_buffer = FrameBuffer(r_eye, RenderBuffer((4096, 4096)))
+        self.right_distortion, self.right_indices = make_distortion.Mesh.make_eye(r_eye, 'right')
 
     def on_initialize(self, event):
         gloo.set_state(clear_color='black', depth_test=True)
@@ -214,19 +215,22 @@ class Canvas(app.Canvas):
         width, height = event.size
         gloo.set_viewport(0, 0, width, height)
         self.projection = perspective(60.0, width / float(height), 1.0, 100.0)
+        # self.projection = parameters.projection_left.T
         self.program['u_projection'] = self.projection
 
     def on_draw(self, event):
         with self.left_eye_buffer:
-            # Clear
             gloo.clear(color=True, depth=True)
-            # Draw
+            self.program.draw('triangles')
+
+        with self.right_eye_buffer:
+            gloo.clear(color=True, depth=True)
             self.program.draw('triangles')
 
         gloo.clear(color=True, depth=True)
+        gloo.set_clear_color('white')
         self.left_distortion.draw('triangles', self.left_indices)
-        # self.left_distortion.draw('points')
-
+        self.right_distortion.draw('triangles', self.right_indices)
 
 generate_points(8)
 
