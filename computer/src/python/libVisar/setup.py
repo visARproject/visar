@@ -5,11 +5,15 @@ setup(name='jOpenGL',
     author='Jacob Panikulam',
     author_email='jpanikulam@ufl.edu',
     url='https://www.python.org/',
+    #entry_points={
+    #    "console_scripts": ["ds4drv=ds4drv.__main__:main"]
+    #},
     package_dir = {
-    	'': '.',
-	},
+    	'libVisar': '.',
+
+    },
     packages=[
     	'libVisar.OpenGL', 'libVisar.OpenGL.shaders', 'libVisar.OpenGL.rift_parameters',
-    	# 'oculusvr',
+        'libVisar.visar', 'libVisar.visar.drawables',
     ],
 )
