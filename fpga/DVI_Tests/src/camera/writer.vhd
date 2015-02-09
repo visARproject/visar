@@ -18,7 +18,7 @@ entity camera_writer is
 end entity;
 
 architecture arc of camera_writer is
-    constant BURST_LENGTH : integer := 32;
+    constant BURST_LENGTH : integer := 16;
 begin
     process (camera_output, inhibit) is
         variable dest, next_dest : integer range 0 to 32*1024*1024-1 := 0;
@@ -27,20 +27,13 @@ begin
         variable inhibit1, inhibit2 : std_logic;
         variable count : unsigned(6 downto 0);
     begin
-        if rising_edge(camera_output.clock) then
-            dest := next_dest;
-            state := next_state;
-            
-            inhibit2 := inhibit1;
-            inhibit1 := inhibit;
-            
-            count := count + 1;
-        end if;
-        
-        if dest >= 31*1024*1024 and inhibit2 = '1' then
+        if dest >= 32*1024*1024-BURST_LENGTH*100 and inhibit2 = '1' then
             real_inhibit := '1';
         else
             real_inhibit := '0';
+        end if;
+        if ram_out.wr.full = '1' or ram_out.cmd.full = '1' then
+            real_inhibit := '1';
         end if;
         
         
@@ -80,6 +73,16 @@ begin
             else
                 next_state := state + 1;
             end if;
+        end if;
+        
+        if rising_edge(camera_output.clock) then
+            dest := next_dest;
+            state := next_state;
+            
+            inhibit2 := inhibit1;
+            inhibit1 := inhibit;
+            
+            count := count + 1;
         end if;
     end process;
 end architecture;

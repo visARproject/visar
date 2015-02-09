@@ -8,6 +8,12 @@ use unisim.vcomponents.all;
 use work.camera.all;
 
 entity camera_wrapper is
+    generic (
+        SYNC_INVERTED  : boolean;
+        DATA3_INVERTED : boolean;
+        DATA2_INVERTED : boolean;
+        DATA1_INVERTED : boolean;
+        DATA0_INVERTED : boolean);
     port (
         clock_620MHz : in std_logic;
         clock_310MHz : in std_logic;

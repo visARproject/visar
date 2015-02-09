@@ -1,5 +1,7 @@
 # coding=utf-8
 
+from __future__ import division
+
 import struct
 import time
 
@@ -211,7 +213,8 @@ time.sleep(3)'''
 
 
 with open('dump', 'wb') as f:
-    for i in xrange(int(16*1024*1024//4)):
+    m = int(7*1024*1024//4)
+    for i in xrange(m):
         x = s._r.read(32*1024*1024+i*4)
         f.write(struct.pack('>I', x))
-        if i % 1000 == 0: print i//1000
+        if i % 1000 == 0: print i/m

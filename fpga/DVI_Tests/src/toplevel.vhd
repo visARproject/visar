@@ -144,29 +144,43 @@ begin
         LOCKED            => clk_locked);
     
 
-    --U_LEFT_CAMERA_WRAPPER : entity work.camera_wrapper port map (
-    --    clock_620MHz => clk_620MHz,
-    --    clock_310MHz => clk_310MHz,
-    --    clock_124MHz => clk_124MHz,
-    --    clock_locked => clk_locked,
-    --    reset        => reset,
-    --    
-    --    camera_out => left_camera_out,
-    --    camera_in  => left_camera_in,
-    --    
-    --    output => left_camera_output);
+    --U_LEFT_CAMERA_WRAPPER : entity work.camera_wrapper
+    --    generic map (
+    --        SYNC_INVERTED  => true,
+    --        DATA3_INVERTED => true,
+    --        DATA2_INVERTED => true,
+    --        DATA1_INVERTED => false,
+    --        DATA0_INVERTED => false)
+    --    port map (
+    --        clock_620MHz => clk_620MHz,
+    --        clock_310MHz => clk_310MHz,
+    --        clock_124MHz => clk_124MHz,
+    --        clock_locked => clk_locked,
+    --        reset        => reset,
+    --        
+    --        camera_out => left_camera_out,
+    --        camera_in  => left_camera_in,
+    --        
+    --        output => left_camera_output);
     
-    U_RIGHT_CAMERA_WRAPPER : entity work.camera_wrapper port map (
-        clock_620MHz => clk_620MHz,
-        clock_310MHz => clk_310MHz,
-        clock_124MHz => clk_124MHz,
-        clock_locked => clk_locked,
-        reset        => reset,
-        
-        camera_out => right_camera_out,
-        camera_in  => right_camera_in,
-        
-        output => right_camera_output);
+    U_RIGHT_CAMERA_WRAPPER : entity work.camera_wrapper
+        generic map (
+            SYNC_INVERTED  => false,
+            DATA3_INVERTED => false,
+            DATA2_INVERTED => true,
+            DATA1_INVERTED => false,
+            DATA0_INVERTED => false)
+        port map (
+            clock_620MHz => clk_620MHz,
+            clock_310MHz => clk_310MHz,
+            clock_124MHz => clk_124MHz,
+            clock_locked => clk_locked,
+            reset        => reset,
+            
+            camera_out => right_camera_out,
+            camera_in  => right_camera_in,
+            
+            output => right_camera_output);
     
     --U_LEFT_CAMERA_WRITER : entity work.camera_writer
     --    generic map (
@@ -373,6 +387,7 @@ begin
                  sel       => received_video.sync.valid,
                  video_out => overlay_video);
 
+    XXX : if false generate
     U_DISTORTER : entity work.video_distorter
         generic map (
             LEFT_CAMERA_MEMORY_LOCATION => LEFT_CAMERA_MEMORY_LOCATION,
@@ -388,6 +403,7 @@ begin
             ram2_out => c3_p3_out,
             ram3_in  => c3_p1_rdonly_in,
             ram3_out => c3_p1_rdonly_out);
+    end generate;
 
     U_OVERLAY : entity work.video_overlay
         port map(video_sync  => overlay_video.sync,
