@@ -12,11 +12,11 @@ setup(name='libVisar',
        "console_scripts": ["vsr=libVisar.visar.render_package:main"]
     },
     package_dir={
-    	'': '.',
+        '': '.',
     },
     packages=[
         'libVisar',
-    	'libVisar.OpenGL', 'libVisar.OpenGL.shaders', 'libVisar.OpenGL.rift_parameters',
+        'libVisar.OpenGL', 'libVisar.OpenGL.shaders', 'libVisar.OpenGL.rift_parameters',
         'libVisar.visar', 'libVisar.visar.drawables',
     ],
 )
