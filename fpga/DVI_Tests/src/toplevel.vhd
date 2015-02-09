@@ -24,12 +24,24 @@ entity toplevel is
         rx_scl : inout std_logic;
         led : out std_logic_vector(0 downto 0);
 
-        -- Camera A and B interface
-        camera_a_out    : out   camera_out;
-        camera_a_inout  : inout camera_inout;
-        camera_b_out    : out   camera_out;
-        camera_b_inout  : inout camera_inout;
-        camera_x_vdd_en : out   std_logic;
+        -- Camera interfaces
+        left_camera_out  : out camera_out;
+        left_camera_in   : in  camera_in;
+        right_camera_out : out camera_out;
+        right_camera_in  : in  camera_in;
+        
+        pair7P:  inout std_logic;
+        pair7N:  inout std_logic;
+        pair8P:  inout std_logic;
+        pair8N:  inout std_logic;
+        pair9P:  inout std_logic;
+        pair9N:  inout std_logic;
+        pair12P: inout std_logic;
+        pair12N: inout std_logic;
+        pair13P: inout std_logic;
+        pair13N: inout std_logic;
+        pair14P: inout std_logic;
+        pair14N: inout std_logic;
 
         uart_tx : out std_logic;
         uart_rx : in std_logic;
@@ -60,10 +72,12 @@ architecture RTL of toplevel is
     signal reset          : std_logic;
     signal clk_100MHz_buf : std_logic;
     signal clk_132MHz     : std_logic;
-    signal clk_24MHz      : std_logic;
+    signal clk_310MHz     : std_logic;
+    signal clk_620MHz     : std_logic;
+    signal clk_124MHz     : std_logic;
+    signal clk_locked     : std_logic;
 
-    signal camera_a_vdd_en, camera_b_vdd_en : std_logic;
-    signal camera_a_output, camera_b_output : camera_output;
+    signal left_camera_output, right_camera_output : camera_output;
 
     -- DDR2 Signals
     signal c3_calib_done : std_logic;
@@ -109,6 +123,8 @@ architecture RTL of toplevel is
     constant               RIGHT_CAMERA_MEMORY_LOCATION : integer := 32*1024*1024;
     constant DISTORTER_PREFETCHER_TABLE_MEMORY_LOCATION : integer := 64*1024*1024;
     constant              DISTORTER_MAP_MEMORY_LOCATION : integer := 96*1024*1024;
+    
+    signal right_camera_inhibit : std_logic;
 begin
     reset <= not rst_n;
 
@@ -120,48 +136,68 @@ begin
 
     U_PIXEL_CLK_GEN : entity work.pixel_clk_gen port map (
         CLK_IN_100MHz     => clk_100MHz_buf,
+        CLK_OUT_124MHz    => clk_124MHz,
         CLK_OUT_132MHz    => clk_132MHz,
-        CLK_OUT_24MHz     => clk_24MHz,
+        CLK_OUT_310MHz    => clk_310MHz,
+        CLK_OUT_620MHz    => clk_620MHz,
         RESET             => '0',
-        LOCKED            => open);
+        LOCKED            => clk_locked);
     
 
-    U_CAMERA_A_WRAPPER : entity work.camera_wrapper port map (
-        clock_24MHz     => clk_24MHz,
-        reset           => reset,
-        
-        camera_out => camera_a_out,
-        camera_inout => camera_a_inout,
-        camera_vdd_en => camera_a_vdd_en,
-        
-        output => camera_a_output);
+    --U_LEFT_CAMERA_WRAPPER : entity work.camera_wrapper
+    --    generic map (
+    --        SYNC_INVERTED  => true,
+    --        DATA3_INVERTED => true,
+    --        DATA2_INVERTED => true,
+    --        DATA1_INVERTED => false,
+    --        DATA0_INVERTED => false)
+    --    port map (
+    --        clock_620MHz => clk_620MHz,
+    --        clock_310MHz => clk_310MHz,
+    --        clock_124MHz => clk_124MHz,
+    --        clock_locked => clk_locked,
+    --        reset        => reset,
+    --        
+    --        camera_out => left_camera_out,
+    --        camera_in  => left_camera_in,
+    --        
+    --        output => left_camera_output);
     
-    U_CAMERA_B_WRAPPER : entity work.camera_wrapper port map (
-        clock_24MHz     => clk_24MHz,
-        reset           => reset,
-        
-        camera_out => camera_b_out,
-        camera_inout => camera_b_inout,
-        camera_vdd_en => camera_b_vdd_en,
-        
-        output => camera_b_output);
-
-    camera_x_vdd_en <= camera_a_vdd_en and camera_b_vdd_en;
-    
-    U_CAMERA_A_WRITER : entity work.camera_writer
+    U_RIGHT_CAMERA_WRAPPER : entity work.camera_wrapper
         generic map (
-            BUFFER_ADDRESS => LEFT_CAMERA_MEMORY_LOCATION)
+            SYNC_INVERTED  => false,
+            DATA3_INVERTED => false,
+            DATA2_INVERTED => true,
+            DATA1_INVERTED => false,
+            DATA0_INVERTED => false)
         port map (
-            camera_output => camera_a_output,
+            clock_620MHz => clk_620MHz,
+            clock_310MHz => clk_310MHz,
+            clock_124MHz => clk_124MHz,
+            clock_locked => clk_locked,
+            reset        => reset,
             
-            ram_in  => c3_p4_in,
-            ram_out => c3_p4_out);
+            camera_out => right_camera_out,
+            camera_in  => right_camera_in,
+            
+            output => right_camera_output);
     
-    U_CAMERA_B_WRITER : entity work.camera_writer
+    --U_LEFT_CAMERA_WRITER : entity work.camera_writer
+    --    generic map (
+    --        BUFFER_ADDRESS => LEFT_CAMERA_MEMORY_LOCATION)
+    --    port map (
+    --        camera_output => left_camera_output,
+    --        
+    --        ram_in  => c3_p4_in,
+    --        ram_out => c3_p4_out);
+    
+    U_RIGHT_CAMERA_WRITER : entity work.camera_writer
         generic map (
             BUFFER_ADDRESS => RIGHT_CAMERA_MEMORY_LOCATION)
         port map (
-            camera_output => camera_b_output,
+            camera_output => right_camera_output,
+            
+            inhibit => right_camera_inhibit,
             
             ram_in  => c3_p5_in,
             ram_out => c3_p5_out);
@@ -351,6 +387,7 @@ begin
                  sel       => received_video.sync.valid,
                  video_out => overlay_video);
 
+    XXX : if false generate
     U_DISTORTER : entity work.video_distorter
         generic map (
             LEFT_CAMERA_MEMORY_LOCATION => LEFT_CAMERA_MEMORY_LOCATION,
@@ -366,6 +403,7 @@ begin
             ram2_out => c3_p3_out,
             ram3_in  => c3_p1_rdonly_in,
             ram3_out => c3_p1_rdonly_out);
+    end generate;
 
     U_OVERLAY : entity work.video_overlay
         port map(video_sync  => overlay_video.sync,
@@ -382,7 +420,7 @@ begin
 
     U_UART : entity work.uart_transmitter
         generic map(
-            CLOCK_FREQUENCY => 132000000.0,
+            CLOCK_FREQUENCY => 124000000.0,
             BAUD_RATE => 4000000.0)
         port map (
             clock => clk_132MHz,
@@ -394,7 +432,7 @@ begin
 
     U_UART2 : entity work.uart_receiver
         generic map(
-            CLOCK_FREQUENCY => 132000000.0,
+            CLOCK_FREQUENCY => 124000000.0,
             BAUD_RATE => 4000000.0)
         port map (
             clock => clk_132MHz,
@@ -413,5 +451,18 @@ begin
             uart_tx_data => uart_tx_data,
             uart_tx_write => uart_tx_write,
             uart_rx_valid => uart_rx_valid,
-            uart_rx_data => uart_rx_data);
+            uart_rx_data => uart_rx_data,
+            pair7P => pair7P,
+            pair7N => pair7N,
+            pair8P => pair8P,
+            pair8N => pair8N,
+            pair9P => pair9P,
+            pair9N => pair9N,
+            pair12P => pair12P,
+            pair12N => pair12N,
+            pair13P => pair13P,
+            pair13N => pair13N,
+            pair14P => pair14P,
+            pair14N => pair14N,
+            right_camera_inhibit => right_camera_inhibit);
 end architecture RTL;

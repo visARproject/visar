@@ -3,26 +3,29 @@ use IEEE.std_logic_1164.all;
 
 package camera is
     type camera_out is record
-        mclk : std_logic;
-        rst  : std_logic;
-        pwdn : std_logic;
+        clock_p : std_logic;
+        clock_n : std_logic;
     end record camera_out;
 
-    type camera_inout is record
-        sda  : std_logic;
-        scl  : std_logic;
-        pclk : std_logic; -- this and below are inout as a part of a workaround for IN_TERM bug AR# 40818
-        lv   : std_logic;
-        fv   : std_logic;
-        data : std_logic_vector(7 downto 0);
-    end record camera_inout;
-    
+    type camera_in is record
+        sync_p: std_logic;
+        sync_n: std_logic;
+        data0_p: std_logic;
+        data0_n: std_logic;
+        data1_p: std_logic;
+        data1_n: std_logic;
+        data2_p: std_logic;
+        data2_n: std_logic;
+        data3_p: std_logic;
+        data3_n: std_logic;
+
+        clock_p: std_logic;
+        clock_n: std_logic;
+    end record camera_in;
     
     type camera_output is record
         clock       : std_logic;
-        data        : std_logic_vector(7 downto 0);
-        data_valid  : std_logic;
-        frame_valid : std_logic;
+        data        : std_logic_vector(24 downto 0);
     end record;
 
     constant CAMERA_WIDTH : integer := 1600;
