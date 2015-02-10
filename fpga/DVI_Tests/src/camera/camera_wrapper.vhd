@@ -15,11 +15,11 @@ entity camera_wrapper is
         DATA1_INVERTED : boolean;
         DATA0_INVERTED : boolean);
     port (
-        clock_620MHz : in std_logic;
-        clock_310MHz : in std_logic;
-        clock_124MHz : in std_logic;
-        clock_locked : in std_logic;
-        reset        : in std_logic;
+        clock_camera_unbuf  : in std_logic;
+        clock_camera_over_2 : in std_logic;
+        clock_camera_over_5 : in std_logic;
+        clock_locked        : in std_logic;
+        reset               : in std_logic;
         
         camera_out : out camera_out;
         camera_in  : in  camera_in;
@@ -40,8 +40,8 @@ begin
             SRTYPE        => "SYNC")
         port map (
             Q  => clock_out,
-            C0 => clock_310MHz,
-            C1 => not clock_310MHz,
+            C0 => clock_camera_over_2,
+            C1 => not clock_camera_over_2,
             CE => '1',
             D0 => '1',
             D1 => '0',
@@ -55,12 +55,12 @@ begin
             O  => camera_out.clock_p,
             OB => camera_out.clock_n);
     
-    deserializer_clock <= clock_124MHz;
+    deserializer_clock <= clock_camera_over_5;
     DESERIALIZER : entity work.camera_deserializer port map (
         IO_RESET => reset,
         
-        CLK_IN => clock_620MHz,
-        CLK_DIV_IN => clock_124MHz,
+        CLK_IN => clock_camera_unbuf,
+        CLK_DIV_IN => clock_camera_over_5,
         LOCKED_IN => clock_locked,
         DATA_IN_FROM_PINS_P => camera_in.sync_p & camera_in.data0_p &
             camera_in.data1_p & camera_in.data2_p & camera_in.data3_p,
