@@ -3,6 +3,19 @@
 
 #include <stdint.h>
 
+const int MAX_FRAG_LENGTH = 245; // max bytes of payload used for fragmented packet
+                                //     takes into account the 1 byte packet type, 1 byte packet ID,
+                                //     and 2 bytes of "X of Y" fragment identifier
+                                // XXX: calculate the correct length
+
+const uint8_t TYPE_SKYTRAQ = 0xAC;  // chosen by Ming
+
+const size_t INDEX_TYPE = 13;
+const size_t INDEX_ID = 14;
+const size_t INDEX_X = 15;
+const size_t INDEX_Y = 16;
+const size_t INDEX_SKYTRAQ_START = 17;
+
 typedef enum {
     XBEE_START,
     XBEE_LENGTH_HIGH,
@@ -23,5 +36,8 @@ typedef struct {
 
 void xbee_assemble_tx_packet(xbee_packet_t& tx_pkt, uint64_t addr64,
         uint16_t addr16, char* data, uint8_t data_len);
+
+void xbee_build_header(xbee_packet_t& tx_pkt, uint8_t radius = 0x00, uint8_t options = 0x00);
+void xbee_set_dest_addr(xbee_packet_t& tx_pkt, uint64_t addr64, uint16_t addr16);
 
 #endif
