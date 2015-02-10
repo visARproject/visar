@@ -64,7 +64,24 @@ entity toplevel is
         mcb3_dram_dqs    : inout  std_logic;
         mcb3_dram_dqs_n  : inout  std_logic;
         mcb3_dram_ck     : out std_logic;
-        mcb3_dram_ck_n   : out std_logic);
+        mcb3_dram_ck_n   : out std_logic;
+        
+        -- Ethernet PHY
+        phyrst           : out   std_logic;
+        phytxclk         : in    std_logic;
+        phyTXD           : out   std_logic_vector(7 downto 0);
+        phytxen          : out   std_logic;
+        phytxer          : out   std_logic;
+        phygtxclk        : out   std_logic;
+        phyRXD           : in    std_logic_vector(7 downto 0);
+        phyrxdv          : in    std_logic;
+        phyrxer          : in    std_logic;
+        phyrxclk         : in    std_logic;
+        phymdc           : out   std_logic;
+        phymdi           : inout std_logic;
+        phyint           : in    std_logic; -- currently unused
+        phycrs           : in    std_logic;
+        phycol           : in    std_logic);
 end entity toplevel;
 
 
@@ -125,6 +142,11 @@ architecture RTL of toplevel is
     constant              DISTORTER_MAP_MEMORY_LOCATION : integer := 96*1024*1024;
     
     signal right_camera_inhibit : std_logic;
+    
+    signal phy_in                : PHYInInterface;
+    signal phy_out               : PHYOutInterface;
+    signal data_in, next_data_in : MACInInterface;
+    signal data_out              : MACOutInterface;
 begin
     reset <= not rst_n;
 
@@ -465,4 +487,44 @@ begin
             pair14P => pair14P,
             pair14N => pair14N,
             right_camera_inhibit => right_camera_inhibit);
+    
+    
+    U_UDP : entity work.udp_wrapper
+        generic map(
+            SRC_MAC   => x"000000000000",
+            DST_MAC   => x"00249b09740d",
+            SRC_IP    => x"00000000",   -- 0.0.0.0
+            DST_IP    => x"FFFFFFFF",   -- 255.255.255.255
+            SRC_PORT  => x"0000",
+            DST_PORT  => x"1441",
+            DATA_SIZE => 812)
+        port map(
+            clk_125M => clk_125M,
+            reset    => reset,
+            phy_in   => phy_in,
+            phy_out  => phy_out,
+            data_in  => data_in,
+            data_out => data_out);
+
+    phyrst <= not phy_in.rst;
+    U_PHY_GTXCLK_ODDR : oddr2
+        generic map(
+            ddr_alignment => "c1",      -- sets output alignment to "none", "c0", "c1"
+            init          => '0',       -- sets initial state of the q output to '0' or '1'
+            srtype        => "async"    -- specifies "sync" or "async" set/reset
+        ) port map(
+            q => phygtxclk,
+            c0 => phy_in.gtxclk,
+            c1 => not phy_in.gtxclk,
+            ce => '1',
+            d0 => '0',
+            d1 => '1',
+            r => '0',
+            s => '0');
+    phytxd  <= phy_in.txd;
+    phytxen <= phy_in.txen;
+    phytxer <= phy_in.txer;
+
+    phymdc <= '0';
+    phymdi <= 'Z';
 end architecture RTL;
