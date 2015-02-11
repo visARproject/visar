@@ -4,10 +4,10 @@ use ieee.numeric_std.all;
 
 entity edid_wrapper is
     port(
-        clk_132MHz : in    std_logic;
-        reset      : in    std_logic;
-        scl        : inout std_logic;
-        sda        : inout std_logic
+        clock : in    std_logic;
+        reset : in    std_logic;
+        scl   : inout std_logic;
+        sda   : inout std_logic
     );
 end entity edid_wrapper;
 
@@ -307,16 +307,16 @@ begin
         generic map(SLAVE_ADDR => "1010000")
         port map(scl              => scl,
                  sda              => sda,
-                 clk              => clk_132MHz,
+                 clk              => clock,
                  rst              => reset,
                  read_req         => read_req,
                  data_to_master   => data_to_master,
                  data_valid       => data_valid,
                  data_from_master => data_from_master);
 
-    process(clk_132MHz)
+    process (clock) is
     begin
-        if rising_edge(clk_132MHz) then
+        if rising_edge(clock) then
             if reset = '1' then
                 edid_index <= (others => '0');
             else

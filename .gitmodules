@@ -1,12 +1,6 @@
 [submodule "computer/ext/oglplus"]
 	path = computer/ext/oglplus
 	url = git@github.com:matus-chochlik/oglplus.git
-[submodule "fpga/myhdl"]
-	path = fpga/myhdl
-	url = git@github.com:forrestv/myhdl.git
-[submodule "fpga/ethernet_tri_mode"]
-	path = fpga/ethernet_tri_mode
-	url = forre.st:/srv/git/visar
 [submodule "computer/ext/freetype-gl"]
 	path = computer/ext/freetype-gl
 	url = git@github.com:rougier/freetype-gl.git

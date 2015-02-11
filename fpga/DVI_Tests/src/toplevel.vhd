@@ -8,6 +8,7 @@ use unisim.vcomponents.all;
 use work.video_bus.all;
 use work.ram_port.all;
 use work.camera.all;
+use work.simple_mac_pkg.all;
 
 entity toplevel is
     port (
@@ -64,18 +65,36 @@ entity toplevel is
         mcb3_dram_dqs    : inout  std_logic;
         mcb3_dram_dqs_n  : inout  std_logic;
         mcb3_dram_ck     : out std_logic;
-        mcb3_dram_ck_n   : out std_logic);
+        mcb3_dram_ck_n   : out std_logic;
+        
+        -- Ethernet PHY
+        phyrst           : out   std_logic;
+        phytxclk         : in    std_logic;
+        phyTXD           : out   std_logic_vector(7 downto 0);
+        phytxen          : out   std_logic;
+        phytxer          : out   std_logic;
+        phygtxclk        : out   std_logic;
+        phyRXD           : in    std_logic_vector(7 downto 0);
+        phyrxdv          : in    std_logic;
+        phyrxer          : in    std_logic;
+        phyrxclk         : in    std_logic;
+        phymdc           : out   std_logic;
+        phymdi           : inout std_logic;
+        phyint           : in    std_logic; -- currently unused
+        phycrs           : in    std_logic;
+        phycol           : in    std_logic);
 end entity toplevel;
 
 
 architecture RTL of toplevel is
-    signal reset          : std_logic;
-    signal clk_100MHz_buf : std_logic;
-    signal clk_132MHz     : std_logic;
-    signal clk_310MHz     : std_logic;
-    signal clk_620MHz     : std_logic;
-    signal clk_124MHz     : std_logic;
-    signal clk_locked     : std_logic;
+    signal reset             : std_logic;
+    signal clk_100MHz_buf    : std_logic;
+    signal clk_camera_unbuf  : std_logic;
+    signal clk_camera_over_2 : std_logic;
+    signal clk_camera_over_5 : std_logic;
+    signal clk_pixel         : std_logic;
+    signal clk_ethernet      : std_logic;
+    signal clk_locked        : std_logic;
 
     signal left_camera_output, right_camera_output : camera_output;
 
@@ -125,6 +144,11 @@ architecture RTL of toplevel is
     constant              DISTORTER_MAP_MEMORY_LOCATION : integer := 96*1024*1024;
     
     signal right_camera_inhibit : std_logic;
+    
+    signal phy_in                : PHYInInterface;
+    signal phy_out               : PHYOutInterface;
+    signal data_in, next_data_in : MACInInterface;
+    signal data_out              : MACOutInterface;
 begin
     reset <= not rst_n;
 
@@ -135,13 +159,14 @@ begin
         );
 
     U_PIXEL_CLK_GEN : entity work.pixel_clk_gen port map (
-        CLK_IN_100MHz     => clk_100MHz_buf,
-        CLK_OUT_124MHz    => clk_124MHz,
-        CLK_OUT_132MHz    => clk_132MHz,
-        CLK_OUT_310MHz    => clk_310MHz,
-        CLK_OUT_620MHz    => clk_620MHz,
-        RESET             => '0',
-        LOCKED            => clk_locked);
+        CLK_IN_100MHz         => clk_100MHz_buf,
+        CLK_OUT_CAMERA_UNBUF  => clk_camera_unbuf,
+        CLK_OUT_CAMERA_OVER_2 => clk_camera_over_2,
+        CLK_OUT_CAMERA_OVER_5 => clk_camera_over_5,
+        CLK_OUT_PIXEL         => clk_pixel,
+        CLK_OUT_ETHERNET      => clk_ethernet,
+        RESET                 => '0',
+        LOCKED                => clk_locked);
     
 
     --U_LEFT_CAMERA_WRAPPER : entity work.camera_wrapper
@@ -152,9 +177,9 @@ begin
     --        DATA1_INVERTED => false,
     --        DATA0_INVERTED => false)
     --    port map (
-    --        clock_620MHz => clk_620MHz,
-    --        clock_310MHz => clk_310MHz,
-    --        clock_124MHz => clk_124MHz,
+    --        clock_camera_unbuf => clk_camera_unbuf,
+    --        clock_camera_over_2 => clk_camera_over_2,
+    --        clock_camera_over_5 => clk_camera_over_5,
     --        clock_locked => clk_locked,
     --        reset        => reset,
     --        
@@ -171,9 +196,9 @@ begin
             DATA1_INVERTED => false,
             DATA0_INVERTED => false)
         port map (
-            clock_620MHz => clk_620MHz,
-            clock_310MHz => clk_310MHz,
-            clock_124MHz => clk_124MHz,
+            clock_camera_unbuf => clk_camera_unbuf,
+            clock_camera_over_2 => clk_camera_over_2,
+            clock_camera_over_5 => clk_camera_over_5,
             clock_locked => clk_locked,
             reset        => reset,
             
@@ -362,7 +387,7 @@ begin
 
     U_DUMMY_SYNC_GEN : entity work.video_sync_recovery port map (
         valid => '1',
-        pixel_clock => clk_132MHz,
+        pixel_clock => clk_pixel,
         hsync => '0', -- without hsync or vsync, video_sync_recovery will run free
         vsync => '0',
         sync_out => dummy_video.sync);
@@ -376,10 +401,10 @@ begin
                  rx_tmdsb     => rx_tmdsb,
                  video_output => received_video);
     U_EDID : entity work.edid_wrapper
-        port map(clk_132MHz => clk_132MHz,
-                 reset      => reset,
-                 scl        => rx_scl,
-                 sda        => rx_sda);
+        port map(clock => clk_100MHz_buf,
+                 reset => reset,
+                 scl   => rx_scl,
+                 sda   => rx_sda);
 
     U_SRC_MUX : entity work.video_mux
         port map(video0    => dummy_video,
@@ -423,7 +448,7 @@ begin
             CLOCK_FREQUENCY => 124000000.0,
             BAUD_RATE => 4000000.0)
         port map (
-            clock => clk_132MHz,
+            clock => clk_100MHz_buf,
             reset => reset,
             tx    => uart_tx,
             ready => uart_tx_ready,
@@ -435,7 +460,7 @@ begin
             CLOCK_FREQUENCY => 124000000.0,
             BAUD_RATE => 4000000.0)
         port map (
-            clock => clk_132MHz,
+            clock => clk_100MHz_buf,
             reset => reset,
             rx    => uart_rx,
             valid => uart_rx_valid,
@@ -443,7 +468,7 @@ begin
 
     U_UART_RAM : entity work.uart_ram_interface
         port map (
-            clock => clk_132MHz,
+            clock => clk_100MHz_buf,
             reset => reset,
             ram_in => c3_p0_in,
             ram_out => c3_p0_out,
@@ -465,4 +490,44 @@ begin
             pair14P => pair14P,
             pair14N => pair14N,
             right_camera_inhibit => right_camera_inhibit);
+    
+    
+    U_UDP : entity work.udp_wrapper
+        generic map(
+            SRC_MAC   => x"000000000000",
+            DST_MAC   => x"00249b09740d",
+            SRC_IP    => x"00000000",   -- 0.0.0.0
+            DST_IP    => x"FFFFFFFF",   -- 255.255.255.255
+            SRC_PORT  => x"0000",
+            DST_PORT  => x"1441",
+            DATA_SIZE => 812)
+        port map(
+            clk_125M => clk_ethernet,
+            reset    => reset,
+            phy_in   => phy_in,
+            phy_out  => phy_out,
+            data_in  => data_in,
+            data_out => data_out);
+
+    phyrst <= not phy_in.rst;
+    U_PHY_GTXCLK_ODDR : oddr2
+        generic map(
+            ddr_alignment => "c1",      -- sets output alignment to "none", "c0", "c1"
+            init          => '0',       -- sets initial state of the q output to '0' or '1'
+            srtype        => "async"    -- specifies "sync" or "async" set/reset
+        ) port map(
+            q => phygtxclk,
+            c0 => phy_in.gtxclk,
+            c1 => not phy_in.gtxclk,
+            ce => '1',
+            d0 => '0',
+            d1 => '1',
+            r => '0',
+            s => '0');
+    phytxd  <= phy_in.txd;
+    phytxen <= phy_in.txen;
+    phytxer <= phy_in.txer;
+
+    phymdc <= '0';
+    phymdi <= 'Z';
 end architecture RTL;

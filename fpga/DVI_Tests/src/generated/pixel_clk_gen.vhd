@@ -55,10 +55,11 @@
 -- "Output    Output      Phase     Duty      Pk-to-Pk        Phase"
 -- "Clock    Freq (MHz) (degrees) Cycle (%) Jitter (ps)  Error (ps)"
 ------------------------------------------------------------------------------
--- CLK_OUT1___620.000______0.000______50.0______211.969____244.696
--- CLK_OUT2___124.000______0.000______50.0______279.770____244.696
--- CLK_OUT3___124.000______0.000______50.0______279.770____244.696
--- CLK_OUT4___310.000______0.000______50.0______236.605____244.696
+-- CLK_OUT1___500.000______0.000______50.0______133.929____215.375
+-- CLK_OUT2___250.000______0.000______50.0______152.849____215.375
+-- CLK_OUT3___100.000______0.000______50.0______182.481____215.375
+-- CLK_OUT4___125.000______0.000______50.0______174.592____215.375
+-- CLK_OUT5___125.000______0.000______50.0______174.592____215.375
 --
 ------------------------------------------------------------------------------
 -- "Input Clock   Freq (MHz)    Input Jitter (UI)"
@@ -79,10 +80,11 @@ port
  (-- Clock in ports
   CLK_IN_100MHz           : in     std_logic;
   -- Clock out ports
-  CLK_OUT_620MHz          : out    std_logic;
-  CLK_OUT_124MHz          : out    std_logic;
-  CLK_OUT_132MHz          : out    std_logic;
-  CLK_OUT_310MHz          : out    std_logic;
+  CLK_OUT_CAMERA_UNBUF          : out    std_logic;
+  CLK_OUT_CAMERA_OVER_2          : out    std_logic;
+  CLK_OUT_CAMERA_OVER_5          : out    std_logic;
+  CLK_OUT_PIXEL          : out    std_logic;
+  CLK_OUT_ETHERNET          : out    std_logic;
   -- Status and control signals
   RESET             : in     std_logic;
   LOCKED            : out    std_logic
@@ -91,7 +93,7 @@ end pixel_clk_gen;
 
 architecture xilinx of pixel_clk_gen is
   attribute CORE_GENERATION_INFO : string;
-  attribute CORE_GENERATION_INFO of xilinx : architecture is "pixel_clk_gen,clk_wiz_v3_6,{component_name=pixel_clk_gen,use_phase_alignment=false,use_min_o_jitter=false,use_max_i_jitter=false,use_dyn_phase_shift=false,use_inclk_switchover=false,use_dyn_reconfig=false,feedback_source=FDBK_AUTO,primtype_sel=PLL_BASE,num_out_clk=4,clkin1_period=10.000,clkin2_period=10.000,use_power_down=false,use_reset=true,use_locked=true,use_inclk_stopped=false,use_status=false,use_freeze=false,use_clk_valid=false,feedback_type=SINGLE,clock_mgr_type=AUTO,manual_override=false}";
+  attribute CORE_GENERATION_INFO of xilinx : architecture is "pixel_clk_gen,clk_wiz_v3_6,{component_name=pixel_clk_gen,use_phase_alignment=false,use_min_o_jitter=false,use_max_i_jitter=false,use_dyn_phase_shift=false,use_inclk_switchover=false,use_dyn_reconfig=false,feedback_source=FDBK_AUTO,primtype_sel=PLL_BASE,num_out_clk=5,clkin1_period=10.000,clkin2_period=10.000,use_power_down=false,use_reset=true,use_locked=true,use_inclk_stopped=false,use_status=false,use_freeze=false,use_clk_valid=false,feedback_type=SINGLE,clock_mgr_type=AUTO,manual_override=false}";
   -- Input clock buffering / unused connectors
   signal clkin1      : std_logic;
   -- Output clock buffering / unused connectors
@@ -100,7 +102,7 @@ architecture xilinx of pixel_clk_gen is
   signal clkout1          : std_logic;
   signal clkout2          : std_logic;
   signal clkout3          : std_logic;
-  signal clkout4_unused   : std_logic;
+  signal clkout4          : std_logic;
   signal clkout5_unused   : std_logic;
   -- Unused status signals
 
@@ -123,21 +125,24 @@ begin
    (BANDWIDTH            => "OPTIMIZED",
     CLK_FEEDBACK         => "CLKFBOUT",
     COMPENSATION         => "INTERNAL",
-    DIVCLK_DIVIDE        => 5,
-    CLKFBOUT_MULT        => 31,
+    DIVCLK_DIVIDE        => 1,
+    CLKFBOUT_MULT        => 5,
     CLKFBOUT_PHASE       => 0.000,
     CLKOUT0_DIVIDE       => 1,
     CLKOUT0_PHASE        => 0.000,
     CLKOUT0_DUTY_CYCLE   => 0.500,
-    CLKOUT1_DIVIDE       => 5,
+    CLKOUT1_DIVIDE       => 2,
     CLKOUT1_PHASE        => 0.000,
     CLKOUT1_DUTY_CYCLE   => 0.500,
     CLKOUT2_DIVIDE       => 5,
     CLKOUT2_PHASE        => 0.000,
     CLKOUT2_DUTY_CYCLE   => 0.500,
-    CLKOUT3_DIVIDE       => 2,
+    CLKOUT3_DIVIDE       => 4,
     CLKOUT3_PHASE        => 0.000,
     CLKOUT3_DUTY_CYCLE   => 0.500,
+    CLKOUT4_DIVIDE       => 4,
+    CLKOUT4_PHASE        => 0.000,
+    CLKOUT4_DUTY_CYCLE   => 0.500,
     CLKIN_PERIOD         => 10.000,
     REF_JITTER           => 0.010)
   port map
@@ -147,7 +152,7 @@ begin
     CLKOUT1             => clkout1,
     CLKOUT2             => clkout2,
     CLKOUT3             => clkout3,
-    CLKOUT4             => clkout4_unused,
+    CLKOUT4             => clkout4,
     CLKOUT5             => clkout5_unused,
     -- Status and control signals
     LOCKED              => LOCKED,
@@ -160,21 +165,26 @@ begin
   -------------------------------------
 
 
-  CLK_OUT_620MHz <= clkout0;
+  CLK_OUT_CAMERA_UNBUF <= clkout0;
 
   clkout2_buf : BUFG
   port map
-   (O   => CLK_OUT_124MHz,
+   (O   => CLK_OUT_CAMERA_OVER_2,
     I   => clkout1);
 
   clkout3_buf : BUFG
   port map
-   (O   => CLK_OUT_132MHz,
+   (O   => CLK_OUT_CAMERA_OVER_5,
     I   => clkout2);
 
   clkout4_buf : BUFG
   port map
-   (O   => CLK_OUT_310MHz,
+   (O   => CLK_OUT_PIXEL,
     I   => clkout3);
+
+  clkout5_buf : BUFG
+  port map
+   (O   => CLK_OUT_ETHERNET,
+    I   => clkout4);
 
 end xilinx;
