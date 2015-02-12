@@ -3,12 +3,12 @@
 
 #include <stdint.h>
 
-const int MAX_FRAG_LENGTH = 245; // max bytes of payload used for fragmented packet
-                                //     takes into account the 1 byte packet type, 1 byte packet ID,
-                                //     and 2 bytes of "X of Y" fragment identifier
-                                // XXX: calculate the correct length
+const int MAX_FRAG_LENGTH = 245;// max bytes of payload used for fragmented packet
+                                //     needs to take into account the 1 byte packet type,
+                                //     1 byte packet ID, and 2 bytes of "X of Y" fragment identifier
+                                // XXX: calculate the correct length (this is empirically chosen?)
 
-const uint8_t TYPE_SKYTRAQ = 0xAC;  // chosen by Ming
+const uint8_t TYPE_SKYTRAQ = 0xAC;  // chosen by random survey
 
 const size_t INDEX_TYPE = 13;
 const size_t INDEX_ID = 14;
