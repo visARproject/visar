@@ -74,3 +74,29 @@ void *sender_thread(void *ptr){
   free_buffer(buf);  //free the buffer (TODO: examine placement)
   pthread_exit(NULL); //exit thread safetly
 }
+
+//spawn a reciever thread, requires an input port, buffer, and thread; returns the pthread status code
+int start_reciever(int port, audiobuffer* buf, int* flag){
+  //package the info needed by the handler
+  comms_package pkg = {0, port, buf, flag};
+  
+  //create thread and send it the package
+  pthread_t thread; //thread handler
+  rc = pthread_create(&thread, NULL, (direction)? mic_thread : speaker_thread, (void*)&pkg);
+  if (rc) printf("ERROR: Could not create reciever thread, rc=%d\n", rc); //print errors
+  
+  return rc; //return the response code
+}
+
+//start the sender therad, requires address, port, buffer, and kill flag; returns the pthread status code
+int start_sender(int addr, int port, audiobuffer* buf, int* flag){
+  //package the info needed by the handler
+  comms_package pkg = {addr, port, buf, flag};
+  
+  //create thread and send it the package
+  pthread_t thread; //thread handler
+  rc = pthread_create(&thread, NULL, (direction)? mic_thread : speaker_thread, (void*)&pkg);
+  if (rc) printf("ERROR: Could not create reciever thread, rc=%d\n", rc); //print errors
+  
+  return rc; //return the response code
+}

@@ -1,5 +1,6 @@
 /* 
  * File handles sound processing (start/stop/buffer structure)
+ * TODO: Volume
  */
 
 //library includes 
@@ -19,8 +20,8 @@ int speaker_kill_flag;
 int mic_kill_flag;
 
 //open a sound device with specified period, rate, channels(0=mono,1=stereo) 
-//  and direction(0=playback,1=capture), returns the handler/buffer package
-snd_pcm_package open_snd_pcm(size_t period, unsigned int rate, int stereo, int direction){
+//  and direction(0=playback,1=capture), returns the buffer
+audiobuffer* open_snd_pcm(size_t period, unsigned int rate, int stereo, int direction){
   //Open PCM device for playback/capture, check for errors
   snd_pcm_t *pcm_handle; //handler struct
   int dir = (direction)? SND_PCM_STREAM_CAPTURE:SND_PCM_STREAM_PLAYBACK;
@@ -55,15 +56,21 @@ snd_pcm_package open_snd_pcm(size_t period, unsigned int rate, int stereo, int d
   //create a buffer struct (frame size is frames/period * channels * sample width)
   audiobuffer* buffer = create_buffer(frames*2*2, MAX_BUFFER); //2 16-bit channels
   
-  //package the results
-  snd_pcm_package out = {pcm_handle, buffer};
-  return out;
+  //package the info needed by the handler
+  snd_pcm_package pkg = {pcm_handle, buffer};
+  
+  //create thread and send it the package
+  pthread_t thread; //thread handler
+  rc = pthread_create(&thread, NULL, (direction)? mic_thread : speaker_thread, (void*)&pkg);
+  if (rc) printf("ERROR: Could not create device thread, rc=%d\n", rc); //print errors
+  
+  return buffer; //return the device's audio buffer
 }
 
 void *speaker_thread(void* ptr){
   audiobuffer buf = *(((snd_pcm_package*)ptr)->buffer); //cast pointer, get buffer struct
   snd_pcm_t speaker_handle = ((snd_pcm_package*)ptr)->pcm_handle; //cast pointer, get device pointer
-  speaker_kill = 0;  //reset the kill signal (small race condition, not concerned)
+  speaker_kill = 0;  //reset the kill signal (smallish race condition, not concerned)
   
   char started = 0;  //track when to start reading data
   while(!kill_flag && !speaker_kill_flag) { //loop until program stops us
@@ -87,8 +94,9 @@ void *speaker_thread(void* ptr){
   //TODO: find way to combine multiple audio streams
   
   // notify kernel to empty/close the speakers
-  snd_pcm_drain(speaker_handle);
-  snd_pcm_close(speaker_handle);
+  snd_pcm_drain(speaker_handle);  //finish transferring the audio
+  snd_pcm_close(speaker_handle);  //close the device
+  //free_buffer(buf); //free the audiobuffer
   
   pthread_exit(NULL); //exit thread safetly
 }
@@ -96,7 +104,7 @@ void *speaker_thread(void* ptr){
 void *mic_thread(void* ptr){
   audiobuffer buf = *(((snd_pcm_package*)ptr)->buffer); //cast pointer, get buffer struct
   snd_pcm_t mic_handle = ((snd_pcm_package*)ptr)->pcm_handle; //cast pointer, get device pointer
-  mic_kill = 0;  //reset the kill signal (small race condition, not concerned)
+  mic_kill = 0;  //reset the kill signal (smallish race condition, not concerned)
   
   while(!kill_flag && !mic_kill_flag) { //loop until program stops us
     //wait until there's space in the buffer
@@ -116,9 +124,10 @@ void *mic_thread(void* ptr){
     //        abstract the buffer push operation
   }
 
-  // notify kernel to empty/close the speakers
+  // notify kernel to empty/close the speakers, free the buffer
   snd_pcm_drain(mic_handle);
   snd_pcm_close(mic_handle);
+  free_buffer(buf);
   
   pthread_exit(NULL); //exit thread safetly
 }

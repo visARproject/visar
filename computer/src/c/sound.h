@@ -14,6 +14,6 @@ typedef struct{
 //  and direction(0=playback,1=capture), returns the handler/buffer package
 snd_pcm_package open_snd_pcm(size_t period, unsigned int rate, int stereo, int direction);
 
-//thread function pointers (grab/send data over network)
+//thread functions (grab/send data over network)
 void *speaker_thread(void* ptr);
 void *mic_thread(void* ptr);

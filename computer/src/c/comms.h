@@ -8,7 +8,11 @@ typedef struct{
   int* flag; //thread kill flag
 } comms_package;
 
-//thread functions for sending/recieving data
+//funcitons to spawn network send/recieve threads
+int start_reciever(int port, audiobuffer* buf, int* flag);
+int start_sender(int addr, int port, audiobuffer* buf, int* flag);
+
+//thread target functions for sending/recieving data (only for use with pthread_create)
 void *reciever_thread(void *ptr);
 void *sender_thread(void *ptr);
 
