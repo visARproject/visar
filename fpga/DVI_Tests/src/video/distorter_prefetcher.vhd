@@ -110,13 +110,13 @@ begin
                 
                 ram1_in.cmd.en <= '1';
                 ram1_in.cmd.instr <= READ_PRECHARGE_COMMAND;
-                if command.pos.x < CAMERA_WIDTH then
+                if command.pos.x < CAMERA_COLUMNS then
                     ram1_in.cmd.byte_addr <= std_logic_vector(to_unsigned(
                         LEFT_CAMERA_MEMORY_LOCATION + command.pos.y * CAMERA_STEP + command.pos.x
                     , ram1_in.cmd.byte_addr'length));
                 else
                     ram1_in.cmd.byte_addr <= std_logic_vector(to_unsigned(
-                        RIGHT_CAMERA_MEMORY_LOCATION + command.pos.y * CAMERA_STEP + (command.pos.x - CAMERA_WIDTH)
+                        RIGHT_CAMERA_MEMORY_LOCATION + command.pos.y * CAMERA_STEP + (command.pos.x - CAMERA_COLUMNS)
                     , ram1_in.cmd.byte_addr'length));
                 end if;
                 ram1_in.cmd.bl <= std_logic_vector(to_unsigned(BURST_SIZE_WORDS - 1, ram1_in.cmd.bl'length));

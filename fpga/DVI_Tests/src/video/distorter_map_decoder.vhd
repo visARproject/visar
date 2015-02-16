@@ -24,8 +24,8 @@ architecture arc of video_distorter_map_decoder is
     constant CHUNK_WORDS : integer := 5;
     
     type CameraInterpolationCoordinate is record
-        x : integer range 0 to 2*CAMERA_WIDTH*N-1; -- stacked left-right because distorter buffer moves left-right
-        y : integer range 0 to CAMERA_HEIGHT*N-1;
+        x : integer range 0 to 2*CAMERA_COLUMNS*N-1; -- stacked left-right because distorter buffer moves left-right
+        y : integer range 0 to CAMERA_ROWS*N-1;
     end record;
     
     type CameraTripleInterpolationCoordinate is record
