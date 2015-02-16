@@ -129,6 +129,8 @@ begin
                 -- process sync, data
                 
                 data_valid := false;
+                line_end := false;
+                frame_end := false;
                 if sync_is_window_id then
                     sync_is_window_id := false;
                     data_valid := true;
@@ -139,6 +141,8 @@ begin
                 elsif sync = to_unsigned(16#6#, 3) & to_unsigned(16#2A#, 7) then -- frame end
                     data_valid := true;
                     sync_is_window_id := true;
+                    line_end := true;
+                    frame_end := true;
                 elsif sync = to_unsigned(16#1#, 3) & to_unsigned(16#2A#, 7) then -- line start
                     data_valid := true;
                     sync_is_window_id := true;
@@ -146,6 +150,7 @@ begin
                 elsif sync = to_unsigned(16#2#, 3) & to_unsigned(16#2A#, 7) then -- line end
                     data_valid := true;
                     sync_is_window_id := true;
+                    line_end := true;
                 elsif sync = to_unsigned(16#015#, 10) then -- black
                 elsif sync = to_unsigned(16#035#, 10) then -- valid
                     data_valid := true;
@@ -184,6 +189,8 @@ begin
                         odd_kernel (5) := data(1);
                         odd_kernel (3) := data(2);
                         odd_kernel (1) := data(3);
+                        odd_kernel_line_end := line_end;
+                        odd_kernel_frame_end := frame_end;
                         kernel_pos := 3;
                     elsif kernel_pos = 3 then
                         odd_kernel (6) := data(0);
@@ -197,10 +204,10 @@ begin
             
             output.data_valid <= '0';
             if data_valid then
-                output.last_column <= 'X';
-                output.last_pixel <= 'X';
                 output.data_valid <= '1';
                 -- XXX still need to account for last kernel of each line
+                output.last_column <= '0';
+                output.last_pixel <= '0';
                 if kernel_pos = 2 then
                     if odd then
                         output.pixel1 <= even_kernel(0);
@@ -232,6 +239,12 @@ begin
                     else
                         output.pixel1 <= odd_kernel(6);
                         output.pixel2 <= odd_kernel(7);
+                        if odd_kernel_line_end then
+                            output.last_column <= '1';
+                        end if;
+                        if odd_kernel_frame_end then
+                            output.last_pixel <= '1';
+                        end if;
                     end if;
                 end if;
             end if;
