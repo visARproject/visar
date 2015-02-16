@@ -169,8 +169,8 @@ begin
 
     --U_LEFT_CAMERA_WRAPPER : entity work.camera_wrapper
     --    generic map (
-    --        SYNC_INVERTED  => true,
-    --        DATA3_INVERTED => true,
+    --        SYNC_INVERTED  => false,
+    --        DATA3_INVERTED => false,
     --        DATA2_INVERTED => true,
     --        DATA1_INVERTED => false,
     --        DATA0_INVERTED => false)
@@ -188,8 +188,8 @@ begin
     
     U_RIGHT_CAMERA_WRAPPER : entity work.camera_wrapper
         generic map (
-            SYNC_INVERTED  => false,
-            DATA3_INVERTED => false,
+            SYNC_INVERTED  => true,
+            DATA3_INVERTED => true,
             DATA2_INVERTED => true,
             DATA1_INVERTED => false,
             DATA0_INVERTED => false)
@@ -441,7 +441,7 @@ begin
 
     U_UART : entity work.uart_transmitter
         generic map(
-            CLOCK_FREQUENCY => 124000000.0,
+            CLOCK_FREQUENCY => 100000000.0,
             BAUD_RATE => 4000000.0)
         port map (
             clock => clk_100MHz_buf,
@@ -453,7 +453,7 @@ begin
 
     U_UART2 : entity work.uart_receiver
         generic map(
-            CLOCK_FREQUENCY => 124000000.0,
+            CLOCK_FREQUENCY => 100000000.0,
             BAUD_RATE => 4000000.0)
         port map (
             clock => clk_100MHz_buf,

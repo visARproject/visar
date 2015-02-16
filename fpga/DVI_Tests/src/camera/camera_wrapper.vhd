@@ -85,11 +85,13 @@ begin
         variable sync : unsigned(9 downto 0);
         variable data : DataArray;
         variable data_valid, sync_is_window_id : boolean;
+        variable line_end, frame_end : boolean;
         variable kernel_pos, last_kernel_pos : integer range 0 to 3;
         variable kernel_read_pos : integer range 0 to 4;
         type Kernel is array (0 to 7) of unsigned(9 downto 0);
         variable even_kernel : Kernel;
         variable odd_kernel : Kernel;
+        variable odd_kernel_line_end, odd_kernel_frame_end : boolean;
     begin
         if rising_edge(deserializer_clock) then
             -- fill sync_maybe_inv and data_maybe_inv with deserializer_out
