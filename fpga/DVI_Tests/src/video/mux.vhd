@@ -27,9 +27,9 @@ begin
 			sel_last_last <= sel_last;
 			if sel_last_last /= sel_last then
 				valid_shift_reg <= (others => '0');
+			else
+				valid_shift_reg <= valid_shift_reg(valid_shift_reg'length-2 downto 0) & '1';
 			end if;
-
-			valid_shift_reg <= valid_shift_reg(valid_shift_reg'length-2 downto 0) & '1';
 		end if;
 	end process;
 	
