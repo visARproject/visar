@@ -75,7 +75,7 @@ port
 
   DEBUG_IN                : in    std_logic_vector (1 downto 0);       -- Input debug data. Tie to "00" if not used
   DEBUG_OUT               : out   std_logic_vector ((3*sys_w)+5 downto 0); -- Ouput debug data. Leave NC if not required
-  BITSLIP                 : in    std_logic;
+  BITSLIP                 : in    std_logic_vector(sys_w-1 downto 0);
 -- Clock and reset signals
   CLK_IN                  : in    std_logic;                    -- Fast clock from PLL/MMCM 
   CLK_DIV_IN              : in    std_logic;                    -- Slow clock from PLL/MMCM
@@ -249,7 +249,7 @@ iodelay2_bus_s  : IODELAY2
         VALID       => pd_valid(pin_count),   -- 1-bit Output of Phase Detector (Dummy in Slave). If the input data contains no
                                      -- edges (no info for the phase detector to work with) the VALID signal will go
                                      -- LOW to indicate that the fabric should ignore the INCDEC signal.
-         BITSLIP    => BITSLIP,       -- 1-bit Invoke Bitslip. This can be used with any DATA_WIDTH, cascaded or not.
+         BITSLIP    => BITSLIP(pin_count), -- 1-bit Invoke Bitslip. This can be used with any DATA_WIDTH, cascaded or not.
                                       -- The amount of bitslip is fixed by the DATA_WIDTH selection.
          CE0        => clock_enable,   -- 1-bit Clock enable input
          CLK0       => clk_in_int_buf, -- 1-bit IO Clock network input. Optionally Invertible. This is the primary clock
@@ -290,7 +290,7 @@ iodelay2_bus_s  : IODELAY2
         VALID      => open,    -- 1-bit Output of Phase Detector (Dummy in Slave). If the input data contains no
                                       -- edges (no info for the phase detector to work with) the VALID signal will go
                                       -- LOW to indicate that the fabric should ignore the INCDEC signal.
-        BITSLIP    => BITSLIP,      -- 1-bit Invoke Bitslip. This can be used with any DATA_WIDTH, cascaded or not.
+        BITSLIP    => BITSLIP(pin_count), -- 1-bit Invoke Bitslip. This can be used with any DATA_WIDTH, cascaded or not.
                                     -- The amount of bitslip is fixed by the DATA_WIDTH selection.
         CE0        => clock_enable,   -- 1-bit Clock enable input
         CLK0       => clk_in_int_buf, -- 1-bit IO Clock network input. Optionally Invertible. This is the primary clock

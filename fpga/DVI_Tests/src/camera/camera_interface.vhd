@@ -1,5 +1,6 @@
-library IEEE;
-use IEEE.std_logic_1164.all;
+library ieee;
+use ieee.std_logic_1164.all;
+use ieee.numeric_std.all;
 
 package camera is
     type camera_out is record
@@ -25,16 +26,19 @@ package camera is
     
     type camera_output is record
         clock       : std_logic;
-        data        : std_logic_vector(24 downto 0);
+        frame_valid : std_logic; -- will go to 0 in between frames
+        line_valid  : std_logic; -- will go to 0 in between lines
+        pixel1      : unsigned(9 downto 0); -- pixels will come in pairs when line_valid is 1
+        pixel2      : unsigned(9 downto 0);
     end record;
 
-    constant CAMERA_WIDTH : integer := 1600;
-    constant CAMERA_HEIGHT : integer := 1200;
-    constant CAMERA_STEP : integer := 2048; -- should be CAMERA_WIDTH rounded up to the next power of two
+    constant CAMERA_COLUMNS : integer := 1280;
+    constant CAMERA_ROWS : integer := 1024;
+    constant CAMERA_STEP : integer := 2048; -- should be CAMERA_COLUMNS rounded up to the next power of two
     
     type CameraCoordinate is record
-        x : integer range 0 to 2*CAMERA_WIDTH-1; -- stacked left-right because distorter buffer moves left-right
-        y : integer range 0 to CAMERA_HEIGHT-1;
+        x : integer range 0 to 2*CAMERA_COLUMNS-1; -- stacked left-right because distorter buffer moves left-right
+        y : integer range 0 to CAMERA_ROWS-1;
     end record;
     
     type CameraTripleCoordinate is record
