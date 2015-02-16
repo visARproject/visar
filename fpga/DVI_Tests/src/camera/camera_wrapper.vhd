@@ -85,7 +85,8 @@ begin
         variable sync : unsigned(9 downto 0);
         variable data : DataArray;
         variable data_valid, sync_is_window_id : boolean;
-        variable kernel_pos : integer range 0 to 3;
+        variable kernel_pos, last_kernel_pos : integer range 0 to 3;
+        variable kernel_read_pos : integer range 0 to 4;
         type Kernel is array (0 to 7) of unsigned(9 downto 0);
         variable even_kernel : Kernel;
         variable odd_kernel : Kernel;
@@ -138,6 +139,8 @@ begin
                     data_valid := true;
                     sync_is_window_id := true;
                     kernel_pos := 0;
+                    last_kernel_pos := 0;
+                    kernel_read_pos := 0;
                 elsif sync = to_unsigned(16#6#, 3) & to_unsigned(16#2A#, 7) then -- frame end
                     data_valid := true;
                     sync_is_window_id := true;
@@ -147,6 +150,8 @@ begin
                     data_valid := true;
                     sync_is_window_id := true;
                     kernel_pos := 0;
+                    last_kernel_pos := 0;
+                    kernel_read_pos := 0;
                 elsif sync = to_unsigned(16#2#, 3) & to_unsigned(16#2A#, 7) then -- line end
                     data_valid := true;
                     sync_is_window_id := true;
@@ -171,6 +176,7 @@ begin
                     end if;
                 end if;
                 
+                last_kernel_pos := kernel_pos;
                 if data_valid then
                     if kernel_pos = 0 then
                         even_kernel(0) := data(0);
@@ -203,48 +209,61 @@ begin
             end if;
             
             output.data_valid <= '0';
-            if data_valid then
-                output.data_valid <= '1';
-                -- XXX still need to account for last kernel of each line
-                output.last_column <= '0';
-                output.last_pixel <= '0';
-                if kernel_pos = 2 then
+            output.last_column <= '0';
+            output.last_pixel <= '0';
+            if kernel_read_pos = 0 then
+                if last_kernel_pos = 1 then
                     if odd then
+                        output.data_valid <= '1';
                         output.pixel1 <= even_kernel(0);
                         output.pixel2 <= even_kernel(1);
                     else
+                        output.data_valid <= '1';
                         output.pixel1 <= even_kernel(2);
                         output.pixel2 <= even_kernel(3);
+                        kernel_read_pos := 1;
                     end if;
-                elsif kernel_pos = 3 then
+                end if;
+            elsif kernel_read_pos = 1 then
+                if odd then
+                    output.data_valid <= '1';
+                    output.pixel1 <= even_kernel(4);
+                    output.pixel2 <= even_kernel(5);
+                else
+                    output.data_valid <= '1';
+                    output.pixel1 <= even_kernel(6);
+                    output.pixel2 <= even_kernel(7);
+                    kernel_read_pos := 2;
+                end if;
+            elsif kernel_read_pos = 2 then
+                if last_kernel_pos = 3 then
                     if odd then
-                        output.pixel1 <= even_kernel(4);
-                        output.pixel2 <= even_kernel(5);
-                    else
-                        output.pixel1 <= even_kernel(6);
-                        output.pixel2 <= even_kernel(7);
-                    end if;
-                elsif kernel_pos = 0 then
-                    if odd then
+                        output.data_valid <= '1';
                         output.pixel1 <= odd_kernel(0);
                         output.pixel2 <= odd_kernel(1);
                     else
+                        output.data_valid <= '1';
                         output.pixel1 <= odd_kernel(2);
                         output.pixel2 <= odd_kernel(3);
+                        kernel_read_pos := 3;
                     end if;
-                elsif kernel_pos = 1 then
-                    if odd then
-                        output.pixel1 <= odd_kernel(4);
-                        output.pixel2 <= odd_kernel(5);
-                    else
-                        output.pixel1 <= odd_kernel(6);
-                        output.pixel2 <= odd_kernel(7);
-                        if odd_kernel_line_end then
-                            output.last_column <= '1';
-                        end if;
-                        if odd_kernel_frame_end then
-                            output.last_pixel <= '1';
-                        end if;
+                end if;
+            elsif kernel_read_pos = 3 then
+                if odd then
+                    output.data_valid <= '1';
+                    output.pixel1 <= odd_kernel(4);
+                    output.pixel2 <= odd_kernel(5);
+                else
+                    output.data_valid <= '1';
+                    output.pixel1 <= odd_kernel(6);
+                    output.pixel2 <= odd_kernel(7);
+                    kernel_read_pos := 0;
+                    if odd_kernel_line_end then
+                        output.last_column <= '1';
+                        kernel_read_pos := 4;
+                    end if;
+                    if odd_kernel_frame_end then
+                        output.last_pixel <= '1';
                     end if;
                 end if;
             end if;
