@@ -76,7 +76,7 @@ begin
         DEBUG_OUT => open);
     
     output.clock <= deserializer_clock;
-    process (deserializer_clock, deserializer_out) is
+    process (deserializer_clock) is
         variable bitslip_countdown : integer range 0 to 1000;
         variable odd : boolean;
         type DataArray is array (0 to 3) of unsigned(9 downto 0);
