@@ -26,9 +26,10 @@ package camera is
     
     type camera_output is record
         clock       : std_logic;
-        frame_valid : std_logic; -- will go to 0 in between frames
-        line_valid  : std_logic; -- will go to 0 in between lines
-        pixel1      : unsigned(9 downto 0); -- pixels will come in pairs when line_valid is 1
+        data_valid  : std_logic; -- everything should be ignored if 0
+        last_column : std_logic; -- 1 if (pixel1, pixel2) are last pair in line
+        last_pixel  : std_logic; -- 1 if (pixel1, pixel2) are last pair in frame
+        pixel1      : unsigned(9 downto 0); -- pixels will come in pairs when data_valid is 1
         pixel2      : unsigned(9 downto 0);
     end record;
 

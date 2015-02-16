@@ -84,7 +84,7 @@ begin
         variable data_maybe_inv : DataArray;
         variable sync : unsigned(9 downto 0);
         variable data : DataArray;
-        variable data_valid : boolean;
+        variable data_valid, sync_is_window_id : boolean;
         variable kernel_pos : integer range 0 to 3;
         type Kernel is array (0 to 7) of unsigned(9 downto 0);
         variable even_kernel : Kernel;
@@ -92,7 +92,7 @@ begin
     begin
         if rising_edge(deserializer_clock) then
             -- fill sync_maybe_inv and data_maybe_inv with deserializer_out
-            if odd = false then
+            if not odd then
                 for i in 0 to 4 loop
                     for j in 0 to 3 loop
                         data_maybe_inv(j)(5+i) := deserializer_out(j+5*i);
@@ -110,7 +110,7 @@ begin
                 odd := false;
             end if;
             
-            if odd = true then -- sync_maybe_inv and data_maybe_inv are valid
+            if odd then -- sync_maybe_inv and data_maybe_inv are valid
                 -- process sync_maybe_inv and data_maybe_inv into sync and data
                 if SYNC_INVERTED then sync := not sync_maybe_inv; else sync := sync_maybe_inv; end if;
                 if DATA3_INVERTED then data(3) := not data_maybe_inv(3); else data(3) := data_maybe_inv(3); end if;
@@ -124,10 +124,8 @@ begin
             end if;
             
             bitslip <= (others => '0');
-            output.line_valid <= '0';
-            output.pixel1 <= XXX;
             
-            if odd = true then -- sync+data are valid
+            if odd then -- sync+data are valid
                 -- process sync, data
                 
                 data_valid := false;
@@ -137,6 +135,7 @@ begin
                 elsif sync = to_unsigned(16#5#, 3) & to_unsigned(16#2A#, 7) then -- frame start
                     data_valid := true;
                     sync_is_window_id := true;
+                    kernel_pos := 0;
                 elsif sync = to_unsigned(16#6#, 3) & to_unsigned(16#2A#, 7) then -- frame end
                     data_valid := true;
                     sync_is_window_id := true;
@@ -192,6 +191,47 @@ begin
                         odd_kernel (2) := data(2);
                         odd_kernel (0) := data(3);
                         kernel_pos := 0;
+                    end if;
+                end if;
+            end if;
+            
+            output.data_valid <= '0';
+            if data_valid then
+                output.last_column <= 'X';
+                output.last_pixel <= 'X';
+                output.data_valid <= '1';
+                -- XXX still need to account for last kernel of each line
+                if kernel_pos = 2 then
+                    if odd then
+                        output.pixel1 <= even_kernel(0);
+                        output.pixel2 <= even_kernel(1);
+                    else
+                        output.pixel1 <= even_kernel(2);
+                        output.pixel2 <= even_kernel(3);
+                    end if;
+                elsif kernel_pos = 3 then
+                    if odd then
+                        output.pixel1 <= even_kernel(4);
+                        output.pixel2 <= even_kernel(5);
+                    else
+                        output.pixel1 <= even_kernel(6);
+                        output.pixel2 <= even_kernel(7);
+                    end if;
+                elsif kernel_pos = 0 then
+                    if odd then
+                        output.pixel1 <= odd_kernel(0);
+                        output.pixel2 <= odd_kernel(1);
+                    else
+                        output.pixel1 <= odd_kernel(2);
+                        output.pixel2 <= odd_kernel(3);
+                    end if;
+                elsif kernel_pos = 1 then
+                    if odd then
+                        output.pixel1 <= odd_kernel(4);
+                        output.pixel2 <= odd_kernel(5);
+                    else
+                        output.pixel1 <= odd_kernel(6);
+                        output.pixel2 <= odd_kernel(7);
                     end if;
                 end if;
             end if;
