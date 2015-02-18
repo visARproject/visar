@@ -24,6 +24,8 @@ begin
         variable last_pixel1, last_pixel2 : unsigned(9 downto 0);
         variable dest : integer range 0 to 32*1024*1024-1 := 0;
         variable dest2 : integer range 0 to 32*1024*1024-1 := 0;
+        type CommitLastType is (COMMIT_NONE, COMMIT_ONE, COMMIT_BOTH);
+        variable commit_last, last_commit_last : CommitLastType;
     begin
         ram_in.cmd.clk <= camera_output.clock;
         ram_in.wr.clk <= camera_output.clock;
@@ -37,15 +39,32 @@ begin
             ram_in.wr.mask <= (others => '-');
             ram_in.wr.data <= (others => '-');
             
+            if commit_last = COMMIT_ONE then
+                ram_in.wr.en <= '1';
+                ram_in.wr.mask <= (others => '0');
+                ram_in.wr.data <= "00" & "1111111111" & "1111111111" & std_logic_vector(last_pixel2);
+            elsif commit_last = COMMIT_BOTH then
+                ram_in.wr.en <= '1';
+                ram_in.wr.mask <= (others => '0');
+                ram_in.wr.data <= "00" & "1111111111" & std_logic_vector(last_pixel2) & std_logic_vector(last_pixel1);
+            end if;
+            last_commit_last := commit_last;
+            commit_last := COMMIT_NONE;
+            
             if camera_output.data_valid = '1' then
                 -- 3 input words (of 2 pixels each) turns into 2 output words (of 32 (30 used) bits each)
                 if state = 0 then
                     state := 1;
                     if camera_output.last_column = '1' then
-                        ram_in.wr.en <= '1';
-                        ram_in.wr.mask <= (others => '0');
-                        ram_in.wr.data <= "00" & "1111111111" & std_logic_vector(camera_output.pixel2) & std_logic_vector(camera_output.pixel1);
-                        words_committed := words_committed + 1;
+                        if last_commit_last = COMMIT_NONE then
+                            ram_in.wr.en <= '1';
+                            ram_in.wr.mask <= (others => '0');
+                            ram_in.wr.data <= "00" & "1111111111" & std_logic_vector(camera_output.pixel2) & std_logic_vector(camera_output.pixel1);
+                            words_committed := words_committed + 1;
+                        else
+                            commit_last := COMMIT_BOTH;
+                            words_committed := words_committed + 1;
+                        end if;
                     end if;
                 elsif state = 1 then
                     ram_in.wr.en <= '1';
@@ -53,7 +72,10 @@ begin
                     ram_in.wr.data <= "00" & std_logic_vector(camera_output.pixel1) & std_logic_vector(last_pixel2) & std_logic_vector(last_pixel1);
                     words_committed := words_committed + 1;
                     state := 2;
-                    -- XXX if last_column happens here, one pixel (camera_output.pixel2) is lost!
+                    if camera_output.last_column = '1' then
+                        commit_last := COMMIT_ONE;
+                        words_committed := words_committed + 1;
+                    end if;
                 else
                     ram_in.wr.en <= '1';
                     ram_in.wr.mask <= (others => '0');
