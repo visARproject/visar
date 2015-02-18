@@ -5,6 +5,9 @@ library unisim;
 use unisim.vcomponents.all;
 
 
+use work.camera.all;
+
+
 entity toplevel_tb is
 end entity toplevel_tb;
 
@@ -50,6 +53,9 @@ architecture RTL of toplevel_tb is
     signal mcb3_dram_dm_vector    : std_logic_vector(1 downto 0);
     
     signal rdqs_n : std_logic_vector(1 downto 0);
+    
+    signal right_camera_in  : camera_in;
+    signal right_camera_out : camera_out;
 begin
     UUT : entity work.toplevel port map(
         clk_100MHz => clk_100MHz,
@@ -80,8 +86,18 @@ begin
 
         uart_rx    => uart_rx,
         
-        left_camera_in => (others => 'U'),
-        right_camera_in => (others => 'U'));
+        phytxclk => 'U',
+        phyRXD => (others => 'U'),
+        phyrxdv => 'U',
+        phyrxer => 'U',
+        phyrxclk => 'U',
+        phyint => 'U',
+        phycrs => 'U',
+        phycol => 'U',
+        
+        left_camera_in   => (others => 'U'),
+        right_camera_in  => right_camera_in,
+        right_camera_out => right_camera_out);
     
     UART : entity work.uart_transmitter
         generic map (
@@ -96,7 +112,20 @@ begin
             write => write);
     
     clk_100MHz <= not clk_100MHz after 5 ns;
-         
+    
+    process is
+        constant sync_data : std_logic_vector(19 downto 0) := "1110100110" & "0000110101";
+        --constant data_data : std_logic_vector(19 downto 0);
+    begin
+        while true loop
+            for i in 0 to sync_data'length-1 loop
+                wait until right_camera_out.clock_p'event;
+                right_camera_in.sync_p <= not sync_data(sync_data'length-1-i);
+                right_camera_in.sync_n <=     sync_data(sync_data'length-1-i);
+            end loop;
+        end loop;
+    end process;
+    
     process
     begin
         write <= '0';
