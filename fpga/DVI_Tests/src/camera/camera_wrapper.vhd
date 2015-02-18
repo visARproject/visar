@@ -163,7 +163,7 @@ begin
                 end if;
             end if;
             
-            if odd then -- sync_maybe_inv and data_maybe_inv are valid
+            if not odd then -- sync_maybe_inv and data_maybe_inv are valid
                 -- process sync_maybe_inv and data_maybe_inv into sync and data
                 if SYNC_INVERTED then sync := not sync_maybe_inv; else sync := sync_maybe_inv; end if;
                 if DATA3_INVERTED then data(3) := not data_maybe_inv(3); else data(3) := data_maybe_inv(3); end if;
