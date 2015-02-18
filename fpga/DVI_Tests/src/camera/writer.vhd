@@ -41,12 +41,19 @@ begin
                 -- 3 input words (of 2 pixels each) turns into 2 output words (of 32 (30 used) bits each)
                 if state = 0 then
                     state := 1;
+                    if camera_output.last_column = '1' then
+                        ram_in.wr.en <= '1';
+                        ram_in.wr.mask <= (others => '0');
+                        ram_in.wr.data <= "00" & "1111111111" & std_logic_vector(camera_output.pixel2) & std_logic_vector(camera_output.pixel1);
+                        words_committed := words_committed + 1;
+                    end if;
                 elsif state = 1 then
                     ram_in.wr.en <= '1';
                     ram_in.wr.mask <= (others => '0');
                     ram_in.wr.data <= "00" & std_logic_vector(camera_output.pixel1) & std_logic_vector(last_pixel2) & std_logic_vector(last_pixel1);
                     words_committed := words_committed + 1;
                     state := 2;
+                    -- XXX if last_column happens here, one pixel (camera_output.pixel2) is lost!
                 else
                     ram_in.wr.en <= '1';
                     ram_in.wr.mask <= (others => '0');
