@@ -253,22 +253,17 @@ begin
             end if;
             
             
+            for j in 0 to 3 loop
+                data_maybe_inv(j)(9 downto 5) := data_maybe_inv(j)(4 downto 0);
+            end loop;
+            sync_maybe_inv(9 downto 5) := sync_maybe_inv(4 downto 0);
             -- fill sync_maybe_inv and data_maybe_inv with deserializer_out
-            if odd then
-                for i in 0 to 4 loop
-                    for j in 0 to 3 loop
-                        data_maybe_inv(j)(5+4-i) := deserializer_out(j+5*i);
-                    end loop;
-                    sync_maybe_inv(5+4-i) := deserializer_out(4+5*i);
+            for i in 0 to 4 loop
+                for j in 0 to 3 loop
+                    data_maybe_inv(j)(4-i) := deserializer_out(j+5*i);
                 end loop;
-            else
-                for i in 0 to 4 loop
-                    for j in 0 to 3 loop
-                        data_maybe_inv(j)(4-i) := deserializer_out(j+5*i);
-                    end loop;
-                    sync_maybe_inv(4-i) := deserializer_out(4+5*i);
-                end loop;
-            end if;
+                sync_maybe_inv(4-i) := deserializer_out(4+5*i);
+            end loop;
             odd := not odd;
             
             sync_s <= sync;
