@@ -6,6 +6,7 @@
 #include <netinet/in.h>
 #include <pthread.h>
 
+#include "audio_controller.h"
 #include "buffer.h"
 #include "comms.h"
 
@@ -26,11 +27,11 @@ void *reciever_thread(void *ptr){
   int len = sizeof(client); //recieve needs struct length to get client info
   
   //read data from socket until killed
-  while(!(*flag) && !kill_flag){
+  while(!(*flag) && !global_kill){
     if(!BUFFER_FULL(buf)){ //read data if space is available
       int bytes = recvfrom(sock, GET_QUEUE_TAIL(buf),buf.frame_size, 0,\
                (struct sockaddr *)&client, &len); //get an input packet          
-      
+      //TODO: look into timeouts
       if(bytes > 0){ //ack successful packets, report error otherwise
         bytes = sendto(sock, &ack, 1, 0, (struct sockaddr *)&client,sizeof(client));
         INC_QUEUE_TAIL(buf); //increment if successful
@@ -46,7 +47,7 @@ void *reciever_thread(void *ptr){
 //function for sending audio
 void *sender_thread(void *ptr){
   audiobuffer = *(((comms_package*)ptr)->buf); //extract the buffer
-  int addr = ((comms_package*)ptr)->addr; //get the address
+  char* host = ((comms_package*)ptr)->addr; //get the address
   int port = ((comms_package*)ptr)->port; //get the port
   int* flag = ((comms_package*)ptr)->flag; //get the kill flag
   
@@ -59,10 +60,10 @@ void *sender_thread(void *ptr){
   bind(sock, (struct sockaddr*)&addr, sizeof(addr)); //bind socket
   dest.sin_family = AF_INET;  //setup the target address
   dest.sin_port = htons(port); //set the destination port
-  dest.sin_addr.s_addr = htonl(addr); //set the destination address
+  inet_aton(host, &dest.sin_addr); //set the target address
   
   //read data from 
-  while(!(*flag) && !kill_flag){
+  while(!(*flag) && !global_kill){
     if(!BUFFER_FULL(buf)){ //read data if space is available      
       int bytes = sendto(sock, GET_QUEUE_HEAD(buf), buf.frame_size, 0,\
           (struct sockaddr *)&dest, sizeof(dest)); //send the packet

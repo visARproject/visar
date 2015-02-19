@@ -1,6 +1,6 @@
 /* 
  * File handles sound processing (start/stop/buffer structure)
- * TODO: Volume
+ * TODO: callbacks, multiplexing, volume
  */
 
 //library includes 
@@ -8,6 +8,7 @@
 #include <pthread.h>
 
 //project includes
+#include "audio_controller.h"
 #include "buffer.h"
 #include "sound.h"
 
@@ -21,7 +22,7 @@ int mic_kill_flag;
 
 //open a sound device with specified period, rate, channels(0=mono,1=stereo) 
 //  and direction(0=playback,1=capture), returns the buffer
-audiobuffer* open_snd_pcm(size_t period, unsigned int rate, int stereo, int direction){
+audiobuffer* start_snd_device(size_t period, unsigned int rate, int stereo, int direction){
   //Open PCM device for playback/capture, check for errors
   snd_pcm_t *pcm_handle; //handler struct
   int dir = (direction)? SND_PCM_STREAM_CAPTURE:SND_PCM_STREAM_PLAYBACK;
@@ -73,7 +74,7 @@ void *speaker_thread(void* ptr){
   speaker_kill = 0;  //reset the kill signal (smallish race condition, not concerned)
   
   char started = 0;  //track when to start reading data
-  while(!kill_flag && !speaker_kill_flag) { //loop until program stops us
+  while(!global_kill && !speaker_kill_flag) { //loop until program stops us
     //wait until adequate buffer is achieved
     if((!started && BUFFER_SIZE(buf) < (MAX_BUFFER/2)) || BUFFER_EMPTY(buf)){
       started = 0;  //stop if already started
@@ -106,7 +107,7 @@ void *mic_thread(void* ptr){
   snd_pcm_t mic_handle = ((snd_pcm_package*)ptr)->pcm_handle; //cast pointer, get device pointer
   mic_kill = 0;  //reset the kill signal (smallish race condition, not concerned)
   
-  while(!kill_flag && !mic_kill_flag) { //loop until program stops us
+  while(!global_kill && !mic_kill_flag) { //loop until program stops us
     //wait until there's space in the buffer
     if(BUFFER_FULL(buf)) continue; //do nothing (TODO: consider wait)
     
