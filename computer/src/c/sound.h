@@ -7,7 +7,7 @@ extern int mic_kill_flag;
 //define a struct to package the device handler and buffer
 typedef struct{
   snd_pcm_t   *pcm_handle; //device handler
-  audiobuffer *buf;        //buffer
+  audiobuffer *buffer;     //buffer
 } snd_pcm_package;
 
 //open a sound device with specified period, rate, channels(0=mono,1=stereo) 

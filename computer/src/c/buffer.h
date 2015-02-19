@@ -2,7 +2,7 @@
 
 //useful buffer macros
 #define _BUFFER_SIZE(x,y,max) (((y)-(x)>=0)?(y)-(x):(max)+(y)-(x))
-#define _BUFFER_FULL(x,y,max) (_BUFFER_SIZE(x,y)==((max)-1))
+#define _BUFFER_FULL(x,y,max) (_BUFFER_SIZE(x,y,max)==((max)-1))
 #define _BUFFER_EMPTY(x,y)    ((y)==(x))
 #define BUFFER_SIZE(x)        _BUFFER_SIZE((x).start,(x).end,(x).size)
 #define BUFFER_FULL(x)        _BUFFER_FULL((x).start,(x).end,(x).size)

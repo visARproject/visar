@@ -8,7 +8,7 @@
 //function to create/allocate an empty buffer
 audiobuffer* create_buffer(size_t frame_size, size_t frames){
   //Setup the input data buffer
-  buf = (audiobuffer*) malloc(sizeof(audiobuffer));
+  audiobuffer* buf = (audiobuffer*) malloc(sizeof(audiobuffer));
   buf->data = (char*) malloc(frame_size * frames);  //allocate buffer for network input
   buf->frame_size = frame_size;
   buf->size = frames;

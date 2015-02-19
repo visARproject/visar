@@ -7,6 +7,8 @@
 #include <stdio.h>
 #include <string.h>
 #include <unistd.h>
+#include <pthread.h>
+#include <alsa/asoundlib.h>
 
 #include "audio_controller.h"
 #include "buffer.h"
@@ -22,8 +24,8 @@
 #define TIMEOUT      2
 
 int global_kill = 0;  //global program kill flag, will stop all threads if set
-static int sender_kill;
-static int reciever_kill;
+static int sender_kill_flag;
+static int reciever_kill_flag;
 
 //main function for the program, listens on stdin for commands
 int main(int argc, char** argv){  
@@ -65,10 +67,10 @@ int main(int argc, char** argv){
         //setup the mic
         if(direction & 1){ 
           audiobuffer* mic_buf = start_snd_device(AUDIO_PERIOD, rate, (channels==2), 1); //start the device
-          sender_kill = 0;  //reset the kill flag
-          if(int start_sender(addr, port, mic_buf, &reciever_kill)){
+          sender_kill_flag = 0;  //reset the kill flag
+          if(start_sender(addr, port, mic_buf, &sender_kill_flag)){
             printf("Audio Controller: Could not start mic\n");
-            mic_kill = 1; //kill the mic device thread
+            mic_kill_flag = 1; //kill the mic device thread
           }
           printf("Audio Controller: Started microphone transmission\n");
         }
@@ -76,10 +78,10 @@ int main(int argc, char** argv){
         //setup the speaker
         if(direction & 2){
           audiobuffer* spk_buf = start_snd_device(AUDIO_PERIOD, rate, (channels==2), 0); //start the device
-          reciever_kill = 0;  //reset the kill flag
-          if(int start_reciever(port, mic_buf, &reciever_kill)){
+          reciever_kill_flag = 0;  //reset the kill flag
+          if(start_reciever(port, spk_buf, &reciever_kill_flag)){
             printf("Audio Controller: Could not start speaker\n");
-            speaker_kill = 1; //kill the mic device thread
+            speaker_kill_flag = 1; //kill the mic device thread
           }
           printf("Audio Controller: Started speaker server\n");
         }
@@ -100,11 +102,11 @@ int main(int argc, char** argv){
         }
         
         //shutdown the producers, wait if requested, then shutdown consumers
-        if(direction & 1) mic_kill = 1;         //assert microphone kill flag
-        if(direction & 2) reciever_kill = 1;    //assert server kill flag
+        if(direction & 1) mic_kill_flag = 1;      //assert microphone kill flag
+        if(direction & 2) reciever_kill_flag = 1; //assert server kill flag
         if(!kill_f) sleep(TIMEOUT);  //wait for data to finish processing
-        if(direction & 2) speaker_kill = 1;     //assert speaker kill flag
-        if(direction & 1) transmitter_kill = 1; //assert sender kill flag
+        if(direction & 2) speaker_kill_flag = 1;  //assert speaker kill flag
+        if(direction & 1) sender_kill_flag = 1;   //assert sender kill flag
         printf("Audio Controller: Devices shutdown\n");
         
       //TODO: Start voice_control

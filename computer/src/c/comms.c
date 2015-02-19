@@ -5,6 +5,7 @@
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <pthread.h>
+#include <stdio.h>
 
 #include "audio_controller.h"
 #include "buffer.h"
@@ -12,7 +13,7 @@
 
 //function for recieving audio
 void *reciever_thread(void *ptr){
-  audiobuffer = *(((comms_package*)ptr)->buf); //extract the buffer
+  audiobuffer buf = *(((comms_package*)ptr)->buf); //extract the buffer
   int port = ((comms_package*)ptr)->port; //get the port
   int* flag = ((comms_package*)ptr)->flag; //get the kill flag
   
@@ -40,13 +41,13 @@ void *reciever_thread(void *ptr){
   }
   
   close(sock);
-  free_buffer(buf);  //free the buffer (TODO: examine placement)
+  free_buffer(&buf);  //free the buffer (TODO: examine placement)
   pthread_exit(NULL); //exit thread safetly
 }
 
 //function for sending audio
 void *sender_thread(void *ptr){
-  audiobuffer = *(((comms_package*)ptr)->buf); //extract the buffer
+  audiobuffer buf = *(((comms_package*)ptr)->buf); //extract the buffer
   char* host = ((comms_package*)ptr)->addr; //get the address
   int port = ((comms_package*)ptr)->port; //get the port
   int* flag = ((comms_package*)ptr)->flag; //get the kill flag
@@ -72,7 +73,7 @@ void *sender_thread(void *ptr){
   }
   
   close(sock);
-  free_buffer(buf);  //free the buffer (TODO: examine placement)
+  free_buffer(&buf);  //free the buffer (TODO: examine placement)
   pthread_exit(NULL); //exit thread safetly
 }
 
@@ -83,20 +84,20 @@ int start_reciever(int port, audiobuffer* buf, int* flag){
   
   //create thread and send it the package
   pthread_t thread; //thread handler
-  rc = pthread_create(&thread, NULL, (direction)? mic_thread : speaker_thread, (void*)&pkg);
+  int rc = pthread_create(&thread, NULL, reciever_thread, (void*)&pkg);
   if (rc) printf("ERROR: Could not create reciever thread, rc=%d\n", rc); //print errors
   
   return rc; //return the response code
 }
 
 //start the sender therad, requires address, port, buffer, and kill flag; returns the pthread status code
-int start_sender(int addr, int port, audiobuffer* buf, int* flag){
+int start_sender(char* addr, int port, audiobuffer* buf, int* flag){
   //package the info needed by the handler
   comms_package pkg = {addr, port, buf, flag};
   
   //create thread and send it the package
   pthread_t thread; //thread handler
-  rc = pthread_create(&thread, NULL, (direction)? mic_thread : speaker_thread, (void*)&pkg);
+  int rc = pthread_create(&thread, NULL, sender_thread, (void*)&pkg);
   if (rc) printf("ERROR: Could not create reciever thread, rc=%d\n", rc); //print errors
   
   return rc; //return the response code
