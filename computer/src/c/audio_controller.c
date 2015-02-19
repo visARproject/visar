@@ -33,8 +33,9 @@ int main(int argc, char** argv){
   
   //handler loop, runs until program is killed
   while(!global_kill){
-    if(fgets(input, 80, STDIN_FILENO)){ //get a command from stdin
-      char* token = strtok(input, " "); //split string on whitespace, get command
+    if(fgets(input, 80, stdin)){ //get a command from stdin
+      char* token = strtok(input, "\n"); //split string to ignore newline
+      token = strtok(input, " "); //split string on whitespace, get command
       
       //Start Command
       if(0 == strcmp(token, "start")){
@@ -53,7 +54,7 @@ int main(int argc, char** argv){
           else if(0 == strcmp(token, "-rate")) rate = atoi(strtok(0," ")); //parse the rate 
           else if(0 == strcmp(token, "-ch"))   channels = atoi(strtok(0," ")); //parse the channel count
           else{
-            printf("Audio Controller: Bad command argument: %s\n",token);
+            printf("Audio Controller: Bad command argument: \"%s\"\n",token);
             continue;
           }
         }
@@ -96,7 +97,7 @@ int main(int argc, char** argv){
           else if(0 == strcmp(token, "both"))  direction = 3; //both directions
           else if(0 == strcmp(token, "-f"))    kill_f = 1;    //immediate kill flag
           else{
-            printf("Audio Controller: Bad command argument: %s\n",token);
+            printf("Audio Controller: Bad command argument: \"%s\"\n",token);
             continue;
           }
         }
@@ -118,7 +119,7 @@ int main(int argc, char** argv){
       
       
       } else {
-        printf("Audio Controller: Unrecognized command: %s \n", token);  
+        printf("Audio Controller: Unrecognized command: \"%s\" \n", token);  
       }
     } else {  //could not read from stdin
       printf("Audio Controller: Error when reading input, terminating\n");

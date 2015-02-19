@@ -11,8 +11,8 @@
 //useful queue aware macros (Push/Pop increment pointers, get's just peek)
 #define GET_QUEUE_HEAD(x) ((x).data+((x).start*(x).frame_size))
 #define GET_QUEUE_TAIL(x) ((x).data+((x).end*(x).frame_size))
-#define INC_QUEUE_HEAD(x) ((x).start = ((x).start + 1) % (x).size)
-#define INC_QUEUE_TAIL(x) ((x).end = ((x).end + 1) % (x).size)
+#define INC_QUEUE_HEAD(x) ((x).start = ((x).start+1 < (x).size)? (x).start+1: 0)
+#define INC_QUEUE_TAIL(x) ((x).end = ((x).end+1 < (x).size)? (x).end+1: 0)
 
 //audiobuffer struct to handle ring buffer queue
 typedef struct{

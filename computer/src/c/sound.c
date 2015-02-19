@@ -6,6 +6,7 @@
 //library includes 
 #include <alsa/asoundlib.h>
 #include <pthread.h>
+#include <stdio.h>
 
 //project includes
 #include "audio_controller.h"
@@ -38,7 +39,7 @@ audiobuffer* start_snd_device(size_t period, unsigned int rate, int stereo, int 
   snd_pcm_hw_params_any(pcm_handle, params); //fill with defaults
   snd_pcm_hw_params_set_access(pcm_handle, params, SND_PCM_ACCESS_RW_INTERLEAVED); //interleaved mode
   snd_pcm_hw_params_set_format(pcm_handle, params, SND_PCM_FORMAT_S16_LE); //signed 16-bit LE
-  snd_pcm_hw_params_set_channels(pcm_handle, params, 2); //stereo mode
+  snd_pcm_hw_params_set_channels(pcm_handle, params, (stereo?2:1)); //stereo mode
   unsigned int rate2 = rate; //copy rate (will be overwritten on mismatch)
   int err_dir = 0; //try to set rate exactly
   snd_pcm_hw_params_set_rate_near(pcm_handle, params, &rate2, &err_dir); //get closest match
@@ -55,14 +56,16 @@ audiobuffer* start_snd_device(size_t period, unsigned int rate, int stereo, int 
   }
 
   //create a buffer struct (frame size is frames/period * channels * sample width)
-  audiobuffer* buffer = create_buffer(frames*2*2, MAX_BUFFER); //2 16-bit channels
+  audiobuffer* buffer = create_buffer(frames*2*((stereo)?2:1), MAX_BUFFER); //16-bit channels
   
   //package the info needed by the handler
-  snd_pcm_package pkg = {pcm_handle, buffer};
+  snd_pcm_package* pkg = (snd_pcm_package*)malloc(sizeof(snd_pcm_package));
+  pkg->pcm_handle = pcm_handle;
+  pkg->buffer = buffer;
   
   //create thread and send it the package
   pthread_t thread; //thread handler
-  rc = pthread_create(&thread, NULL, (direction)? mic_thread : speaker_thread, (void*)&pkg);
+  rc = pthread_create(&thread, NULL, (direction)? mic_thread : speaker_thread, (void*)pkg);
   if (rc) printf("ERROR: Could not create device thread, rc=%d\n", rc); //print errors
   
   return buffer; //return the device's audio buffer
@@ -71,12 +74,13 @@ audiobuffer* start_snd_device(size_t period, unsigned int rate, int stereo, int 
 void *speaker_thread(void* ptr){
   audiobuffer* buf = ((snd_pcm_package*)ptr)->buffer; //cast pointer, get buffer struct
   snd_pcm_t* speaker_handle = ((snd_pcm_package*)ptr)->pcm_handle; //cast pointer, get device pointer
+  free(ptr); //free message memory
   speaker_kill_flag = 0;  //reset the kill signal (smallish race condition, not concerned)
-  
+    
   char started = 0;  //track when to start reading data
   while(!global_kill && !speaker_kill_flag) { //loop until program stops us
     //wait until adequate buffer is achieved
-    if((!started && BUFFER_SIZE(*buf) < (MAX_BUFFER/2)) || BUFFER_EMPTY(*buf)){
+    if((!started && BUFFER_SIZE(*buf) < (MIN_BUFFER)) || BUFFER_EMPTY(*buf)){
       started = 0;  //stop if already started
       //TODO: Consider adding a wait statement (less CPU use)
       continue;     //don't start yet
@@ -105,6 +109,7 @@ void *speaker_thread(void* ptr){
 void *mic_thread(void* ptr){
   audiobuffer* buf = ((snd_pcm_package*)ptr)->buffer; //cast pointer, get buffer struct
   snd_pcm_t* mic_handle = ((snd_pcm_package*)ptr)->pcm_handle; //cast pointer, get device pointer
+  free(ptr); //clean up memory
   mic_kill_flag = 0;  //reset the kill signal (smallish race condition, not concerned)
   
   while(!global_kill && !mic_kill_flag) { //loop until program stops us
