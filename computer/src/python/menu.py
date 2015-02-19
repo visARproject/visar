@@ -12,39 +12,38 @@ from vispy.util.transforms import translate, scale
 
 class Menu():
   def __init__(self):
-    self.button_color = (0, 33, 165) ## gator blue
-    self.outline_color = (255, 255, 255) ## white
+    ## setting xml tree
+    setting_tree = ET.parse('button_settings.xml')
+    root_setting_xml = setting_tree.getroot()
 
-    ## xml tree
-    tree = ET.parse('menu_buttons.xml')
-
-    ## root button
-    root_xml = tree.getroot()
-    self.root_button = None
+    self.button_color = root_setting_xml.get('button_color') ## color within button
+    self.outline_color = root_setting_xml.get('outline_color') ## color of outline of button
 
     ## individual button size
-    self.button_size = (.2, .1)
-
-    ## default vertex locations for inactive buttons
-    self.init_left_x_inactive = -(self.button_size[0] / 2)
-    self.init_right_x_inactive = self.button_size[0] / 2
-    self.init_bottom_y_inactive = -(self.button_size[1] / 2)
-    self.init_top_y_inactive = self.button_size[1] / 2
-
-    ## default vertex locations for inactive buttons
-    self.init_left_x_active = -(self.button_size[0])
-    self.init_right_x_active = self.button_size[0]
-    self.init_bottom_y_active = -(self.button_size[1])
-    self.init_top_y_active = self.button_size[1]
+    self.button_size = float(root_setting_xml.get('width')), float(root_setting_xml.get('height'))
 
     ## gap info
-    self.left_gap = .05 ## gap from side
-    self.tb_gap = .025 ## gap between buttons
+    self.left_gap = float(root_setting_xml.get('left_gap')) ## gap from left side
+    self.between_gap = float(root_setting_xml.get('between_gap')) ## gap between buttons
+
+    ## default vertex locations for inactive buttons
+    self.position = {}
+    self.position['left'] = -(self.button_size[0] / 2)
+    self.position['right'] = (self.button_size[0] / 2)
+    self.position['bottom'] = -(self.button_size[1] / 2)
+    self.position['top'] = (self.button_size[1] / 2)
 
     self.listOfActives = [] ## Used for keeping track of active buttons while going through options
 
+    ## button xml tree
+    button_tree = ET.parse('menu_buttons.xml')
+
+    ## root button
+    root_button_xml = button_tree.getroot()
+    self.root_button = None
+
     ## creates each button
-    self.setup(None, xml_node=root_xml)
+    self.setup(None, xml_node=root_button_xml)
 
     ## assign current tier as children of ""
     self.current = self.root_button.children
@@ -62,10 +61,10 @@ class Menu():
   ## create placement of buttons
   def setup(self, parent_node, xml_node=None, text=None):
     ## place buttons default in the center
-    pos = [[self.init_left_x_inactive, self.init_bottom_y_inactive]
-    , [self.init_left_x_inactive, self.init_top_y_inactive]
-    , [self.init_right_x_inactive, self.init_bottom_y_inactive]
-    , [self.init_right_x_inactive, self.init_top_y_inactive]]
+    pos = [[self.position['left'], self.position['bottom']]
+    , [self.position['left'], self.position['top']]
+    , [self.position['right'], self.position['bottom']]
+    , [self.position['right'], self.position['top']]]
 
     ## text is used primarily to put in a back button
     if text != None:
@@ -81,8 +80,9 @@ class Menu():
         parent_node.set_child(b) ## add current button to parent's child list
 
       ## recursively go through all of the children
-      for child in xml_node:
-        self.setup(b, xml_node=child) 
+      if xml_node.get('function') != "True":
+        for child in xml_node:
+          self.setup(b, xml_node=child) 
 
       ## setup back button
       if parent_node != None and len(xml_node) > 0:
@@ -149,7 +149,7 @@ class Menu():
   ## moves the current set of buttons to the correct place
   def move(self):
     ## total height for all the buttons
-    total_height = (len(self.current) - 1) * (self.button_size[1] + self.tb_gap) + (2 * self.button_size[1])
+    total_height = (len(self.current) - 1) * (self.button_size[1] + self.between_gap) + (2 * self.button_size[1])
 
     active_check = False
 
@@ -160,26 +160,22 @@ class Menu():
       ## note: active buttons have twice the height and width as normal buttons
       active_multi = 1 ## active multiplier
       if self.active.path == b.path:
-        top_y = (total_height / 2) - x * (self.button_size[1] + self.tb_gap)
+        top_y = (total_height / 2) - x * (self.button_size[1] + self.between_gap)
         bottom_y = top_y - (2 * self.button_size[1])
         active_check = True
         active_multi = 2
       elif active_check:
-        top_y = (total_height / 2) - x * (self.button_size[1] + self.tb_gap) - self.button_size[1]
+        top_y = (total_height / 2) - x * (self.button_size[1] + self.between_gap) - self.button_size[1]
         bottom_y = top_y - self.button_size[1]
       else:
-        top_y = (total_height / 2) - x * (self.button_size[1] + self.tb_gap)
+        top_y = (total_height / 2) - x * (self.button_size[1] + self.between_gap)
         bottom_y = top_y - self.button_size[1]
       left_x = -1 + self.left_gap
       right_x = left_x + (self.button_size[0] * active_multi)
 
       ## calculate the difference between where the buttons should be and the initial positions
-      if active_multi == 2:
-        diff_x = left_x - self.init_left_x_active
-        diff_y = top_y - self.init_top_y_active
-      else:
-        diff_x = left_x - self.init_left_x_inactive
-        diff_y = top_y - self.init_top_y_inactive
+      diff_x = left_x - (self.position['left'] * active_multi)
+      diff_y = top_y - (self.position['top'] * active_multi)
 
       b.move_button(diff_x, diff_y, active_multi)
 
