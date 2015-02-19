@@ -39,7 +39,7 @@ audiobuffer* start_snd_device(size_t period, unsigned int rate, int stereo, int 
   snd_pcm_hw_params_any(pcm_handle, params); //fill with defaults
   snd_pcm_hw_params_set_access(pcm_handle, params, SND_PCM_ACCESS_RW_INTERLEAVED); //interleaved mode
   snd_pcm_hw_params_set_format(pcm_handle, params, SND_PCM_FORMAT_S16_LE); //signed 16-bit LE
-  snd_pcm_hw_params_set_channels(pcm_handle, params, (stereo?2:1)); //stereo mode
+  snd_pcm_hw_params_set_channels(pcm_handle, params, (stereo+1)); //stereo mode
   unsigned int rate2 = rate; //copy rate (will be overwritten on mismatch)
   int err_dir = 0; //try to set rate exactly
   snd_pcm_hw_params_set_rate_near(pcm_handle, params, &rate2, &err_dir); //get closest match
@@ -56,7 +56,7 @@ audiobuffer* start_snd_device(size_t period, unsigned int rate, int stereo, int 
   }
 
   //create a buffer struct (frame size is frames/period * channels * sample width)
-  audiobuffer* buffer = create_buffer(frames*2*((stereo)?2:1), MAX_BUFFER); //16-bit channels
+  audiobuffer* buffer = create_buffer(frames, 2*(stereo+1), MAX_BUFFER); //16-bit channels
   
   //package the info needed by the handler
   snd_pcm_package* pkg = (snd_pcm_package*)malloc(sizeof(snd_pcm_package));
@@ -87,13 +87,13 @@ void *speaker_thread(void* ptr){
     } else started = 1; //indicate that we've startd
     
     //write data to speaker buffer, check responses
-    int rc = snd_pcm_writei(speaker_handle, GET_QUEUE_HEAD(*buf), buf->size);
+    int rc = snd_pcm_writei(speaker_handle, GET_QUEUE_HEAD(*buf), buf->period);
     INC_QUEUE_HEAD(*buf);
     if (rc == -EPIPE){ //Catch underruns (not enough data)
       fprintf(stderr, "underrun occurred\n");
       snd_pcm_prepare(speaker_handle); //reset speaker
     } else if (rc < 0) fprintf(stderr, "error from writei: %s\n", snd_strerror(rc)); //other errors
-    else if (rc != (int)buf->size) fprintf(stderr, "short write, write %d frames\n", rc);
+    else if (rc != (int)buf->period) fprintf(stderr, "short write, write %d frames\n", rc);
   }
 
   //TODO: find way to combine multiple audio streams
@@ -102,6 +102,7 @@ void *speaker_thread(void* ptr){
   snd_pcm_drain(speaker_handle);  //finish transferring the audio
   snd_pcm_close(speaker_handle);  //close the device
   //free_buffer(buf); //free the audiobuffer
+  printf("Audio Controller: Speaker Thread shutdown\n");
   
   pthread_exit(NULL); //exit thread safetly
 }
@@ -117,14 +118,14 @@ void *mic_thread(void* ptr){
     if(BUFFER_FULL(*buf)) continue; //do nothing (TODO: consider wait)
     
     //write data to speaker buffer, check response codes
-    int rc = snd_pcm_readi(mic_handle, GET_QUEUE_TAIL(*buf), buf->size);
+    int rc = snd_pcm_readi(mic_handle, GET_QUEUE_TAIL(*buf), buf->period);
     INC_QUEUE_TAIL(*buf);
     if (rc == -EPIPE) { //catch overruns (too much data)
       fprintf(stderr, "overrun occurred\n");
       snd_pcm_prepare(mic_handle); //reset handler
     //other errors
     } else if (rc < 0) fprintf(stderr, "error from read: %s\n", snd_strerror(rc));
-    else if (rc != (int)buf->size) fprintf(stderr, "short read, read %d frames\n", rc);
+    else if (rc != (int)buf->period) fprintf(stderr, "short read, read %d frames\n", rc);
     
     //TODO: implement way of handling multiple buffers (and also pipes)
     //        abstract the buffer push operation
@@ -134,6 +135,7 @@ void *mic_thread(void* ptr){
   snd_pcm_drain(mic_handle);
   snd_pcm_close(mic_handle);
   //free_buffer(buf);
+  printf("Audio Controller: Microphone Thread shutdown\n");
   
   pthread_exit(NULL); //exit thread safetly
 }

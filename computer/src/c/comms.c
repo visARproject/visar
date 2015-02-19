@@ -31,18 +31,21 @@ void *reciever_thread(void *ptr){
   //read data from socket until killed
   while(!(*flag) && !global_kill){
     if(!BUFFER_FULL(*buf)){ //read data if space is available
-      int bytes = recvfrom(sock, GET_QUEUE_TAIL(*buf),buf->frame_size, 0,\
-               (struct sockaddr *)&client, &len); //get an input packet          
+      int bytes = recvfrom(sock, GET_QUEUE_TAIL(*buf),buf->per_size, 0,\
+               (struct sockaddr *)&client, &len); //get an input packet
+      //printf("%d\n",bytes); 
       //TODO: look into timeouts
-      if(bytes == buf->frame_size){ //ack successful packets, report error otherwise
+      if(bytes == buf->per_size){ //ack successful packets, report error otherwise
         bytes = sendto(sock, &ack, 1, 0, (struct sockaddr *)&client,sizeof(client));
         INC_QUEUE_TAIL(*buf); //increment if successful
       } else printf("Error, bad socket read\n"); //report the error
-    } else printf("Waiting\n");
+      //printf("buffer: (%d, %d, %d)\n", buf->start, buf->end, BUFFER_SIZE(*buf));
+    } //else printf("Waiting\n");
   }
   
   close(sock);
   free_buffer(buf);  //free the buffer (TODO: examine placement)
+  printf("Audio Controller: Reciever Thread shutdown\n");
   pthread_exit(NULL); //exit thread safetly
 }
 
@@ -68,7 +71,7 @@ void *sender_thread(void *ptr){
   //read data from 
   while(!(*flag) && !global_kill){
     if(!BUFFER_FULL(*buf)){ //read data if space is available      
-      int bytes = sendto(sock, GET_QUEUE_HEAD(*buf), buf->frame_size, 0,\
+      int bytes = sendto(sock, GET_QUEUE_HEAD(*buf), buf->per_size, 0,\
           (struct sockaddr *)&dest, sizeof(dest)); //send the packet
       INC_QUEUE_HEAD(*buf); //don't care if it sent or not, assume it did
     }
@@ -76,6 +79,7 @@ void *sender_thread(void *ptr){
   
   close(sock);
   free_buffer(buf);  //free the buffer (TODO: examine placement)
+  printf("Audio Controller: Sender Thread shutdown\n");
   pthread_exit(NULL); //exit thread safetly
 }
 

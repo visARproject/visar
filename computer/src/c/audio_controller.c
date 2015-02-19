@@ -16,7 +16,7 @@
 #include "sound.h"
 #include "voice_control.h"
 
-#define AUDIO_PERIOD 32
+#define AUDIO_PERIOD 128
 #define DEFAULT_RATE 44100
 #define DEFAULT_CHNS 2
 #define DEFAULT_PORT 19101
