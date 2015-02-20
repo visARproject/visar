@@ -1,3 +1,2 @@
-fix wasting one slot by using mirroring trick
 add asynchronous reset and synchronizers
 make sure initial conditions are good - read_empty should be 1 and write_full should be 1 until FIFO is ready

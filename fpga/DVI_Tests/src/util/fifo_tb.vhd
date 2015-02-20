@@ -10,7 +10,7 @@ end entity;
 architecture arc of util_fifo_tb is
     constant WIDTH : natural := LOG_2_DEPTH + 8;
     
-    constant DEPTH : positive := 2**LOG_2_DEPTH - 1; -- XXX - 1 until fifo is able to use all slots at once
+    constant DEPTH : positive := 2**LOG_2_DEPTH;
     
     signal write_clock  : std_logic := '0';
     signal write_enable : std_logic := '0';
