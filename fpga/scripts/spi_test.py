@@ -193,11 +193,15 @@ camera_write(192, list_to_int(camera_read(192)) | 0b1)
 # enable temperature sensor
 camera_write(96, 1)
 
-
 for i in xrange(1500):
     print i, list_to_int(camera_read(97)), '{0:025b}'.format(s._r.read(32*1024*1024))
     if i == 1000:
         s.set_pin(31)
+
+m = int(7*1024*1024//4)
+for i in xrange(m):
+    s._r.write(32*1024*1024+i*4, 0xffffffff)
+    if i % 1000 == 0: print i/m
 
 '''s.set_pin(31)
 time.sleep(3)

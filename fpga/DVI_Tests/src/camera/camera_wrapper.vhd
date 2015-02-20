@@ -94,6 +94,7 @@ begin
         variable even_kernel : Kernel;
         variable odd_kernel : Kernel;
         variable odd_kernel_line_end, odd_kernel_frame_end : boolean;
+        variable in_frame : boolean;
     begin
         if rising_edge(deserializer_clock) then
             if bitslip_countdown /= 0 then
@@ -185,21 +186,27 @@ begin
                     kernel_pos := 0;
                     last_kernel_pos := 0;
                     kernel_read_pos := 0;
+                    in_frame := true;
                 elsif sync = to_unsigned(16#6#, 3) & to_unsigned(16#2A#, 7) then -- frame end
                     data_valid := true;
                     sync_is_window_id := true;
                     line_end := true;
                     frame_end := true;
+                    in_frame := false;
                 elsif sync = to_unsigned(16#1#, 3) & to_unsigned(16#2A#, 7) then -- line start
-                    data_valid := true;
                     sync_is_window_id := true;
-                    kernel_pos := 0;
-                    last_kernel_pos := 0;
-                    kernel_read_pos := 0;
+                    if in_frame then
+                        data_valid := true;
+                        kernel_pos := 0;
+                        last_kernel_pos := 0;
+                        kernel_read_pos := 0;
+                    end if;
                 elsif sync = to_unsigned(16#2#, 3) & to_unsigned(16#2A#, 7) then -- line end
-                    data_valid := true;
                     sync_is_window_id := true;
-                    line_end := true;
+                    if in_frame then
+                        data_valid := true;
+                        line_end := true;
+                    end if;
                 elsif sync = to_unsigned(16#015#, 10) then -- black
                 elsif sync = to_unsigned(16#035#, 10) then -- valid
                     data_valid := true;
