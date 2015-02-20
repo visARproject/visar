@@ -89,9 +89,10 @@ begin
         variable data_valid, sync_is_window_id : boolean;
         variable line_end, frame_end : boolean;
         variable kernel_pos, last_kernel_pos : integer range 0 to 3;
-        variable kernel_read_pos : integer range 0 to 4;
+        variable kernel_read_pos : integer range 0 to 4 := 0;
         type Kernel is array (0 to 7) of unsigned(9 downto 0);
         variable even_kernel : Kernel;
+        variable even_kernel_line_end, even_kernel_frame_end : boolean;
         variable odd_kernel : Kernel;
         variable odd_kernel_line_end, odd_kernel_frame_end : boolean;
         variable in_frame : boolean;
@@ -130,6 +131,17 @@ begin
                     output.pixel1 <= even_kernel(6);
                     output.pixel2 <= even_kernel(7);
                     kernel_read_pos := 2;
+                    if even_kernel_line_end then
+                        output.last_column <= '1';
+                        if last_kernel_pos = 1 then
+                            kernel_read_pos := 4;
+                        else
+                            kernel_read_pos := 0;
+                        end if;
+                    end if;
+                    if even_kernel_frame_end then
+                        output.last_pixel <= '1';
+                    end if;
                 end if;
             elsif kernel_read_pos = 2 then
                 if last_kernel_pos = 3 then
@@ -156,11 +168,15 @@ begin
                     kernel_read_pos := 0;
                     if odd_kernel_line_end then
                         output.last_column <= '1';
-                        kernel_read_pos := 4;
+                        kernel_read_pos := 0;
                     end if;
                     if odd_kernel_frame_end then
                         output.last_pixel <= '1';
                     end if;
+                end if;
+            elsif kernel_read_pos = 4 then
+                if last_kernel_pos /= 1 then
+                    kernel_read_pos := 0;
                 end if;
             end if;
             
@@ -185,7 +201,6 @@ begin
                     sync_is_window_id := true;
                     kernel_pos := 0;
                     last_kernel_pos := 0;
-                    kernel_read_pos := 0;
                     in_frame := true;
                 elsif sync = to_unsigned(16#6#, 3) & to_unsigned(16#2A#, 7) then -- frame end
                     data_valid := true;
@@ -199,7 +214,6 @@ begin
                         data_valid := true;
                         kernel_pos := 0;
                         last_kernel_pos := 0;
-                        kernel_read_pos := 0;
                     end if;
                 elsif sync = to_unsigned(16#2#, 3) & to_unsigned(16#2A#, 7) then -- line end
                     sync_is_window_id := true;
@@ -234,6 +248,8 @@ begin
                         even_kernel(2) := data(1);
                         even_kernel(4) := data(2);
                         even_kernel(6) := data(3);
+                        even_kernel_line_end := line_end;
+                        even_kernel_frame_end := frame_end;
                         kernel_pos := 1;
                     elsif kernel_pos = 1 then
                         even_kernel(1) := data(0);
