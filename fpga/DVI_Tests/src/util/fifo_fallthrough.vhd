@@ -5,16 +5,18 @@ use ieee.numeric_std.all;
 entity util_fifo_fallthrough is
     generic (
         WIDTH : natural;
-        LOG_2_DEPTH : natural);
+        LOG_2_DEPTH : natural;
+        WRITE_WIDTH : natural;
+        READ_WIDTH : natural);
     port (
         write_clock  : in  std_logic;
         write_enable : in  std_logic;
-        write_data   : in  std_logic_vector(WIDTH-1 downto 0);
+        write_data   : in  std_logic_vector(WRITE_WIDTH-1 downto 0);
         write_full   : out std_logic;
         
         read_clock  : in  std_logic;
         read_enable : in  std_logic;
-        read_data   : out std_logic_vector(WIDTH-1 downto 0);
+        read_data   : out std_logic_vector(READ_WIDTH-1 downto 0);
         read_empty  : out std_logic);
 end entity;
 
@@ -24,10 +26,12 @@ architecture arc of util_fifo_fallthrough is
     
     signal have_data : std_logic := '0';
 begin
-    INNER : entity work.util_fifo
+    INNER : entity work.util_fifo_narrowed
         generic map (
             WIDTH => WIDTH,
-            LOG_2_DEPTH => LOG_2_DEPTH)
+            LOG_2_DEPTH => LOG_2_DEPTH,
+            WRITE_WIDTH => WRITE_WIDTH,
+            READ_WIDTH => READ_WIDTH)
         port map (
             write_clock  => write_clock,
             write_enable => write_enable,
