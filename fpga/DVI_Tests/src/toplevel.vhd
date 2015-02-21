@@ -110,6 +110,8 @@ architecture RTL of toplevel is
     signal c3_p1_out        : ram_bidir_port_out;
     signal c3_p1_rdonly_in  : ram_rd_port_in;
     signal c3_p1_rdonly_out : ram_rd_port_out;
+    signal c3_p1_wronly_in  : ram_wr_port_in;
+    signal c3_p1_wronly_out : ram_wr_port_out;
 
     signal c3_p2_in  : ram_rd_port_in;
     signal c3_p2_out : ram_rd_port_out;
@@ -368,15 +370,15 @@ begin
         c3_p5_wr_count      => c3_p5_out.wr.count,
         c3_p5_wr_underrun   => c3_p5_out.wr.underrun,
         c3_p5_wr_error      => c3_p5_out.wr.error);
-    c3_p1_in <= (
-        cmd => c3_p1_rdonly_in.cmd,
-        rd => c3_p1_rdonly_in.rd,
-        wr => (
-            clk => '0',
-            en => '0',
-            mask => (others => '-'),
-            data => (others => '-')));
-    c3_p1_rdonly_out <= (cmd => c3_p1_out.cmd, rd => c3_p1_out.rd);
+    
+    U_C3_P1_SPLITTER : entity work.util_bidir_ram_port_splitter port map (
+        clock => clk_camera_over_2,
+        ram_in => c3_p1_in,
+        ram_out => c3_p1_out,
+        ram_rd_in => c3_p1_rdonly_in,
+        ram_rd_out => c3_p1_rdonly_out,
+        ram_wr_in => c3_p1_wronly_in,
+        ram_wr_out => c3_p1_wronly_out);
 
     led(0) <= c3_calib_done;
 
