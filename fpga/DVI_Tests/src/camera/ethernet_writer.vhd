@@ -24,15 +24,16 @@ architecture arc of camera_ethernet_writer is
     constant BURST_LENGTH_WORDS : integer := RAM_FIFO_LENGTH/4; -- 4-byte words
     constant BURST_LENGTH_BYTES : integer := BURST_LENGTH_WORDS * 4;
     constant DATA_SIZE : integer := 1024; -- bytes
+    constant PAYLOAD_SIZE : integer := 4 + DATA_SIZE; -- bytes
     constant COUNT : integer := 2048; -- packets
     
     signal clock : std_logic;
     
-    signal packet_index : integer range 0 to COUNT-1;
-    signal state : integer range 0 to 1;
-    signal read_index : integer range 0 to DATA_SIZE/BURST_LENGTH_BYTES;
-    signal words_in_flight : integer range 0 to 2*RAM_FIFO_LENGTH-1;
-    signal words_committed : integer range 0 to 1+DATA_SIZE/4;
+    signal packet_index : integer range 0 to COUNT-1 := 0;
+    signal state : integer range 0 to 1 := 0;
+    signal read_index : integer range 0 to DATA_SIZE/BURST_LENGTH_BYTES := 0;
+    signal words_in_flight : integer range 0 to 2*RAM_FIFO_LENGTH-1 := 0;
+    signal words_committed : integer range 0 to 1+DATA_SIZE/4 := 0;
     
     signal fifo_write_enable : std_logic := '0';
     signal fifo_write_data   : std_logic_vector(35 downto 0);
@@ -91,7 +92,11 @@ begin
                         words_in_flight <= words_in_flight - 1;
                         if words_committed = DATA_SIZE/4-1 then
                             tx_flag <= not tx_flag;
-                            packet_index <= packet_index + 1;
+                            if packet_index /= COUNT-1 then
+                                packet_index <= packet_index + 1;
+                            else
+                                packet_index <= 0;
+                            end if;
                             read_index <= 0;
                             state <= 0;
                         end if;
@@ -105,7 +110,7 @@ begin
     FIFO : entity work.util_fifo_narrowed
         generic map (
             WIDTH => 36,
-            LOG_2_DEPTH => integer(ceil(log2(real(DATA_SIZE/4)*1.5))),
+            LOG_2_DEPTH => integer(ceil(log2(real(PAYLOAD_SIZE/4)*1.5))),
             WRITE_WIDTH => 36,
             READ_WIDTH => 9)
         port map (
@@ -130,7 +135,7 @@ begin
             DST_IP    => x"FFFFFFFF", -- 255.255.255.255
             SRC_PORT  => x"0000",
             DST_PORT  => x"1441",
-            DATA_SIZE => DATA_SIZE)
+            DATA_SIZE => PAYLOAD_SIZE)
         port map(
             clk_125M => clock_ethernet,
             reset    => '0',
