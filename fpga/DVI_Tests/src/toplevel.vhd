@@ -145,10 +145,8 @@ architecture RTL of toplevel is
     constant DISTORTER_PREFETCHER_TABLE_MEMORY_LOCATION : integer := 64*1024*1024;
     constant              DISTORTER_MAP_MEMORY_LOCATION : integer := 96*1024*1024;
     
-    signal phy_in                : PHYInInterface;
-    signal phy_out               : PHYOutInterface;
-    signal data_in, next_data_in : MACInInterface;
-    signal data_out              : MACOutInterface;
+    signal phy_in  : PHYInInterface;
+    signal phy_out : PHYOutInterface;
 begin
     reset <= not rst_n;
 
@@ -371,14 +369,24 @@ begin
         c3_p5_wr_underrun   => c3_p5_out.wr.underrun,
         c3_p5_wr_error      => c3_p5_out.wr.error);
     
-    U_C3_P1_SPLITTER : entity work.util_bidir_ram_port_splitter port map (
-        clock => clk_camera_over_2,
-        ram_in => c3_p1_in,
-        ram_out => c3_p1_out,
-        ram_rd_in => c3_p1_rdonly_in,
-        ram_rd_out => c3_p1_rdonly_out,
-        ram_wr_in => c3_p1_wronly_in,
-        ram_wr_out => c3_p1_wronly_out);
+    c3_p1_in <= (
+        cmd => c3_p1_rdonly_in.cmd,
+        rd => c3_p1_rdonly_in.rd,
+        wr => (
+            clk => '0',
+            en => '0',
+            mask => (others => '-'),
+            data => (others => '-')));
+    c3_p1_rdonly_out <= (cmd => c3_p1_out.cmd, rd => c3_p1_out.rd);
+
+    --U_C3_P1_SPLITTER : entity work.util_bidir_ram_port_splitter port map (
+    --    clock => clk_camera_over_2,
+    --    ram_in => c3_p1_in,
+    --    ram_out => c3_p1_out,
+    --    ram_rd_in => c3_p1_rdonly_in,
+    --    ram_rd_out => c3_p1_rdonly_out,
+    --    ram_wr_in => c3_p1_wronly_in,
+    --    ram_wr_out => c3_p1_wronly_out);
 
     led(0) <= c3_calib_done;
 
@@ -488,24 +496,16 @@ begin
             pair14P => pair14P,
             pair14N => pair14N);
     
+    U_CAMERA_ETHERNET_WRITER : entity work.camera_ethernet_writer
+        generic map (
+            BUFFER_ADDRESS => RIGHT_CAMERA_MEMORY_LOCATION)
+        port map (
+            ram_in => c3_p1_rdonly_in,
+            ram_out => c3_p1_rdonly_out,
+            clock_ethernet => clk_ethernet,
+            phy_in => phy_in,
+            phy_out => phy_out);
     
-    U_UDP : entity work.udp_wrapper
-        generic map(
-            SRC_MAC   => x"000000000000",
-            DST_MAC   => x"00249b09740d",
-            SRC_IP    => x"00000000",   -- 0.0.0.0
-            DST_IP    => x"FFFFFFFF",   -- 255.255.255.255
-            SRC_PORT  => x"0000",
-            DST_PORT  => x"1441",
-            DATA_SIZE => 812)
-        port map(
-            clk_125M => clk_ethernet,
-            reset    => reset,
-            phy_in   => phy_in,
-            phy_out  => phy_out,
-            data_in  => data_in,
-            data_out => data_out);
-
     phyrst <= not phy_in.rst;
     U_PHY_GTXCLK_ODDR : oddr2
         generic map(
