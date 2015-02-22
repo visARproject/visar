@@ -34,7 +34,9 @@ begin
     RD_CMD_FIFO : entity work.util_fifo_fallthrough
         generic map (
             WIDTH => COMMAND_WIDTH,
-            LOG_2_DEPTH => 4)
+            LOG_2_DEPTH => 4,
+            WRITE_WIDTH => COMMAND_WIDTH,
+            READ_WIDTH => COMMAND_WIDTH)
         port map (
             write_clock => ram_rd_in.cmd.clk,
             write_enable => ram_rd_in.cmd.en,
@@ -49,7 +51,9 @@ begin
     WR_CMD_FIFO : entity work.util_fifo_fallthrough
         generic map (
             WIDTH => COMMAND_WIDTH,
-            LOG_2_DEPTH => 4)
+            LOG_2_DEPTH => 4,
+            WRITE_WIDTH => COMMAND_WIDTH,
+            READ_WIDTH => COMMAND_WIDTH)
         port map (
             write_clock => ram_wr_in.cmd.clk,
             write_enable => ram_wr_in.cmd.en,
