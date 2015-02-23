@@ -15,7 +15,7 @@
 
 //predefined constants (basically guesses)
 #define MAX_BUFFER 20   //total ring buffer size
-#define MIN_BUFFER 02   //buffered frames needed to initiate playback
+#define MIN_BUFFER 10   //buffered frames needed to initiate playback
 
 //externally defined global variables
 int speaker_kill_flag;
