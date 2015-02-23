@@ -17,6 +17,8 @@ int stop_voice_control();  //kill the output pipe, stop transmitting data
  *  stop [-dir mic/spk/both] [-f]
  *    -Stop a device, will let buffers empty first (if dir is ommitted, will stop all devices).
  *    -Stops processing immediately instead if -f is present.
+ *  shutdown
+ *    -Kills all operations, program exits
  *  voice_start/voice_stop
  *    -Start/Stop the voice control module (consult val for specifics)
  *

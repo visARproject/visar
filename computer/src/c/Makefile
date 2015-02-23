@@ -1,13 +1,13 @@
-# Makefile for the audio controller
+# Makefile for the audio controller, requires pthread and alsa libraries
 
 CC=gcc
 CFLAGS=-c 
-LIBS=-lasound -lpthread
+LIBS=-lasound -lpthread -lspeex
 
 all: audio
 
-audio: audio_controller.o buffer.o comms.o sound.o
-	$(CC) audio_controller.o buffer.o comms.o sound.o -o audio $(LIBS) 
+audio: audio_controller.o buffer.o comms.o sound.o encode.o
+	$(CC) audio_controller.o buffer.o comms.o sound.o encode.o -o audio $(LIBS) 
 
 audio_controller.o: audio_controller.c
 	$(CC) $(CFLAGS) audio_controller.c
@@ -21,4 +21,8 @@ comms.o: comms.c
 sound.o: sound.c
 	$(CC) $(CFLAGS) sound.c
 
-clean: rm *o audio
+encode.o: encode.c
+	$(CC) $(CFLAGS) encode.c
+
+clean: 
+	rm *o audio

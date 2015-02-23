@@ -1,7 +1,7 @@
 /* 
  * File handles the the speaker/mic control interface
  *  Program expects control inputs from stdin (done via redirects) 
- * TODO: multiple streams, voice_control
+ * TODO: multiple streams, voice_control, compression
  */
  
 #include <stdio.h>
@@ -15,13 +15,13 @@
 #include "comms.h"
 #include "sound.h"
 #include "voice_control.h"
+#include "encode.h"
 
-#define AUDIO_PERIOD 128
-#define DEFAULT_RATE 44100
-#define DEFAULT_CHNS 2
+#define DEFAULT_RATE 16000   //encoder uses narrowband audio
+#define DEFAULT_CHNS 1
 #define DEFAULT_PORT 19101
 #define DEFAULT_ADDR "127.0.0.1"
-#define TIMEOUT      2
+#define TIMEOUT      1
 
 int global_kill = 0;  //global program kill flag, will stop all threads if set
 static int sender_kill_flag;
@@ -30,6 +30,8 @@ static int reciever_kill_flag;
 //main function for the program, listens on stdin for commands
 int main(int argc, char** argv){  
   char input[80]; //buffer for commands
+  
+  int period = setup_codecs(); //setup the codecs and get the period size  
   
   //handler loop, runs until program is killed
   while(!global_kill){
@@ -59,32 +61,36 @@ int main(int argc, char** argv){
           }
         }
       
-        //handle missing information via defaults
+        //handle missing information via defaults (rate/chn are fixed with codecs
         addr     = addr?:     DEFAULT_ADDR;
         port     = port?:     DEFAULT_PORT;
-        rate     = rate?:     DEFAULT_RATE;
-        channels = channels?: DEFAULT_CHNS;
+        //rate     = rate?:     DEFAULT_RATE;
+        //channels = channels?: DEFAULT_CHNS;
+        rate     = DEFAULT_RATE;
+        channels = DEFAULT_CHNS;
       
-        //setup the mic
-        if(direction & 1){ 
-          audiobuffer* mic_buf = start_snd_device(AUDIO_PERIOD, rate, (channels==2), 1); //start the device
-          sender_kill_flag = 0;  //reset the kill flag
-          if(start_sender(addr, port, mic_buf, &sender_kill_flag)){
-            printf("Audio Controller: Could not start mic\n");
-            mic_kill_flag = 1; //kill the mic device thread
-          }
-          printf("Audio Controller: Started microphone transmission\n");
-        }
-        
+        printf("Rate: %d, Channels: %d, Period: %d\n", rate, channels, period);
+      
         //setup the speaker
         if(direction & 2){
-          audiobuffer* spk_buf = start_snd_device(AUDIO_PERIOD, rate, (channels==2), 0); //start the device
+          audiobuffer* spk_buf = start_snd_device(period, rate, (channels==2), 0); //start the device
           reciever_kill_flag = 0;  //reset the kill flag
           if(start_reciever(port, spk_buf, &reciever_kill_flag)){
             printf("Audio Controller: Could not start speaker\n");
             speaker_kill_flag = 1; //kill the mic device thread
           }
           printf("Audio Controller: Started speaker server\n");
+        }
+        
+        //setup the mic
+        if(direction & 1){ 
+          audiobuffer* mic_buf = start_snd_device(period, rate, (channels==2), 1); //start the device
+          sender_kill_flag = 0;  //reset the kill flag
+          if(start_sender(addr, port, mic_buf, &sender_kill_flag)){
+            printf("Audio Controller: Could not start mic\n");
+            mic_kill_flag = 1; //kill the mic device thread
+          }
+          printf("Audio Controller: Started microphone transmission\n");
         }
       
       //Stop Command
@@ -109,6 +115,17 @@ int main(int argc, char** argv){
         if(direction & 2) speaker_kill_flag = 1;  //assert speaker kill flag
         if(direction & 1) sender_kill_flag = 1;   //assert sender kill flag
         printf("Audio Controller: Devices shutdown\n");
+      
+      } else if(0 == strcmp(token, "shutdown")){
+        //shutdown the producers, wait, then shutdown consumers
+        mic_kill_flag = 1;      //assert microphone kill flag
+        reciever_kill_flag = 1; //assert server kill flag
+        sleep(TIMEOUT);         //wait for data to finish processing
+        speaker_kill_flag = 1;  //assert speaker kill flag
+        sender_kill_flag = 1;   //assert sender kill flag
+        global_kill = 1;        //assert global kill flag (just in case)
+        sleep(TIMEOUT);         //wait for data to finish processing
+        printf("Audio Controller: Devices shutdown\n");
         
       //TODO: Start voice_control
       } else if(0 == strcmp(token, "voice_start")){
@@ -124,13 +141,13 @@ int main(int argc, char** argv){
     } else {  //could not read from stdin
       printf("Audio Controller: Error when reading input, terminating\n");
       global_kill = 1;  //assert global kill signal
+      sleep(TIMEOUT);
+      break;
     }
   }
   
-  //wait for threads to terminate, then exit
-  printf("Audio Controller: Waiting for network threads to timeout\n");
-  sleep(TIMEOUT+1); //TODO: check timing against audio buffer size
-  printf("Audio Controller: Exiting\n");
+  //clean up the encoder
+  destroy_codecs();
   
   return 0;
 }

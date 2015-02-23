@@ -15,7 +15,7 @@
 
 //predefined constants (basically guesses)
 #define MAX_BUFFER 20   //total ring buffer size
-#define MIN_BUFFER 10   //buffered frames needed to initiate playback
+#define MIN_BUFFER 02   //buffered frames needed to initiate playback
 
 //externally defined global variables
 int speaker_kill_flag;
@@ -94,6 +94,7 @@ void *speaker_thread(void* ptr){
       snd_pcm_prepare(speaker_handle); //reset speaker
     } else if (rc < 0) fprintf(stderr, "error from writei: %s\n", snd_strerror(rc)); //other errors
     else if (rc != (int)buf->period) fprintf(stderr, "short write, write %d frames\n", rc);
+    else fprintf(stderr, "audio written correctly\n");
   }
 
   //TODO: find way to combine multiple audio streams
