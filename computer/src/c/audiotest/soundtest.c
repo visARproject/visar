@@ -13,7 +13,7 @@ Test code will buffer/play sound from a network socket
 
 //constants for the program
 #define SAMPLE_RATE 44100
-#define PERIOD      128
+#define PERIOD      32
 #define MAX_BUFFER  20
 #define INPUT_PORT  19101
 

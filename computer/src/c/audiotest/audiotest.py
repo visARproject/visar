@@ -4,7 +4,7 @@ import decoder
 import time
 
 FILENAME = 'test.mp3'
-CHUNK = 128
+CHUNK = 32
 OUT_PORT = 19101
 IN_PORT  = 19102
 HOSTNAME = "127.0.0.1"

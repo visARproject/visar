@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8"?>
+<button name="" function="False">
+  <button name="Call" function="True">
+  </button>
+  <button name="Options" function="False">
+    <button name="Map" function="False">
+      <button name="Hide/Show" function="True"></button>
+      <button name="Scroll Mode" function="True"></button>
+    </button>
+    <button name="Targets" function="False">
+      <button name="Hide/Show" function="True"></button>
+    </button>
+    <button name="Volume" function="False">
+      <button name="Up/Down" function="True"></button>
+      <button name="Mute" function="True"></button>
+    </button>
+    <button name="Voice Control Switch" function="True"></button>
+  </button>
+  <button name="Hide All" function="True"></button>
+</button>

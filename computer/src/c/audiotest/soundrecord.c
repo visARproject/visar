@@ -1,8 +1,7 @@
 // Code taken from linux-journal examples
-
 /*
-This example reads standard from input and writes
-to the default PCM device for 5 seconds of data.
+This example reads from the default PCM device
+and writes to standard output for 5 seconds of data.
 */
 
 /* Use the newer ALSA API */
@@ -21,9 +20,9 @@ int main() {
   snd_pcm_uframes_t frames;
   char *buffer;
 
-  /* Open PCM device for playback. */
+  /* Open PCM device for recording (capture). */
   rc = snd_pcm_open(&handle, "default",
-                    SND_PCM_STREAM_PLAYBACK, 0);
+                    SND_PCM_STREAM_CAPTURE, 0);
   if (rc < 0) {
     fprintf(stderr,
             "unable to open pcm device: %s\n",
@@ -70,41 +69,34 @@ int main() {
   }
 
   /* Use a buffer large enough to hold one period */
-  snd_pcm_hw_params_get_period_size(params, &frames,
-                                    &dir);
+  snd_pcm_hw_params_get_period_size(params,
+                                      &frames, &dir);
   size = frames * 4; /* 2 bytes/sample, 2 channels */
   buffer = (char *) malloc(size);
 
   /* We want to loop for 5 seconds */
   snd_pcm_hw_params_get_period_time(params,
-                                    &val, &dir);
-  /* 5 seconds in microseconds divided by
-   * period time */
+                                         &val, &dir);
   loops = 5000000 / val;
 
   while (loops > 0) {
     loops--;
-    rc = read(0, buffer, size);
-    if (rc == 0) {
-      fprintf(stderr, "end of file on input\n");
-      break;
-    } else if (rc != size) {
-      fprintf(stderr,
-              "short read: read %d bytes\n", rc);
-    }
-    rc = snd_pcm_writei(handle, buffer, frames);
+    rc = snd_pcm_readi(handle, buffer, frames);
     if (rc == -EPIPE) {
-      /* EPIPE means underrun */
-      fprintf(stderr, "underrun occurred\n");
+      /* EPIPE means overrun */
+      fprintf(stderr, "overrun occurred\n");
       snd_pcm_prepare(handle);
     } else if (rc < 0) {
       fprintf(stderr,
-              "error from writei: %s\n",
+              "error from read: %s\n",
               snd_strerror(rc));
-    }  else if (rc != (int)frames) {
-      fprintf(stderr,
-              "short write, write %d frames\n", rc);
+    } else if (rc != (int)frames) {
+      fprintf(stderr, "short read, read %d frames\n", rc);
     }
+    rc = write(1, buffer, size);
+    if (rc != size)
+      fprintf(stderr,
+              "short write: wrote %d bytes\n", rc);
   }
 
   snd_pcm_drain(handle);

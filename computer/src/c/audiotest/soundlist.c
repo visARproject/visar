@@ -1,3 +1,5 @@
+// Code taken from linux-journal examples
+
 #include <alsa/asoundlib.h>
 
 int main() {

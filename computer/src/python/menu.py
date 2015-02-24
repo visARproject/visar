@@ -1,68 +1,157 @@
-import cv2
 import keyboard
 import numpy as np
 import PIL
 import rendering
 import sys
 import vispy
+import xml.etree.ElementTree as ET
 
 from PIL import Image, ImageFont, ImageDraw
 from vispy import app, scene
+from vispy.util.transforms import translate, scale
 
 class Menu():
   def __init__(self):
-    self.button_color = (0, 33, 165) ## gator blue
-    self.outline_color = (255, 255, 255) ## white
+    ## setting xml tree
+    setting_tree = ET.parse('button_settings.xml')
+    root_setting_xml = setting_tree.getroot()
 
-    list_of_buttons = [] ## temp list of buttons
-    list_of_buttons.append((Button(""), None)) ## DO NOT REMOVE, use "" as parent for top tier
-
-    ## begin list of buttons here
-    list_of_buttons.append((Button("Call"), ""))
-    list_of_buttons.append((Button("Options"), ""))
-    list_of_buttons.append((Button("Hide All"), ""))
-    list_of_buttons.append((Button("Menu Button 1"), "Options"))
-    list_of_buttons.append((Button("Menu Button 2"), "Options"))
-    list_of_buttons.append((Button("Menu Button 3"), "Options"))
-    list_of_buttons.append((Button("Menu Button 4"), "Options"))
-    list_of_buttons.append((Button("Menu Button 1"), "Menu Button 1"))
-    list_of_buttons.append((Button("Menu Button 2"), "Menu Button 1"))
-
-    for x in range(0, len(list_of_buttons)):
-      if list_of_buttons[x][1] != None:
-        for y in range(0, x):
-          if list_of_buttons[y][0].name == list_of_buttons[x][1]:
-            list_of_buttons[y][0].set_child(list_of_buttons[x][0])
-            list_of_buttons[x][0].parent = list_of_buttons[y][0]
-            break
-
-    ## assign current tier as children of ""
-    for x in list_of_buttons:
-      self.setup(x[0])
-      if (x[0].parent == None):
-        self.current = x[0].children
-
-    ## assign active button as first button in current list
-    self.active = self.current[0]
-    self.active.active = True
+    self.button_color = root_setting_xml.get('button_color') ## color within button
+    self.outline_color = root_setting_xml.get('outline_color') ## color of outline of button
 
     ## individual button size
-    self.button_size = (.2, .1)
+    self.button_size = float(root_setting_xml.get('width')), float(root_setting_xml.get('height'))
 
     ## gap info
-    self.left_gap = .05 ## gap from side
-    self.tb_gap = .025 ## gap between buttons
+    self.left_gap = float(root_setting_xml.get('left_gap')) ## gap from left side
+    self.between_gap = float(root_setting_xml.get('between_gap')) ## gap between buttons
+
+    ## default vertex locations for inactive buttons
+    self.position = {}
+    self.position['left'] = -(self.button_size[0] / 2)
+    self.position['right'] = (self.button_size[0] / 2)
+    self.position['bottom'] = -(self.button_size[1] / 2)
+    self.position['top'] = (self.button_size[1] / 2)
 
     self.listOfActives = [] ## Used for keeping track of active buttons while going through options
 
-    self.draw()
+    ## button xml tree
+    button_tree = ET.parse('menu_buttons.xml')
 
-  ## 'draws' the buttons
-  def draw(self):
-    active_check = False ## check if active was already positioned
+    ## root button
+    root_button_xml = button_tree.getroot()
+    self.root_button = None
 
+    ## creates each button
+    self.setup(None, xml_node=root_button_xml)
+
+    ## assign current tier as children of ""
+    self.current = self.root_button.children
+
+    ## assume the top button is being hovered over
+    self.active = self.current[0]
+
+    ## draw only the top layer menu
+    for x in self.current:
+      x.render.resumeRender()
+
+    ## move buttons to correct place
+    self.move()
+
+  ## create placement of buttons
+  def setup(self, parent_node, xml_node=None, text=None):
+    ## place buttons default in the center
+    pos = [[self.position['left'], self.position['bottom']]
+    , [self.position['left'], self.position['top']]
+    , [self.position['right'], self.position['bottom']]
+    , [self.position['right'], self.position['top']]]
+
+    ## text is used primarily to put in a back button
+    if text != None:
+      img = self.tex(name=text) ## get the texture of the button
+      b = Button(text, parent_node, img, pos, False) ## create button instance
+      parent_node.set_child(b) ## add current button to parent's child list
+    else:
+      img = self.tex(xml_node=xml_node) ## get the texture of the button
+      b = Button(xml_node.get('name'), parent_node, img, pos, xml_node.get('function')) ## create button instance
+      if xml_node.get('name') == "":
+        self.root_button = b ## set root button as such
+      else:
+        parent_node.set_child(b) ## add current button to parent's child list
+
+      ## recursively go through all of the children
+      if xml_node.get('function') != "True":
+        for child in xml_node:
+          self.setup(b, xml_node=child) 
+
+      ## setup back button
+      if parent_node != None and len(xml_node) > 0:
+        self.setup(b, text="< Back")
+
+  ## create the texture for the button
+  def tex(self, xml_node=None, name=None):
+    if name == None:
+      children_count = len(xml_node)
+      if children_count > 0:
+        text = xml_node.get('name') + " >"
+      else:
+        text = xml_node.get('name')
+    else:
+      text = name
+
+    image_size = [400, 100] ## size of the image of the button
+    outline_width = 10
+    inner_size = [image_size[0] - outline_width, image_size[1] - outline_width]
+
+    ## blank button creation (eventually the outline)
+    img = Image.new("RGBA", image_size, self.outline_color)
+    draw = ImageDraw.Draw(img)
+
+    ## draw inner color
+    x0 = outline_width
+    y0 = outline_width
+    x1 = inner_size[0]
+    y1 = inner_size[1]
+    draw.rectangle([x0, y0, x1, y1], fill=self.button_color)
+
+    ## add text only if not root button
+    if text != "":
+      ## font information for the text
+      font_size = 1
+      f = ImageFont.FreeTypeFont("font.ttf", font_size)
+      y = f.getoffset(text)[1]
+      wh = f.getsize(text) ## size of the text in the current font
+
+      while (wh[0] < inner_size[0] - outline_width) and (wh[1] < inner_size[1] - outline_width - y):
+        font_size += 1
+        f = ImageFont.FreeTypeFont("font.ttf", font_size)
+        y = f.getoffset(text)[1]
+        wh = f.getsize(text) ## size of the text in the current font
+
+      font_size -= 2
+      f = ImageFont.FreeTypeFont("font.ttf", font_size)
+      y = f.getoffset(text)[1]
+      wh = f.getsize(text) ## size of the text in the current font
+
+      ## calculate top-left corner of text in order to center it
+      tx = ((outline_width + inner_size[0]) / 2) - wh[0]/2
+      ty = ((outline_width + inner_size[1] - 2*y) / 2) - wh[1]/2
+
+      ## add text to the button (name)
+      draw.text([tx, ty], text, self.outline_color, font=f)
+
+    ## rotate the finished product
+    img = img.rotate(180)
+    img = img.transpose(PIL.Image.FLIP_LEFT_RIGHT)
+
+    return img
+
+  ## moves the current set of buttons to the correct place
+  def move(self):
     ## total height for all the buttons
-    total_height = (len(self.current) - 1) * (self.button_size[1] + self.tb_gap) + (2 * self.button_size[1])
+    total_height = (len(self.current) - 1) * (self.button_size[1] + self.between_gap) + (2 * self.button_size[1])
+
+    active_check = False
 
     for x in xrange(len(self.current)):
       b = self.current[x] ## current button
@@ -70,54 +159,27 @@ class Menu():
       ## positioning info for the current button
       ## note: active buttons have twice the height and width as normal buttons
       active_multi = 1 ## active multiplier
-      if b.active:
-        top_y = (total_height / 2) - x * (self.button_size[1] + self.tb_gap)
+      if self.active.path == b.path:
+        top_y = (total_height / 2) - x * (self.button_size[1] + self.between_gap)
         bottom_y = top_y - (2 * self.button_size[1])
         active_check = True
         active_multi = 2
       elif active_check:
-        top_y = (total_height / 2) - x * (self.button_size[1] + self.tb_gap) - self.button_size[1]
+        top_y = (total_height / 2) - x * (self.button_size[1] + self.between_gap) - self.button_size[1]
         bottom_y = top_y - self.button_size[1]
       else:
-        top_y = (total_height / 2) - x * (self.button_size[1] + self.tb_gap)
+        top_y = (total_height / 2) - x * (self.button_size[1] + self.between_gap)
         bottom_y = top_y - self.button_size[1]
       left_x = -1 + self.left_gap
       right_x = left_x + (self.button_size[0] * active_multi)
 
-      b.render.setVerticies([[bottom_y, left_x], [bottom_y, right_x], [top_y, left_x], [top_y, right_x]])
+      ## calculate the difference between where the buttons should be and the initial positions
+      diff_x = left_x - (self.position['left'] * active_multi)
+      diff_y = top_y - (self.position['top'] * active_multi)
 
-  def setup(self, b):
-    image_size = (400, 100) ## size of the image of the button
-
-    text = b.get_name() ## text for the button
-
-    ## font information for the text
-    font_size = 44
-    font = ImageFont.truetype("font.ttf", font_size)
-    wh = font.getsize(text) ## size of the text in the current font
-
-    ## blank button creation
-    img = Image.new("RGBA", image_size, self.button_color)
-    draw = ImageDraw.Draw(img)
-
-    ## add the outline on the blank button
-    outline_width = 20
-    draw.line((0, 0, 0, image_size[1]), fill = self.outline_color, width = outline_width)
-    draw.line((0, 0, image_size[0], 0), fill = self.outline_color, width = outline_width)
-    draw.line((image_size[0], 0, image_size[0], image_size[1]), fill = self.outline_color, width = outline_width)
-    draw.line((0, image_size[1], image_size[0], image_size[1]), fill = self.outline_color, width = outline_width)
-
-    ## add text to the button (name)
-    draw.text((image_size[0]/2 - wh[0]/2, image_size[1]/2 - wh[1]), text, (255,255,255), font=font)
-    draw = ImageDraw.Draw(img)
-
-    ## rotate the finished product
-    img = img.rotate(270)
-
-    b.render.setTexture(img)
+      b.move_button(diff_x, diff_y, active_multi)
 
   def key_stuff(self, event, direction):
-    # if(event.key == vispy.keys.ESCAPE): exit()
     if direction == "down":
       if event.text == "w":
         self.change_keys("up")
@@ -132,56 +194,63 @@ class Menu():
     if dir == "up": ## go if 'w' is pressed; go up in the list
       i = self.current.index(self.active)
       if i == 0:
-        self.new_active(self.current[len(self.current) - 1])
+        self.active = self.current[len(self.current) - 1]
       else:
-        self.new_active(self.current[i - 1])
+        self.active = self.current[i - 1]
     elif dir == "down": ## go if 's' is pressed; go down in the list
       i = self.current.index(self.active)
       if i == len(self.current) - 1:
-        self.new_active(self.current[0])
+        self.active = self.current[0]
       else:
-        self.new_active(self.current[i + 1])
+        self.active = self.current[i + 1]
     elif dir == "back": ## go if 'a' is pressed; go back a level
       ## Go if not top tier
       if (self.active.parent.parent != None):
         self.pause()
         grandparent = self.active.parent.parent
         self.current = grandparent.children
-        self.new_active(self.listOfActives.pop())
+        self.active = self.listOfActives.pop()
+        self.resume()
     elif dir == "forward": ## go if 'd' is pressed; 'Select' active button
       ## Go if a child exists for the active button
       if (len(self.active.children) > 0):
         self.pause()
         self.current = self.active.children
         self.listOfActives.append(self.active)
-        self.new_active(self.current[0])
-    self.draw()
+        self.active = self.current[0]
+        self.resume()
+      elif self.active.functional:
+        print self.active.name, "was pressed!"
+    self.move()
 
-  ## switches active buttons
-  def new_active(self, button):
-    self.active.active = False
-    self.active = button
-    self.active.active = True
-
-  ## 'undraw' current set of button
+  ## pause the current menu
   def pause(self):
     for x in self.current:
       x.render.pauseRender()
 
+  ## resume the current menu
+  def resume(self):
+    for x in self.current:
+      x.render.resumeRender()
+
 class Button:
-  def __init__(self, name=""):
-    self.name = name ## name of button
-    self.parent = None ## button that leads to current button
+  def __init__(self, name, parent, tex, verts, functional):
+    self.name = name ## the button's name
     self.children = [] ## sub-menu that appears when button is pressed
-    self.arrow_kids = "" ## concatenate an arrow if children are available
-    self.active = False ## true if current button is active, i.e. hovered over
-    self.render = rendering.Drawable() ## setup render
+    self.parent = parent ## button that leads to current button
+    self.functional = functional
+    self.path = [self.name] ## create a path to the button
+
+    if parent != None:
+      self.path.extend(parent.path)
+
+    self.render = rendering.Drawable(verticies=verts, tex_data=tex, start=False) ## set up render
 
   def set_child(self, child):
     self.children.append(child)
-
-  def get_name(self):
-    if len(self.children) > 0:
-      return self.name + " >"
-    else:
-      return self.name
+    
+  def move_button(self, diff_x, diff_y, s):
+    a = np.eye(4)
+    scale(a, s) ## scale by some 's'
+    translate(a, diff_x, diff_y) ## translate button by some 'x' and 'y'
+    self.render.setPosition(a)

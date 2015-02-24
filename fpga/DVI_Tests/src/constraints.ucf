@@ -1,86 +1,109 @@
-###########################################
-# Timing Constraints
-###########################################
-NET "clk_100MHz" TNM_NET = "TNM_CLK100M";
-TIMESPEC "TS_CLK100M" = PERIOD "TNM_CLK100M" 100 MHz HIGH 50 % PRIORITY 0 ;
-
-NET "clk_132MHz" TNM_NET = "TNM_PCLK";
-TIMESPEC "TS_PCLK" = PERIOD "TNM_PCLK" 132 MHz HIGH 50 % PRIORITY 0 ;
-
-#
-# Multi-cycle paths
-#
-TIMEGRP "bramgrp" = RAMS(U_DVI_TX/U_dvi_tx/pixel2x/dataint<*>);  
-TIMEGRP "fddbgrp" = FFS(U_DVI_TX/U_dvi_tx/pixel2x/db<*>);
-TIMEGRP "bramra" = FFS(U_DVI_TX/U_dvi_tx/pixel2x/ra<*>);
-
-TIMESPEC "TS_ramdo" = FROM "bramgrp" TO "fddbgrp" TS_PCLK;
-TIMESPEC "TS_ramra" = FROM "bramra" TO "fddbgrp" TS_PCLK;
-
 VCCAUX = 3.3;
 
 NET "rst_n" LOC = T15 | IOSTANDARD = "LVCMOS33";
 NET "clk_100MHz" LOC = L15 | IOSTANDARD = "LVCMOS33" | PERIOD = 100 MHz HIGH 50%;
 
-NET "tx_tmds(0)"  	LOC = "D8" | IOSTANDARD = TMDS_33 ; # Blue
+NET "tx_tmds(0)"   LOC = "D8" | IOSTANDARD = TMDS_33 ; # Blue
 NET "tx_tmdsb(0)"  LOC = "C8" | IOSTANDARD = TMDS_33 ;
-NET "tx_tmds(1)"  	LOC = "C7" | IOSTANDARD = TMDS_33 ; # Red
+NET "tx_tmds(1)"   LOC = "C7" | IOSTANDARD = TMDS_33 ; # Red
 NET "tx_tmdsb(1)"  LOC = "A7" | IOSTANDARD = TMDS_33 ;
-NET "tx_tmds(2)"  	LOC = "B8" | IOSTANDARD = TMDS_33 ; # Green
+NET "tx_tmds(2)"   LOC = "B8" | IOSTANDARD = TMDS_33 ; # Green
 NET "tx_tmdsb(2)"  LOC = "A8" | IOSTANDARD = TMDS_33 ;
-NET "tx_tmds(3)"  	LOC = "B6" | IOSTANDARD = TMDS_33 ; # Clock
+NET "tx_tmds(3)"   LOC = "B6" | IOSTANDARD = TMDS_33 ; # Clock
 NET "tx_tmdsb(3)"  LOC = "A6" | IOSTANDARD = TMDS_33 ;
-NET "rx_scl"  LOC = "M16"; # Bank = 1, Pin name = IO_L47P_FWE_B_M1DQ0, Sch name = TMDS-RX-SCL
-NET "rx_sda"  LOC = "M18"; # Bank = 1, Pin name = IO_L47N_LDC_M1DQ1,   Sch name = TMDS-RX-SDA
+NET "rx_scl"  LOC = "M16" | IOSTANDARD = LVCMOS33; # Bank = 1, Pin name = IO_L47P_FWE_B_M1DQ0, Sch name = TMDS-RX-SCL
+NET "rx_sda"  LOC = "M18" | IOSTANDARD = LVCMOS33; # Bank = 1, Pin name = IO_L47N_LDC_M1DQ1,   Sch name = TMDS-RX-SDA
 
 
-NET "rx_tmds(3)"  	LOC = "H17" |IOSTANDARD = TMDS_33 ; # CLK
-NET "rx_tmdsb(3)"  LOC = "H18" |IOSTANDARD = TMDS_33 ;
-NET "rx_tmds(2)"  	LOC = "J16" |IOSTANDARD = TMDS_33 ; # Red
-NET "rx_tmdsb(2)"  LOC = "J18" |IOSTANDARD = TMDS_33 ;
-NET "rx_tmds(1)"  	LOC = "L17" |IOSTANDARD = TMDS_33 ; # Green	
-NET "rx_tmdsb(1)"  LOC = "L18" |IOSTANDARD = TMDS_33 ;
-NET "rx_tmds(0)"  	LOC = "K17" |IOSTANDARD = TMDS_33 ; # Blue	
-NET "rx_tmdsb(0)"  LOC = "K18" |IOSTANDARD = TMDS_33 ;
+NET "rx_tmds(3)"  LOC = "H17" | IOSTANDARD = TMDS_33 | PERIOD = 131.980 MHz HIGH 50%; # CLK
+NET "rx_tmdsb(3)" LOC = "H18" | IOSTANDARD = TMDS_33;
+NET "rx_tmds(2)"  LOC = "J16" | IOSTANDARD = TMDS_33; # Red
+NET "rx_tmdsb(2)" LOC = "J18" | IOSTANDARD = TMDS_33;
+NET "rx_tmds(1)"  LOC = "L17" | IOSTANDARD = TMDS_33; # Green 
+NET "rx_tmdsb(1)" LOC = "L18" | IOSTANDARD = TMDS_33;
+NET "rx_tmds(0)"  LOC = "K17" | IOSTANDARD = TMDS_33; # Blue 
+NET "rx_tmdsb(0)" LOC = "K18" | IOSTANDARD = TMDS_33;
 
-NET "led<0>" LOC = "U18"; # Bank = 1, Pin name = IO_L52N_M1DQ15, 	   Sch name = LD0
+NET "led<0>" LOC = "U18" | IOSTANDARD = LVCMOS33; # Bank = 1, Pin name = IO_L52N_M1DQ15,     Sch name = LD0
 
 NET "uart_tx" LOC = "B16" | IOSTANDARD = LVCMOS33;
 NET "uart_rx" LOC = "A16" | IOSTANDARD = LVCMOS33;
 
 
-NET "camera_a_inout_data[7]" LOC = R11 | IOSTANDARD = LVCMOS33 | IN_TERM = UNTUNED_SPLIT_50;
-NET "camera_a_inout_data[6]" LOC = M11 | IOSTANDARD = LVCMOS33 | IN_TERM = UNTUNED_SPLIT_50;
-NET "camera_a_inout_data[5]" LOC = U13 | IOSTANDARD = LVCMOS33 | IN_TERM = UNTUNED_SPLIT_50;
-NET "camera_a_inout_data[4]" LOC = U15 | IOSTANDARD = LVCMOS33 | IN_TERM = UNTUNED_SPLIT_50;
-NET "camera_a_inout_data[3]" LOC = U16 | IOSTANDARD = LVCMOS33 | IN_TERM = UNTUNED_SPLIT_50;
-NET "camera_a_inout_data[2]" LOC = V15 | IOSTANDARD = LVCMOS33 | IN_TERM = UNTUNED_SPLIT_50;
-NET "camera_a_inout_data[1]" LOC = U11 | IOSTANDARD = LVCMOS33 | IN_TERM = UNTUNED_SPLIT_50;
-NET "camera_a_inout_data[0]" LOC = M10 | IOSTANDARD = LVCMOS33 | IN_TERM = UNTUNED_SPLIT_50;
-NET "camera_a_inout_fv"      LOC = T12 | IOSTANDARD = LVCMOS33 | IN_TERM = UNTUNED_SPLIT_50;
-NET "camera_a_inout_lv"      LOC = N10 | IOSTANDARD = LVCMOS33 | IN_TERM = UNTUNED_SPLIT_50;
-NET "camera_a_inout_pclk"    LOC = R10 | IOSTANDARD = LVCMOS33 | IN_TERM = UNTUNED_SPLIT_50;
-NET "camera_a_inout_sda"     LOC = P11 | IOSTANDARD = I2C;
-NET "camera_a_inout_scl"     LOC = V12 | IOSTANDARD = I2C;
-NET "camera_a_out_pwdn"      LOC = T11 | IOSTANDARD = LVCMOS33;
-NET "camera_a_out_mclk"      LOC = N11 | IOSTANDARD = LVCMOS33;
-NET "camera_a_out_rst"       LOC = V13 | IOSTANDARD = LVCMOS33 | DRIVE = 24;
+NET "right_camera_out_clock_p" LOC = U16 | IOSTANDARD = LVDS_33 | DIFF_TERM = TRUE;
+NET "right_camera_out_clock_n" LOC = V16 | IOSTANDARD = LVDS_33 | DIFF_TERM = TRUE;
+NET "right_camera_in_sync_p"   LOC = U15 | IOSTANDARD = LVDS_33 | DIFF_TERM = TRUE;
+NET "right_camera_in_sync_n"   LOC = V15 | IOSTANDARD = LVDS_33 | DIFF_TERM = TRUE;
+NET "right_camera_in_data3_p"  LOC = U13 | IOSTANDARD = LVDS_33 | DIFF_TERM = TRUE;
+NET "right_camera_in_data3_n"  LOC = V13 | IOSTANDARD = LVDS_33 | DIFF_TERM = TRUE;
+NET "right_camera_in_data2_p"  LOC = M11 | IOSTANDARD = LVDS_33 | DIFF_TERM = TRUE;
+NET "right_camera_in_data2_n"  LOC = N11 | IOSTANDARD = LVDS_33 | DIFF_TERM = TRUE;
+NET "right_camera_in_data1_p"  LOC = R11 | IOSTANDARD = LVDS_33 | DIFF_TERM = TRUE;
+NET "right_camera_in_data1_n"  LOC = T11 | IOSTANDARD = LVDS_33 | DIFF_TERM = TRUE;
+NET "right_camera_in_data0_p"  LOC = T12 | IOSTANDARD = LVDS_33 | DIFF_TERM = TRUE;
+NET "right_camera_in_data0_n"  LOC = V12 | IOSTANDARD = LVDS_33 | DIFF_TERM = TRUE;
 
-NET "camera_x_vdd_en" LOC = V16 | IOSTANDARD = LVCMOS33;
+NET "pair7P" LOC = N10 | IOSTANDARD = LVCMOS33;
+NET "pair7N" LOC = P11 | IOSTANDARD = LVCMOS33;
+NET "pair8P" LOC = M10 | IOSTANDARD = LVCMOS33;
+NET "pair8N" LOC = N9  | IOSTANDARD = LVCMOS33;
+NET "pair9P" LOC = U11 | IOSTANDARD = LVCMOS33;
+NET "pair9N" LOC = V11 | IOSTANDARD = LVCMOS33;
 
-NET "camera_b_inout_data[7]" LOC = T6 | IOSTANDARD = LVCMOS33 | IN_TERM = UNTUNED_SPLIT_50;
-NET "camera_b_inout_data[6]" LOC = N7 | IOSTANDARD = LVCMOS33 | IN_TERM = UNTUNED_SPLIT_50;
-NET "camera_b_inout_data[5]" LOC = U7 | IOSTANDARD = LVCMOS33 | IN_TERM = UNTUNED_SPLIT_50;
-NET "camera_b_inout_data[4]" LOC = U8 | IOSTANDARD = LVCMOS33 | IN_TERM = UNTUNED_SPLIT_50;
-NET "camera_b_inout_data[3]" LOC = M8 | IOSTANDARD = LVCMOS33 | IN_TERM = UNTUNED_SPLIT_50;
-NET "camera_b_inout_data[2]" LOC = R8 | IOSTANDARD = LVCMOS33 | IN_TERM = UNTUNED_SPLIT_50;
-NET "camera_b_inout_data[1]" LOC = V5 | IOSTANDARD = LVCMOS33 | IN_TERM = UNTUNED_SPLIT_50;
-NET "camera_b_inout_data[0]" LOC = U5 | IOSTANDARD = LVCMOS33 | IN_TERM = UNTUNED_SPLIT_50;
-NET "camera_b_inout_fv"      LOC = R7 | IOSTANDARD = LVCMOS33 | IN_TERM = UNTUNED_SPLIT_50;
-NET "camera_b_inout_lv"      LOC = N6 | IOSTANDARD = LVCMOS33 | IN_TERM = UNTUNED_SPLIT_50;
-NET "camera_b_inout_pclk"    LOC = U10 | IOSTANDARD = LVCMOS33 | IN_TERM = UNTUNED_SPLIT_50;
-NET "camera_b_inout_sda"     LOC = V6 | IOSTANDARD = I2C;
-NET "camera_b_inout_scl"     LOC = P8 | IOSTANDARD = I2C;
-NET "camera_b_out_pwdn"      LOC = T8 | IOSTANDARD = LVCMOS33;
-NET "camera_b_out_mclk"      LOC = V8 | IOSTANDARD = LVCMOS33;
-NET "camera_b_out_rst"       LOC = N8 | IOSTANDARD = LVCMOS33;
+#NET "right_camera_in_clock_p" LOC = R10 | IOSTANDARD = LVDS_33 | DIFF_TERM = TRUE;
+#NET "right_camera_in_clock_n" LOC = T10 | IOSTANDARD = LVDS_33 | DIFF_TERM = TRUE;
+
+#NET "left_camera_in_clock_p" LOC = U10 | IOSTANDARD = LVDS_33 | DIFF_TERM = TRUE;
+#NET "left_camera_in_clock_n" LOC = V10 | IOSTANDARD = LVDS_33 | DIFF_TERM = TRUE;
+
+NET "pair12P" LOC = R8 | IOSTANDARD = LVCMOS33;
+NET "pair12N" LOC = T8 | IOSTANDARD = LVCMOS33;
+NET "pair13P" LOC = M8 | IOSTANDARD = LVCMOS33;
+NET "pair13N" LOC = N8 | IOSTANDARD = LVCMOS33;
+NET "pair14P" LOC = U8 | IOSTANDARD = LVCMOS33;
+NET "pair14N" LOC = V8 | IOSTANDARD = LVCMOS33;
+
+#NET "left_camera_in_data0_p"  LOC = U7 | IOSTANDARD = LVDS_33 | DIFF_TERM = TRUE;
+#NET "left_camera_in_data0_n"  LOC = V7 | IOSTANDARD = LVDS_33 | DIFF_TERM = TRUE;
+#NET "left_camera_in_data1_p"  LOC = N7 | IOSTANDARD = LVDS_33 | DIFF_TERM = TRUE;
+#NET "left_camera_in_data1_n"  LOC = P8 | IOSTANDARD = LVDS_33 | DIFF_TERM = TRUE;
+#NET "left_camera_in_data2_p"  LOC = T6 | IOSTANDARD = LVDS_33 | DIFF_TERM = TRUE;
+#NET "left_camera_in_data2_n"  LOC = V6 | IOSTANDARD = LVDS_33 | DIFF_TERM = TRUE;
+#NET "left_camera_in_data3_p"  LOC = R7 | IOSTANDARD = LVDS_33 | DIFF_TERM = TRUE;
+#NET "left_camera_in_data3_n"  LOC = T7 | IOSTANDARD = LVDS_33 | DIFF_TERM = TRUE;
+#NET "left_camera_in_sync_p"   LOC = N6 | IOSTANDARD = LVDS_33 | DIFF_TERM = TRUE;
+#NET "left_camera_in_sync_n"   LOC = P7 | IOSTANDARD = LVDS_33 | DIFF_TERM = TRUE;
+#NET "left_camera_out_clock_p" LOC = U5 | IOSTANDARD = LVDS_33 | DIFF_TERM = TRUE;
+#NET "left_camera_out_clock_n" LOC = V5 | IOSTANDARD = LVDS_33 | DIFF_TERM = TRUE;
+
+
+# Ethernet PHY
+NET "phyrst"    LOC = "G13" | IOSTANDARD = LVCMOS33; # Bank = 1, Pin name = IO_L32N_A16_M1A9,            Sch name = E-RESET
+NET "phytxclk"  LOC = "K16" | IOSTANDARD = LVCMOS33; # Bank = 1, Pin name = IO_L41N_GCLK8_M1CASN,       Sch name = E-TXCLK
+NET "phyTXD<0>" LOC = "H16" | IOSTANDARD = LVCMOS33; # Bank = 1, Pin name = IO_L37N_A6_M1A1,             Sch name = E-TXD0
+NET "phyTXD<1>" LOC = "H13" | IOSTANDARD = LVCMOS33; # Bank = 1, Pin name = IO_L36P_A9_M1BA0,            Sch name = E-TXD1
+NET "phyTXD<2>" LOC = "K14" | IOSTANDARD = LVCMOS33; # Bank = 1, Pin name = IO_L39N_M1ODT,                       Sch name = E-TXD2
+NET "phyTXD<3>" LOC = "K13" | IOSTANDARD = LVCMOS33; # Bank = 1, Pin name = IO_L34N_A12_M1BA2,           Sch name = E-TXD3
+NET "phyTXD<4>" LOC = "J13" | IOSTANDARD = LVCMOS33; # Bank = 1, Pin name = IO_L39P_M1A3,                        Sch name = E-TXD4
+NET "phyTXD<5>" LOC = "G14" | IOSTANDARD = LVCMOS33; # Bank = 1, Pin name = IO_L30N_A20_M1A11,           Sch name = E-TXD5
+NET "phyTXD<6>" LOC = "H12" | IOSTANDARD = LVCMOS33; # Bank = 1, Pin name = IO_L32P_A17_M1A8,            Sch name = E-TXD6
+NET "phyTXD<7>" LOC = "K12" | IOSTANDARD = LVCMOS33; # Bank = 1, Pin name = IO_L34P_A13_M1WE,            Sch name = E-TXD7
+NET "phytxen"   LOC = "H15" | IOSTANDARD = LVCMOS33; # Bank = 1, Pin name = IO_L37P_A7_M1A0,             Sch name = E-TXEN
+NET "phytxer"   LOC = "G18" | IOSTANDARD = LVCMOS33; # Bank = 1, Pin name = IO_L38N_A4_M1CLKN,           Sch name = E-TXER
+NET "phygtxclk" LOC = "L12" | IOSTANDARD = LVCMOS33; # Bank = 1, Pin name = IO_L40P_GCLK11_M1A5,        Sch name = E-GTXCLK
+NET "phyRXD<0>" LOC = "G16" | IOSTANDARD = LVCMOS33; # Bank = 1, Pin name = IO_L38P_A5_M1CLK,            Sch name = E-RXD0
+NET "phyRXD<1>" LOC = "H14" | IOSTANDARD = LVCMOS33; # Bank = 1, Pin name = IO_L36N_A8_M1BA1,            Sch name = E-RXD1
+NET "phyRXD<2>" LOC = "E16" | IOSTANDARD = LVCMOS33; # Bank = 1, Pin name = IO_L33P_A15_M1A10,           Sch name = E-RXD2
+NET "phyRXD<3>" LOC = "F15" | IOSTANDARD = LVCMOS33; # Bank = 1, Pin name = IO_L1P_A25,                          Sch name = E-RXD3
+NET "phyRXD<4>" LOC = "F14" | IOSTANDARD = LVCMOS33; # Bank = 1, Pin name = IO_L30P_A21_M1RESET,        Sch name = E-RXD4
+NET "phyRXD<5>" LOC = "E18" | IOSTANDARD = LVCMOS33; # Bank = 1, Pin name = IO_L33N_A14_M1A4,            Sch name = E-RXD5
+NET "phyRXD<6>" LOC = "D18" | IOSTANDARD = LVCMOS33; # Bank = 1, Pin name = IO_L31N_A18_M1A12,           Sch name = E-RXD6
+NET "phyRXD<7>" LOC = "D17" | IOSTANDARD = LVCMOS33; # Bank = 1, Pin name = IO_L31P_A19_M1CKE,           Sch name = E-RXD7
+NET "phyrxdv"   LOC = "F17" | IOSTANDARD = LVCMOS33; # Bank = 1, Pin name = IO_L35P_A11_M1A7,            Sch name = E-RXDV
+NET "phyrxer"   LOC = "F18" | IOSTANDARD = LVCMOS33; # Bank = 1, Pin name = IO_L35N_A10_M1A2,           Sch name = E-RXER
+NET "phyrxclk"  LOC = "K15" | IOSTANDARD = LVCMOS33; # Bank = 1, Pin name = IO_L41P_GCLK9_IRDY1_M1RASN, Sch name = E-RXCLK
+NET "phymdc"    LOC = "F16" | IOSTANDARD = LVCMOS33; # Bank = 1, Pin name = IO_L1N_A24_VREF,             Sch name = E-MDC
+NET "phymdi"    LOC = "N17" | IOSTANDARD = LVCMOS33; # Bank = 1, Pin name = IO_L48P_HDC_M1DQ8,           Sch name = E-MDIO
+NET "phyint"    LOC = "L16" | IOSTANDARD = LVCMOS33; # Bank = 1, Pin name = IO_L42N_GCLK6_TRDY1_M1LDM,  Sch name = E-INT
+NET "phycrs"    LOC = "C18" | IOSTANDARD = LVCMOS33;
+NET "phycol"    LOC = "C17" | IOSTANDARD = LVCMOS33;

@@ -78,7 +78,10 @@ begin
         mcb3_dram_ck     => mcb3_dram_ck,
         mcb3_dram_ck_n   => mcb3_dram_ck_n,
 
-        uart_rx    => uart_rx);
+        uart_rx    => uart_rx,
+        
+        left_camera_in => (others => 'U'),
+        right_camera_in => (others => 'U'));
     
     UART : entity work.uart_transmitter
         generic map (
