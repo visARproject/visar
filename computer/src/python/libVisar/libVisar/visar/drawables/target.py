@@ -2,8 +2,8 @@ from .drawable import Drawable
 import numpy as np
 
 
-class Targets(drawable):
-    super(Target, self).__init__()
+class Targets(Drawable):
+    # super(Targets, self).__init__()
     pass
 
 

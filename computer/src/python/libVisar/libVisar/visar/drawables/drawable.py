@@ -19,22 +19,31 @@ class Drawable(object):
             If you do not make a mesh, you'll get a square that takes up the screen
 
         '''
-        assert isinstance(worldpos, tuple), "World position specified invalid, should be tuple"
-        assert len(worldpos) == 3, "World position invalid (should be length 3)"
+        self.model = np.eye(4)
+        self.view = np.eye(4)
+        self.projection = np.eye(4)
 
         self.mesh = self.make_mesh()
         self.vert_shader, self.frag_shader = self.make_shaders()
         self.program = Program(self.vert_shader, self.frag_shader)
         self.program.bind(VertexBuffer(self.mesh))
-        if hasattr(self, make_tex):
-            self.texture = self.make_tex()
+        if hasattr(self, make_texture):
+            self.texture = self.make_texture()
             assert isinstance(self.texture, Texture2D), "Texture passed is not a texture!"
 
         self.program['texture'] = self.texture
         cube["texture"].interpolation = 'linear'
 
     def __setitem__(self, key, value):
-        self.rebind(key, value)
+        self.bind(key, value)
+
+    def translate(self, *args):
+        translate(self.model, *args)
+        self.program['model'] = self.model
+
+    def rotate(self, *args):
+        rotate(self.model, *args)
+        self.program['model'] = self.model
 
     def bind(self, key, value):
         '''Rebind a single program item to a value'''
@@ -42,8 +51,8 @@ class Drawable(object):
 
     def bind_multiple(self, **kwargs):
         '''rebind multiple things!'''
-        for key, item in kwargs:
-            self.program[key] = item
+        for key, value in kwargs:
+            self.bind(key, value)
 
     def make_mesh(self):
         '''mesh()
@@ -57,10 +66,11 @@ class Drawable(object):
         cube.bind(vertices)
         self.program['model'] = model
         self.program['view'] = view
+        self.program['projection'] = projection
 
         if self.mesh is None:
             vertices, indices, _ = create_cube()
-            self.mesh = 
+            # self.mesh = 
             
         else:
             return self.mesh
@@ -75,21 +85,23 @@ class Drawable(object):
         vertex = ''
         return vertex, fragment
 
-    def make_tex(self):
+    def make_texture(self):
         '''Make a texture
         THIS IS A DEFAULT TEXTURE
         '''
         texture = utils.checkerboard()
         return texture
 
-    @property
     def draw(self):
         self.program.draw()
 
-class Drawable_List():
-    def __init__(self, view, *args):
+class Context(object):
+    '''Note contexts are nestable (you can treat a context as a drawable)
+    '''
+    def __init__(self, *args):
         self.drawables = args
-        self.view = view
+        self.view = np.eye(4)
+        self.projection = np.eye(4)
 
     def __getitem__(self, key):
         return(self.drawables[key])
@@ -114,3 +126,20 @@ class Drawable_List():
         for drawable in self.drawables:
             drawable['view'] = self.view
 
+    def set_projection(self, projection):
+        self.projection = projection
+        for drawable in self.drawables:
+            drawable['projection'] = self.projection
+
+    def set_view(self, view):
+        self.view = view
+        for drawable in self.drawables:
+            drawable['view'] = self.view
+
+    def on_resize(self):
+        for drawable in self.drawables:
+            drawable['projection'] = self.projection
+
+    def draw(self):
+        for drawable in self.drawables:
+            drawable.draw()
