@@ -3,8 +3,9 @@ from vispy.geometry import create_cube
 from vispy.util.transforms import perspective, translate, rotate
 from vispy.gloo import (Program, VertexBuffer, IndexBuffer, Texture2D, clear,
                         FrameBuffer)
+from vispy import gloo
 
-from ..rift_parameters import read_mesh_txt
+from ..rift_parameters import read_mesh_txt, parameters
 
 
 class Mesh(object):
@@ -145,15 +146,17 @@ class Distorter(object):
         self.left_eye = gloo.FrameBuffer(self.left_eye_tex, gloo.RenderBuffer(self.size))
         self.right_eye = gloo.FrameBuffer(self.right_eye_tex, gloo.RenderBuffer(self.size))
 
-        self.left_eye_program, self.left_eye_indices = make_distortion(self.left_eye_tex, 'left')
-        self.right_eye_program, self.right_eye_indices = make_distortion(self.right_eye_tex, 'right')
+        self.left_eye_program, self.left_eye_indices = Mesh.make_eye(self.left_eye_tex, 'left')
+        self.right_eye_program, self.right_eye_indices = Mesh.make_eye(self.right_eye_tex, 'right')
 
         self.IPD = 0.0647 # Interpupilary distance in m
         # Male: 64.7 mm
         # Female: 62.3 mm
 
+        self.L_projection = parameters.projection_left.T
+        self.R_projection = parameters.projection_right.T
 
-    def draw(self, drawables):
+    def draw(self, Drawables):
         '''Distorter.draw(list_of_drawables)
         Draw the drawables to the right and left-eye render buffers,
         then apply the distortion and display these buffers to the screen
@@ -164,16 +167,16 @@ class Distorter(object):
         gloo.set_clear_color('black')
         with self.left_eye:
             gloo.clear(color=True, depth=True)
-            for drawable in drawables:
-                drawable.draw()
+            Drawables.translate(0, 0, -self.IPD / 2)
+            Drawables.set_projection(self.L_projection)
+            Drawables.draw()
 
         with self.right_eye:
-            translate(view, 0, 0, self.IPD)
             gloo.clear(color=True, depth=True)
-            for drawable in drawables:
-                drawable.shader['view'] = view
-                drawable.draw()
+            Drawables.translate(0, 0, self.IPD / 2)
+            Drawables.set_projection(self.R_projection)
+            Drawables.draw()
 
         gloo.clear(color=True, depth=True)
-        self.left_eye_program.draw('triangles', self.left_indices)
-        self.right_eye_program.draw('triangles', self.right_indices)
+        self.left_eye_program.draw('triangles', self.left_eye_indices)
+        self.right_eye_program.draw('triangles', self.right_eye_indices)
