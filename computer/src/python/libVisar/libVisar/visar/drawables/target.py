@@ -1,3 +1,11 @@
+from .drawable import Drawable
+import numpy as np
+
+
+class Targets(drawable):
+    super(Target, self).__init__()
+    pass
+
 
 class Target(object):
     def __init__(self, world_pos, color=(1.0, 0.0, 0.5)):
@@ -9,11 +17,8 @@ class Target(object):
         '''
         assert isinstance(worldpos, tuple), "World position specified invalid, should be tuple"
         assert len(worldpos) == 3, "World position invalid (should be length 3)"
-
         self.mesh = None
 
-
-    @property
     def mesh(self):
         '''mesh(), virtual property
         Generates and/or returns a triangle mesh
@@ -21,8 +26,7 @@ class Target(object):
         treat it as though it is a property (i.e. not a function)
         ex:
         >>> x = Target((100, 100, 100))
-        >>> mesh = Target.mesh
-
+        >>> mesh = Target.mesh()
         '''
         if self.mesh is None:
             self.mesh = np.zeros(3, 
@@ -33,10 +37,8 @@ class Target(object):
             )
 
         else:
-
             return self.mesh
 
-    @property
     def shader(self):
         '''shader -> (vertex, fragment) 
         Returns vertex and fragment shaders as 2-tuple of strings
@@ -44,7 +46,6 @@ class Target(object):
         fragment = ''
         vertex = ''
         return vertex, fragment
-
 
     @property
     def draw(self):
