@@ -22,6 +22,7 @@
 #define DEFAULT_PORT 19101
 #define DEFAULT_ADDR "127.0.0.1"
 #define TIMEOUT      1
+#define PERIOD_UTIME 20000   //codec needs frame time of 20ms
 
 int global_kill = 0;  //global program kill flag, will stop all threads if set
 static int sender_kill_flag;

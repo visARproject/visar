@@ -6,6 +6,7 @@
 #include <netinet/in.h>
 #include <pthread.h>
 #include <stdio.h>
+#include <unistd.h>
 
 #include "audio_controller.h"
 #include "buffer.h"
@@ -51,7 +52,10 @@ void *reciever_thread(void *ptr){
         //bytes = sendto(sock, &ack, 1, 0, (struct sockaddr *)&client,sizeof(client)); //send an ack
       } else printf("Error, bad socket read: %d\n",bytes); //report the error
       //printf("buffer: (%d, %d, %d)\n", buf->start, buf->end, BUFFER_SIZE(*buf));
-    } //else printf("Waiting\n");
+    } else {
+      //printf("Waiting\n");
+      usleep(PERIOD_UTIME/2);
+    }
   }
   
   close(sock);
@@ -89,6 +93,8 @@ void *sender_thread(void *ptr){
       int bytes = encode(GET_QUEUE_HEAD(*buf), encode_buf, buf->per_size); //encode the data
       INC_QUEUE_HEAD(*buf); //increment queue head
       bytes = sendto(sock, encode_buf, bytes, 0, (struct sockaddr *)&dest, sizeof(dest)); //send the packet
+    } else {
+      usleep(PERIOD_UTIME/2);
     }
   }
   
