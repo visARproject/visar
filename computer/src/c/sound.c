@@ -7,6 +7,7 @@
 #include <alsa/asoundlib.h>
 #include <pthread.h>
 #include <stdio.h>
+#include <stdlib.h>
 #include <unistd.h>
 
 //project includes
@@ -83,6 +84,7 @@ void *speaker_thread(void* ptr){
     //wait until adequate buffer is achieved
     if((!started && BUFFER_SIZE(*buf) < (MIN_BUFFER)) || BUFFER_EMPTY(*buf)){
       started = 0;  //stop if already started
+      printf("Speaker Waiting\n");
       usleep(PERIOD_UTIME/2); //wait to reduce CPU usage
       continue;     //don't start yet
     } else started = 1; //indicate that we've startd
@@ -118,6 +120,7 @@ void *mic_thread(void* ptr){
   while(!global_kill && !mic_kill_flag) { //loop until program stops us
     //wait until there's space in the buffer
     if(BUFFER_FULL(*buf)){
+      printf("Microphone Waiting\n");
       usleep(PERIOD_UTIME/2); //wait to reduce CPU usage
       continue; //do nothing else
     }
@@ -125,6 +128,7 @@ void *mic_thread(void* ptr){
     //write data to speaker buffer, check response codes
     int rc = snd_pcm_readi(mic_handle, GET_QUEUE_TAIL(*buf), buf->period);
     INC_QUEUE_TAIL(*buf);
+    printf("Mic Data Read\n");
     if (rc == -EPIPE) { //catch overruns (too much data)
       fprintf(stderr, "overrun occurred\n");
       snd_pcm_prepare(mic_handle); //reset handler

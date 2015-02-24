@@ -6,6 +6,7 @@
 #include <netinet/in.h>
 #include <pthread.h>
 #include <stdio.h>
+#include <stdlib.h>
 #include <unistd.h>
 
 #include "audio_controller.h"
@@ -43,6 +44,7 @@ void *reciever_thread(void *ptr){
   while(!(*flag) && !global_kill){
     if(!BUFFER_FULL(*buf)){ //read data if space is available
       int bytes = recvfrom(sock, decode_buf, buf->per_size, 0, (struct sockaddr *)&client, &len); //get an input packet
+      //int bytes = recvfrom(sock, GET_QUEUE_TAIL(*buf), buf->per_size, 0, (struct sockaddr *)&client, &len); //get an input packet
       //printf("%d\n",bytes); 
       //TODO: timeouts
       if(bytes > 0){ //ack successful packets, report error otherwise
@@ -53,7 +55,7 @@ void *reciever_thread(void *ptr){
       } else printf("Error, bad socket read: %d\n",bytes); //report the error
       //printf("buffer: (%d, %d, %d)\n", buf->start, buf->end, BUFFER_SIZE(*buf));
     } else {
-      //printf("Waiting\n");
+      printf("Reciever Waiting\n");
       usleep(PERIOD_UTIME/2);
     }
   }
@@ -89,11 +91,13 @@ void *sender_thread(void *ptr){
   
   //read data from 
   while(!(*flag) && !global_kill){
-    if(!BUFFER_FULL(*buf)){ //read data if space is available  
+    if(!BUFFER_EMPTY(*buf)){ //read data if space is available  
       int bytes = encode(GET_QUEUE_HEAD(*buf), encode_buf, buf->per_size); //encode the data
       INC_QUEUE_HEAD(*buf); //increment queue head
       bytes = sendto(sock, encode_buf, bytes, 0, (struct sockaddr *)&dest, sizeof(dest)); //send the packet
+      //int bytes = sendto(sock, GET_QUEUE_HEAD(*buf), buf->per_size, 0, (struct sockaddr *)&dest, sizeof(dest)); //send the packet
     } else {
+      printf("Sender Waiting\n");
       usleep(PERIOD_UTIME/2);
     }
   }

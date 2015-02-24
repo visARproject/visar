@@ -1,11 +1,15 @@
 /* Header file for the audio controller interface */
 
+//constants used elsewhere
+#define TIMEOUT      1       //socket timeout is 1 second
+#define PERIOD_UTIME 20000   //codec needs frame time of 20ms
+
 extern int global_kill; //define the global kill flag
 
 //Function prototypes
 int start_voice_control(); //fork off a voice controller subprocess
 int stop_voice_control();  //kill the output pipe, stop transmitting data
-//int main(); -program's main funciton is defined in .c file
+//int main(); --program's main funciton is defined in .c file
 
 /* Audio Control Protocol Documentation */
 /* Command messages use the following format:
