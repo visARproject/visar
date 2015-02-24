@@ -214,8 +214,8 @@ class Canvas(app.Canvas):
     def on_resize(self, event):
         width, height = event.size
         gloo.set_viewport(0, 0, width, height)
-        self.projection = perspective(60.0, width / float(height), 1.0, 100.0)
-        # self.projection = parameters.projection_left.T
+        # self.projection = perspective(60.0, width / float(height), 1.0, 100.0)
+        self.projection = parameters.projection_left.T
         self.program['u_projection'] = self.projection
 
     def on_draw(self, event):

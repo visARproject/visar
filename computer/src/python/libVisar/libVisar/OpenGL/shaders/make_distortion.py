@@ -134,3 +134,46 @@ class Mesh(object):
         program['texture'] = texture
 
         return program, IndexBuffer(i_buffer)
+
+
+class Distorter(object):
+    def __init__(self, size=(1600, 900)):
+        self.size = size
+        self.left_eye_tex = gloo.Texture2D(shape=(4096, 4096) + (3,))
+        self.right_eye_tex = gloo.Texture2D(shape=(4096, 4096) + (3,))
+        
+        self.left_eye = gloo.FrameBuffer(self.left_eye_tex, gloo.RenderBuffer(self.size))
+        self.right_eye = gloo.FrameBuffer(self.right_eye_tex, gloo.RenderBuffer(self.size))
+
+        self.left_eye_program, self.left_eye_indices = make_distortion(self.left_eye_tex, 'left')
+        self.right_eye_program, self.right_eye_indices = make_distortion(self.right_eye_tex, 'right')
+
+        self.IPD = 0.0647 # Interpupilary distance in m
+        # Male: 64.7 mm
+        # Female: 62.3 mm
+
+
+    def draw(self, drawables):
+        '''Distorter.draw(list_of_drawables)
+        Draw the drawables to the right and left-eye render buffers,
+        then apply the distortion and display these buffers to the screen
+        TODO:
+        How can we globally handle view?
+        Should we even bother trying to find the 'right' way to do this?
+        '''
+        gloo.set_clear_color('black')
+        with self.left_eye:
+            gloo.clear(color=True, depth=True)
+            for drawable in drawables:
+                drawable.draw()
+
+        with self.right_eye:
+            translate(view, 0, 0, self.IPD)
+            gloo.clear(color=True, depth=True)
+            for drawable in drawables:
+                drawable.shader['view'] = view
+                drawable.draw()
+
+        gloo.clear(color=True, depth=True)
+        self.left_eye_program.draw('triangles', self.left_indices)
+        self.right_eye_program.draw('triangles', self.right_indices)
