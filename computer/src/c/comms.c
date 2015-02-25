@@ -66,48 +66,6 @@ void *reciever_thread(void *ptr){
   pthread_exit(NULL); //exit thread safetly
 }
 
-//function for sending audio
-void *sender_thread(void *ptr){
-  audiobuffer* buf = ((comms_package*)ptr)->buf; //extract the buffer
-  char* host = ((comms_package*)ptr)->addr; //get the address
-  int port = ((comms_package*)ptr)->port; //get the port
-  int* flag = ((comms_package*)ptr)->flag; //get the kill flag
-  free(ptr); //free the package's memory
-  
-  //setup the scoket
-  int sock = socket(PF_INET, SOCK_DGRAM, 0); // setup UDP socket
-  struct sockaddr_in addr, dest; //create address structs for socket
-  addr.sin_family = AF_INET;  //using internet protocols
-  addr.sin_port = htons(0);   //port doesn't matter
-  addr.sin_addr.s_addr = htonl(INADDR_ANY); //don't care what our address is
-  bind(sock, (struct sockaddr*)&addr, sizeof(addr)); //bind socket
-  dest.sin_family = AF_INET;  //setup the target address
-  dest.sin_port = htons(port); //set the destination port
-  inet_aton(host, &dest.sin_addr); //set the target address
-  char encode_buf[buf->per_size]; //allocate buffer for encoded data
-  int true = 1;
-  setsockopt(sock,SOL_SOCKET,SO_REUSEADDR,&true,sizeof(int)); //allow socket reuse
-  
-  
-  //read data from 
-  while(!(*flag) && !global_kill){
-    if(!BUFFER_EMPTY(*buf)){ //read data if space is available  
-      int bytes = encode(GET_QUEUE_HEAD(*buf), encode_buf, buf->per_size); //encode the data
-      INC_QUEUE_HEAD(*buf); //increment queue head
-      bytes = sendto(sock, encode_buf, bytes, 0, (struct sockaddr *)&dest, sizeof(dest)); //send the packet
-      //int bytes = sendto(sock, GET_QUEUE_HEAD(*buf), buf->per_size, 0, (struct sockaddr *)&dest, sizeof(dest)); //send the packet
-    } else {
-      printf("Sender Waiting\n");
-      usleep(PERIOD_UTIME/2);
-    }
-  }
-  
-  close(sock);
-  free_buffer(buf);  //free the buffer (TODO: examine placement)
-  printf("Audio Controller: Sender Thread shutdown\n");
-  pthread_exit(NULL); //exit thread safetly
-}
-
 //spawn a reciever thread, requires an input port, buffer, and thread; returns the pthread status code
 int start_reciever(int port, audiobuffer* buf, int* flag){
   //package the info needed by the handler
@@ -125,19 +83,40 @@ int start_reciever(int port, audiobuffer* buf, int* flag){
   return rc; //return the response code
 }
 
-//start the sender therad, requires address, port, buffer, and kill flag; returns the pthread status code
-int start_sender(char* addr, int port, audiobuffer* buf, int* flag){
-  //package the info needed by the handler
-  comms_package* pkg = (comms_package*)malloc(sizeof(comms_package));
-  pkg->addr = addr;
-  pkg->port = port;
-  pkg->buf  = buf;
-  pkg->flag = flag;
+//function for sending audio packet, returns bytes sent
+int send_packet(sender_handle* snd){
+  char encode_buf[snd->len]; //allocate buffer for encoded data
+  int bytes = encode(snd->buf, encode_buf, snd->len); //encode the data
+  bytes = sendto(snd->sock, encode_buf, bytes, 0, (struct sockaddr *)&(snd->dest), sizeof(snd->dest)); //send the packet
+  //int bytes = sendto(snd->sock, snd->buf, snd->len, 0, (struct sockaddr *)&(snd->dest), sizeof(snd->dest)); //send the packet
+  return bytes;
+}
+
+//start the sender therad, requires address, port, and buffer/length; returns the handler
+sender_handle* start_sender(const char* host, int port, char* buf, size_t len){
+  //setup the scoket
+  int sock = socket(PF_INET, SOCK_DGRAM, 0); // setup UDP socket
+  struct sockaddr_in addr, dest; //create address structs for socket
+  addr.sin_family = AF_INET;  //using internet protocols
+  addr.sin_port = htons(0);   //port doesn't matter
+  addr.sin_addr.s_addr = htonl(INADDR_ANY); //don't care what our address is
+  bind(sock, (struct sockaddr*)&addr, sizeof(addr)); //bind socket
+  dest.sin_family = AF_INET;  //setup the target address
+  dest.sin_port = htons(port); //set the destination port
+  inet_aton(host, &dest.sin_addr); //set the target address
+  int true = 1;
+  setsockopt(sock,SOL_SOCKET,SO_REUSEADDR,&true,sizeof(int)); //allow socket reuse
   
-  //create thread and send it the package
-  pthread_t thread; //thread handler
-  int rc = pthread_create(&thread, NULL, sender_thread, (void*)pkg);
-  if (rc) printf("ERROR: Could not create reciever thread, rc=%d\n", rc); //print errors
-  
-  return rc; //return the response code
+  //create handler and store attributes
+  sender_handle* snd = (sender_handle*)malloc(sizeof(sender_handle));
+  snd->sock = sock;
+  snd->buf  = buf; 
+  snd->len  = len;
+  snd->dest = dest; 
+  return snd; //return the response code
+}
+
+void destroy_sender(sender_handle* snd){
+  close(snd->sock);
+  free(snd->buf);  //free the buffer
 }
