@@ -13,6 +13,7 @@
 //project includes
 #include "audio_controller.h"
 #include "buffer.h"
+#include "comms.h"
 #include "sound.h"
 
 //predefined constants (basically guesses)
@@ -61,42 +62,41 @@ snd_pcm_t* start_snd_device(size_t period, unsigned int rate, int stereo, int di
 }
 
 //spawn a speaker thread
-audiobuffer* create_speaker_thread(snd_pcm_t pcm_handle){
+audiobuffer* create_speaker_thread(snd_pcm_t* pcm_handle, size_t period, size_t frame_size){
   //create a buffer struct (frame size is frames/period * channels * sample width)
-  audiobuffer* buffer = create_buffer(frames, 2*(stereo+1), MAX_BUFFER); //16-bit channels
+  audiobuffer* buffer = create_buffer(period, frame_size, MAX_BUFFER); //16-bit channels
   
   //package the information for the thread
   spk_pcm_package* pkg = (spk_pcm_package*)malloc(sizeof(spk_pcm_package));
   pkg->pcm_handle = pcm_handle;
   pkg->buffer = buffer;
-  pkg_out = (void*)pkg;
 
   //create thread and send it the package
   pthread_t thread; //thread handler
-  rc = pthread_create(&thread, NULL, (direction)? mic_thread : speaker_thread, (void*)pkg);
+  int rc = pthread_create(&thread, NULL, speaker_thread, (void*)pkg);
   if (rc) printf("ERROR: Could not create device thread, rc=%d\n", rc); //print errors
   
   return buffer; //return the device's audio buffer
 }
 
-void create_speaker_thread(snd_pcm_t pcm_handle, size_t period, size_t frame_size){
+void create_mic_thread(snd_pcm_t* pcm_handle, sender_handle* sender, size_t period, size_t frame_size){
   //allocate a microphone buffer (just one period)
   char* buffer = (char*)malloc(period*frame_size);
   
   //finish populating the sender info
   sender->buf = buffer;
-  sender->len = frames*2*(stereo+1);
+  sender->len = period*frame_size;
   
   //store in package
   mic_pcm_package* pkg = (mic_pcm_package*)malloc(sizeof(mic_pcm_package));
   pkg->pcm_handle = pcm_handle; //store the device handler
-  pkg->buffer = period; //store the buffer pointer
-  pkg->period = frame_size; //store the period size
+  pkg->buffer = buffer; //store the buffer pointer
+  pkg->period = period; //store the period size
   pkg->snd_handle = sender; //store the handler
 
   //create thread and send it the package
   pthread_t thread; //thread handler
-  rc = pthread_create(&thread, NULL, (direction)? mic_thread : speaker_thread, (void*)pkg);
+  int rc = pthread_create(&thread, NULL, mic_thread, (void*)pkg);
   if (rc) printf("ERROR: Could not create device thread, rc=%d\n", rc); //print errors
 }
 
@@ -110,8 +110,7 @@ void *speaker_thread(void* ptr){
   while(!global_kill && !speaker_kill_flag) { //loop until program stops us
     //wait until adequate buffer is achieved
     if((!started && BUFFER_SIZE(*buf) < (MIN_BUFFER)) || BUFFER_EMPTY(*buf)){
-      started = 0;  //stop if already started
-      printf("Speaker Waiting\n");
+      //printf("Speaker Waiting\n");
       usleep(PERIOD_UTIME/2); //wait to reduce CPU usage
       continue;     //don't start yet
     } else started = 1; //indicate that we've startd
@@ -122,9 +121,11 @@ void *speaker_thread(void* ptr){
     if (rc == -EPIPE){ //Catch underruns (not enough data)
       fprintf(stderr, "underrun occurred\n");
       snd_pcm_prepare(speaker_handle); //reset speaker
+      started = 0;  //stop and wait for buffer to buildup
     } else if (rc < 0) fprintf(stderr, "error from writei: %s\n", snd_strerror(rc)); //other errors
     else if (rc != (int)buf->period) fprintf(stderr, "short write, write %d frames\n", rc);
-    else fprintf(stderr, "audio written correctly\n");
+    //else fprintf(stderr, "audio written correctly\n");
+    snd_pcm_wait(speaker_handle, 1000); //wait for IO to be ready
   }
 
   //TODO: find way to combine multiple audio streams
@@ -140,7 +141,7 @@ void *speaker_thread(void* ptr){
 
 void *mic_thread(void* ptr){
   char* buf = ((mic_pcm_package*)ptr)->buffer; //cast pointer, get buffer struct
-  size_t preiod  = ((mic_pcm_package*)ptr)->period;  //cast pointer, get period size
+  size_t period  = ((mic_pcm_package*)ptr)->period;  //cast pointer, get period size
   sender_handle* snd_handle = ((mic_pcm_package*)ptr)->snd_handle; //cast pointer, get handler
   snd_pcm_t* mic_handle = ((mic_pcm_package*)ptr)->pcm_handle; //cast pointer, get device pointer
   free(ptr); //clean up memory
@@ -149,13 +150,13 @@ void *mic_thread(void* ptr){
   while(!global_kill && !mic_kill_flag) { //loop until program stops us
     //write data to speaker buffer, check response codes
     int rc = snd_pcm_readi(mic_handle, buf, period);
-    printf("Mic Data Read\n");
+    //printf("Mic Data Read\n");
     if (rc == -EPIPE) { //catch overruns (too much data for buffer)
       fprintf(stderr, "overrun occurred\n");
       snd_pcm_prepare(mic_handle); //reset handler
     //other errors
     } else if (rc < 0) fprintf(stderr, "error from read: %s\n", snd_strerror(rc));
-    else if (rc != (int)buf->period) fprintf(stderr, "short read, read %d frames\n", rc);
+    else if (rc != (int)period) fprintf(stderr, "short read, read %d frames\n", rc);
     else{
       //TODO: send multiple packets to places
       send_packet(snd_handle); //if it worked, send the packet

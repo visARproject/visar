@@ -72,9 +72,10 @@ int main(int argc, char** argv){
       
         //setup the speaker
         if(direction & 2){
-          audiobuffer* spk_buf = start_snd_device(period, rate, (channels==2), PLAYBACK_DIR, 0); //start the device
+          snd_pcm_t* handle = start_snd_device(period, rate, (channels==2), PLAYBACK_DIR); //start the device
+          audiobuffer* spk_buf = create_speaker_thread(handle, period, 2*channels); //spawn the speaker thread
           reciever_kill_flag = 0;  //reset the kill flag
-          if(start_reciever(port, spk_buf, &reciever_kill_flag)){
+          if(start_reciever(port, spk_buf, &reciever_kill_flag)){ //start the reciever thread
             printf("Audio Controller: Could not start speaker\n");
             speaker_kill_flag = 1; //kill the mic device thread
           }
@@ -83,9 +84,9 @@ int main(int argc, char** argv){
         
         //setup the mic
         if(direction & 1){ 
-          sender_handle* sndr = setup_sender(addr, port, 0, 0); //setup partial sender
-          audiobuffer* mic_buf = start_snd_device(period, rate, (channels==2), CAPTURE_DIR, sndr); //start the device
-          sender_kill_flag = 0;  //reset the kill flag
+          snd_pcm_t* handle = start_snd_device(period, rate, (channels==2), CAPTURE_DIR); //start the device
+          sender_handle* sndr = start_sender(addr, port, 0, 0); //setup partial sender
+          create_mic_thread(handle, sndr, period, 2*(channels)); //spawn the thread
           printf("Audio Controller: Started microphone transmission\n");
         }
       

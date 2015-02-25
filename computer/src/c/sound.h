@@ -24,8 +24,10 @@ typedef struct{
 
 //open a sound device with specified period, rate, channels(0=mono,1=stereo or MONO_SOUND/STEREO_SOUND) 
 //  and direction(0=playback,1=capture), returns the buffer (also PLAYBACK_DIR/CAPTURE_DIR)
-//  sender handler is only required for mic threads, use 0 otherwise
-audiobuffer* start_snd_device(size_t period, unsigned int rate, int stereo, int direction, sender_handle* sender){
+snd_pcm_t* start_snd_device(size_t period, unsigned int rate, int stereo, int direction);
+
+audiobuffer* create_speaker_thread(snd_pcm_t* pcm_handle, size_t period, size_t frame_size);
+void create_mic_thread(snd_pcm_t* pcm_handle, sender_handle* sender, size_t period, size_t frame_size);
 
 //thread functions (grab/send data over network); pointer should be a snd_pcm_package
 void *speaker_thread(void* ptr);

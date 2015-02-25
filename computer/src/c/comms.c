@@ -85,16 +85,15 @@ int start_reciever(int port, audiobuffer* buf, int* flag){
 
 //function for sending audio packet, returns bytes sent
 int send_packet(sender_handle* snd){
-  char encode_buf[snd->buf->per_size]; //allocate buffer for encoded data
-  int bytes = encode(GET_QUEUE_HEAD(*(snd->buf)), encode_buf, snd->buf->per_size); //encode the data
-  INC_QUEUE_HEAD(*(snd->buf)); //increment queue head
-  int bytes = sendto(snd->sock, encode_buf, bytes, 0, (struct sockaddr *)&(snd->dest), sizeof(snd->dest)); //send the packet
-  //int bytes = sendto(snd->sock, GET_QUEUE_HEAD(*(snd->buf)), snd->buf->per_size, 0, (struct sockaddr *)&(snd->dest), sizeof(snd->dest)); //send the packet
+  char encode_buf[snd->len]; //allocate buffer for encoded data
+  int bytes = encode(snd->buf, encode_buf, snd->len); //encode the data
+  bytes = sendto(snd->sock, encode_buf, bytes, 0, (struct sockaddr *)&(snd->dest), sizeof(snd->dest)); //send the packet
+  //int bytes = sendto(snd->sock, snd->buf, snd->len, 0, (struct sockaddr *)&(snd->dest), sizeof(snd->dest)); //send the packet
   return bytes;
 }
 
 //start the sender therad, requires address, port, and buffer/length; returns the handler
-sender_handle* start_sender(const char* addr, int port, char* buf, size_t len){
+sender_handle* start_sender(const char* host, int port, char* buf, size_t len){
   //setup the scoket
   int sock = socket(PF_INET, SOCK_DGRAM, 0); // setup UDP socket
   struct sockaddr_in addr, dest; //create address structs for socket
@@ -112,7 +111,7 @@ sender_handle* start_sender(const char* addr, int port, char* buf, size_t len){
   sender_handle* snd = (sender_handle*)malloc(sizeof(sender_handle));
   snd->sock = sock;
   snd->buf  = buf; 
-  snd->len  = len
+  snd->len  = len;
   snd->dest = dest; 
   return snd; //return the response code
 }
