@@ -1,6 +1,6 @@
 /* 
  * File handles sound processing (start/stop/buffer structure)
- * TODO: callbacks, multiplexing, volume
+ * TODO: multiplexing, volume
  */
 
 //library includes 
@@ -127,8 +127,6 @@ void *speaker_thread(void* ptr){
     //else fprintf(stderr, "audio written correctly\n");
     snd_pcm_wait(speaker_handle, 1000); //wait for IO to be ready
   }
-
-  //TODO: find way to combine multiple audio streams
   
   // notify kernel to empty/close the speakers
   snd_pcm_drain(speaker_handle);  //finish transferring the audio
@@ -144,6 +142,7 @@ void *mic_thread(void* ptr){
   size_t period  = ((mic_pcm_package*)ptr)->period;  //cast pointer, get period size
   sender_handle* snd_handle = ((mic_pcm_package*)ptr)->snd_handle; //cast pointer, get handler
   snd_pcm_t* mic_handle = ((mic_pcm_package*)ptr)->pcm_handle; //cast pointer, get device pointer
+  size_t length = snd_handle->len; //get the buffer size
   free(ptr); //clean up memory
   mic_kill_flag = 0;  //reset the kill signal (smallish race condition, not concerned)
   
@@ -157,9 +156,13 @@ void *mic_thread(void* ptr){
     //other errors
     } else if (rc < 0) fprintf(stderr, "error from read: %s\n", snd_strerror(rc));
     else if (rc != (int)period) fprintf(stderr, "short read, read %d frames\n", rc);
-    else{
-      //TODO: send multiple packets to places
-      send_packet(snd_handle); //if it worked, send the packet
+    else{ //read was good, send the data
+      send_packet(snd_handle); //send the packet over network
+      if(vc_flag){ //write to voice control pipe if flag set
+        vc_hold_flag = 1; //start of write
+        write(vc_pipe[0], buf, snd_handle->length); //write data
+        vc_hold_flag = 0; //end of write
+      }
     }
   }
 

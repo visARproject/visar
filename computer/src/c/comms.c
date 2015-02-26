@@ -46,7 +46,6 @@ void *reciever_thread(void *ptr){
       int bytes = recvfrom(sock, decode_buf, buf->per_size, 0, (struct sockaddr *)&client, &len); //get an input packet
       //int bytes = recvfrom(sock, GET_QUEUE_TAIL(*buf), buf->per_size, 0, (struct sockaddr *)&client, &len); //get an input packet
       //printf("%d\n",bytes); 
-      //TODO: timeouts
       if(bytes > 0){ //ack successful packets, report error otherwise
         decode(decode_buf, GET_QUEUE_TAIL(*buf), bytes); //decode the input
         //write(stdout, GET_QUEUE_TAIL(*buf), buf->per_size); //DEBUG
@@ -61,7 +60,7 @@ void *reciever_thread(void *ptr){
   }
   
   close(sock);
-  free_buffer(buf);  //free the buffer (TODO: examine placement)
+  free_buffer(buf); 
   printf("Audio Controller: Reciever Thread shutdown\n");
   pthread_exit(NULL); //exit thread safetly
 }

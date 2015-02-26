@@ -17,7 +17,7 @@ int setup_codecs(){
   enc_state = speex_encoder_init(&speex_wb_mode);
   dec_state = speex_decoder_init(&speex_wb_mode);
 
-  //Set the quality to 8 (15 kbps nb, 28 wb)
+  //Set the quality to 8 (28 kbps)
   int tmp=8;
   speex_encoder_ctl(enc_state, SPEEX_SET_QUALITY, &tmp);
   

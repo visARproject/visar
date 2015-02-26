@@ -1,7 +1,7 @@
 /* 
  * File handles the the speaker/mic control interface
  *  Program expects control inputs from stdin (done via redirects) 
- * TODO: multiple streams, voice_control, compression
+ * TODO: test voice control, multiple streams?
  */
  
 #include <stdio.h>
@@ -9,6 +9,7 @@
 #include <unistd.h>
 #include <pthread.h>
 #include <alsa/asoundlib.h>
+#include <signal.h>
 
 #include "audio_controller.h"
 #include "buffer.h"
@@ -23,12 +24,22 @@
 #define DEFAULT_ADDR "127.0.0.1"
 
 int global_kill = 0;  //global program kill flag, will stop all threads if set
-static int sender_kill_flag;
-static int reciever_kill_flag;
+int vc_pipe[2];       //voice control pipe
+int vc_flag;          //voice control active flag
+int vc_hold_flag;     //voice control pipe active flag
+static pid_t child;   //pid of child process
+static int reciever_kill_flag; //kill flag for network reciever thread
 
 //main function for the program, listens on stdin for commands
 int main(int argc, char** argv){  
   char input[80]; //buffer for commands
+  vc_pipe[0] = -1; //set the fd's to -1
+  vc_pipe[1] = -1;
+  vc_flag = 0;      //voice control is not active
+  vc_hold_flag = 0; //nor is the voice control pipe
+  
+  
+  signal(SIGINT, shutdown); //catch SIGINT and exit cleanly
   
   int period = setup_codecs(); //setup the codecs and get the period size  
   
@@ -110,36 +121,28 @@ int main(int argc, char** argv){
         if(direction & 2) reciever_kill_flag = 1; //assert server kill flag
         if(!kill_f) sleep(TIMEOUT);  //wait for data to finish processing
         if(direction & 2) speaker_kill_flag = 1;  //assert speaker kill flag
-        if(direction & 1) sender_kill_flag = 1;   //assert sender kill flag
         printf("Audio Controller: Devices shutdown\n");
       
       } else if(0 == strcmp(token, "shutdown")){
-        //shutdown the producers, wait, then shutdown consumers
-        mic_kill_flag = 1;      //assert microphone kill flag
-        reciever_kill_flag = 1; //assert server kill flag
-        sleep(TIMEOUT);         //wait for data to finish processing
-        speaker_kill_flag = 1;  //assert speaker kill flag
-        sender_kill_flag = 1;   //assert sender kill flag
-        global_kill = 1;        //assert global kill flag (just in case)
-        sleep(TIMEOUT);         //wait for data to finish processing
-        printf("Audio Controller: Devices shutdown\n");
+        shutdown();
         
-      //TODO: Start voice_control
+      //Start voice_control
       } else if(0 == strcmp(token, "voice_start")){
-        
+        start_voice_control();
       
-      //TODO: Stop voice_control
+      //Stop voice_control
       } else if(0 == strcmp(token, "voice_stop")){
-      
+        stop_voice_control();
       
       } else {
         printf("Audio Controller: Unrecognized command: \"%s\" \n", token);  
       }
     } else {  //could not read from stdin
-      printf("Audio Controller: Error when reading input, terminating\n");
-      global_kill = 1;  //assert global kill signal
-      sleep(TIMEOUT);
-      break;
+      if(!global_kill){ //if global kill is 0, it was an actual error; SIGINT otherwise
+        printf("Audio Controller: Error when reading input, terminating\n");
+        shutdown();
+      }
+      break; //break so program can exit
     }
   }
   
@@ -151,12 +154,51 @@ int main(int argc, char** argv){
 
 //fork off a voice controller subprocess
 int start_voice_control(){
+  if(pipe(vc_pipe)){ //create the pipe
+    printf("Audio Controller: Couldn't start pipe\n");
+    return -1; //return in failure
+  }
   
+  //point the pipe's output to stdout
+  if(dup2(stdout, vc_pipe[1]) == -1){
+    printf("Audio Controller: Couldn't copy output\n");
+    return -2; //return in failure
+  }
+  
+  if(!(child = fork())){ //spawn the child processs
+    start_voice(vc_pipe); //throw to voice controller
+  }
 
+  vc_flag = 1; //ok to start sending data
+  printf("Audio Controller: Voice Controller Started\n");
 }
 
 //kill the output pipe, stop 
 int stop_voice_control(){
-
-
+  vc_flag = 0;    //signal thread to stop writing data
+  while(vc_hold_flag);  //wait for pending writes to finish
+  close(fd[0]);   //close the pipe, signaling that child should close
+  sleep(TIMEOUT); //wait for child to respond
+  
+  //check if child pid is valid, try to kill the child, check if it existed
+  if(child && ESRCH != kill(child,SIGKILL)){ 
+    printf("Audio Controller: Voice Controller Killed Manually\n");
+    close(fd[1]); //close its fd
+  }
+  child = 0; //child is no longer valid
+  printf("Audio Controller: Voice Controller Shutdown\n");
 }
+
+//cleanly shutdown the program
+void shutdown(){
+  //shutdown the producers, wait, then shutdown consumers
+  printf("Audio Controller: Shutting down...\n")
+  mic_kill_flag = 1;      //assert microphone kill flag
+  reciever_kill_flag = 1; //assert server kill flag
+  sleep(TIMEOUT);         //wait for data to finish processing
+  speaker_kill_flag = 1;  //assert speaker kill flag
+  global_kill = 1;        //assert global kill flag (just in case)
+  sleep(TIMEOUT);         //wait for data to finish processing
+  printf("Audio Controller: Devices shutdown\n");
+}
+
