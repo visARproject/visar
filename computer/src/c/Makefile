@@ -4,10 +4,16 @@ CC=gcc
 CFLAGS=-c 
 LIBS=-lasound -lpthread -lspeex
 
-all: audio
+all: audio voice_control
 
 audio: audio_controller.o buffer.o comms.o sound.o encode.o
 	$(CC) audio_controller.o buffer.o comms.o sound.o encode.o -o audio $(LIBS) 
+
+test: audio_controller.o buffer.o comms.o sound.o encode.o test.o
+	$(CC) test.o audio_controller.o buffer.o comms.o sound.o encode.o -o audio $(LIBS) 
+
+test.o: test.c
+	$(CC) $(CFLAGS) test.c
 
 audio_controller.o: audio_controller.c
 	$(CC) $(CFLAGS) audio_controller.c

@@ -160,7 +160,9 @@ void *mic_thread(void* ptr){
       send_packet(snd_handle); //send the packet over network
       if(vc_flag){ //write to voice control pipe if flag set
         vc_hold_flag = 1; //start of write
-        write(vc_pipe[0], buf, snd_handle->length); //write data
+        //printf("Writing data to pipe...\n"); //DEBUG
+        write(vc_pipe, buf, length); //write data
+        //printf("Data written to pipe\n"); //DEBUG
         vc_hold_flag = 0; //end of write
       }
     }
