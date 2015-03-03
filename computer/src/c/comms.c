@@ -118,4 +118,5 @@ sender_handle* start_sender(const char* host, int port, char* buf, size_t len){
 void destroy_sender(sender_handle* snd){
   close(snd->sock);
   free(snd->buf);  //free the buffer
+  free(snd);
 }

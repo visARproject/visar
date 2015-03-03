@@ -36,12 +36,17 @@ int main(int argc, char** argv){
     
   //start the voice process before doing anything significant
   setup_voice_control();
+  
+  //default the flags to not started
+  mic_kill_flag = 1;
+  speaker_kill_flag = 1;
      
   int period = setup_codecs(); //setup the codecs and get the period size  
   
   //handler loop, runs until program is killed
   while(!global_kill){
     if(fgets(input, 80, stdin)){ //get a command from stdin
+      printf("Echo: %s",input);
       char* token = strtok(input, "\n"); //split string to ignore newline
       token = strtok(input, " "); //split string on whitespace, get command
       
@@ -76,6 +81,14 @@ int main(int argc, char** argv){
         channels = DEFAULT_CHNS;
       
         printf("Rate: %d, Channels: %d, Period: %d\n", rate, channels, period);
+        
+        //have to pause vc before starting threads
+        int vc_resume = vc_flag;
+        if(vc_flag){
+          printf("Audio Controller: Pausing VC\n");
+          vc_flag = 0;
+          sleep(TIMEOUT);  //wait for vc to stop
+        }
       
         //setup the speaker
         if(direction & 2){
@@ -93,8 +106,14 @@ int main(int argc, char** argv){
         if(direction & 1){ 
           snd_pcm_t* handle = start_snd_device(period, rate, (channels==2), CAPTURE_DIR); //start the device
           sender_handle* sndr = start_sender(addr, port, 0, 0); //setup partial sender
-          create_mic_thread(handle, sndr, period, 2*(channels)); //spawn the thread
+          create_mic_thread(handle, sndr, period, 2*(channels),0); //spawn the thread
           printf("Audio Controller: Started microphone transmission\n");
+        }
+        
+        if(vc_resume){
+          vc_flag = 1;
+          printf("Audio Controller: Resuming VC\n");
+          sleep(TIMEOUT);
         }
       
       //Stop Command
@@ -126,6 +145,12 @@ int main(int argc, char** argv){
       //Start voice_control
       } else if(0 == strcmp(token, "voice_start")){
         vc_flag = 1; //signal that threads should send data to controller
+        if(mic_kill_flag){
+          snd_pcm_t* handle = start_snd_device(period, DEFAULT_RATE, DEFAULT_CHNS==2, CAPTURE_DIR); //start the device
+          sender_handle* sndr = (sender_handle*) malloc(sizeof(sender_handle));
+          create_mic_thread(handle, sndr, period, 2*DEFAULT_CHNS, 1); //spawn the thread
+          printf("Audio Controller: Started microphone transmission\n");
+        }
       
       //Stop voice_control
       } else if(0 == strcmp(token, "voice_stop")){
@@ -135,7 +160,7 @@ int main(int argc, char** argv){
         printf("Audio Controller: Unrecognized command: \"%s\" \n", token);  
       }
     } else {  //could not read from stdin
-      if(!global_kill){ //if global kill is 0, it was an actual error; SIGINT otherwise
+      if(!global_kill){ //if global kill is 0, it was an actual error
         printf("Audio Controller: Error when reading input, terminating\n");
         shutdown_prog();
       }
