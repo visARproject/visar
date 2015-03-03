@@ -29,6 +29,7 @@ int vc_flag;          //voice control active flag
 int vc_hold_flag;     //voice control pipe active flag
 static pid_t child;   //pid of child process
 static int reciever_kill_flag; //kill flag for network reciever thread
+static int period;    //period (samples/frame) required by the codecs
 
 //main function for the program, listens on stdin for commands
 int main(int argc, char** argv){  
@@ -37,7 +38,9 @@ int main(int argc, char** argv){
   //start the voice process before doing anything significant
   setup_voice_control();
      
-  int period = setup_codecs(); //setup the codecs and get the period size  
+  period = setup_codecs(); //setup the codecs and get the period size  
+  mic_kill_flag = 1;      //init the flags
+  speaker_kill_flag = 1;
   
   //handler loop, runs until program is killed
   while(!global_kill){
@@ -91,9 +94,14 @@ int main(int argc, char** argv){
         
         //setup the mic
         if(direction & 1){ 
+          if(vc_flag){
+            vc_flag = 0;    //stop voice control
+            printf("Audio Controller: Stopping VC for comms setup\n");
+            wait(TIMEOUT);  //let thread die
+          }
           snd_pcm_t* handle = start_snd_device(period, rate, (channels==2), CAPTURE_DIR); //start the device
           sender_handle* sndr = start_sender(addr, port, 0, 0); //setup partial sender
-          create_mic_thread(handle, sndr, period, 2*(channels)); //spawn the thread
+          create_mic_thread(handle, sndr, period, 2*(channels), 0); //spawn the thread
           printf("Audio Controller: Started microphone transmission\n");
         }
       
@@ -178,6 +186,13 @@ int setup_voice_control(){
     vc_pipe = pipe_fd[1]; //save the pipe's fd
   }
 
+  //start headless mic thread if it doesn't already exist
+  if(mic_kill_flag){
+    snd_pcm_t* handle = start_snd_device(period, DEFAULT_RATE, (DEFAULT_CHNS==2), CAPTURE_DIR); //start the device
+    create_mic_thread(handle, 0, period, 2*DEFAULT_CHNS, 1); //spawn the thread in vc_only mode
+    printf("Audio Controller: Started microphone for VC\n");
+  }
+  
   printf("Audio Controller: Voice Controller Started\n");
   return 0;
 }

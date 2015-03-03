@@ -26,6 +26,7 @@ void shutdown_prog();         //shutdown the controller
  *  stop [-dir mic/spk/both] [-f]
  *    -Stop a device, will let buffers empty first (if dir is ommitted, will stop all devices).
  *    -Stops processing immediately instead if -f is present.
+ *    -Will continue reading data while voice control is active
  *  shutdown
  *    -Kills all operations, program exits
  *  voice_start/voice_stop

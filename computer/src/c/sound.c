@@ -71,6 +71,8 @@ audiobuffer* create_speaker_thread(snd_pcm_t* pcm_handle, size_t period, size_t 
   pkg->pcm_handle = pcm_handle;
   pkg->buffer = buffer;
 
+  speaker_kill_flag = 0;  //reset the kill signal
+  
   //create thread and send it the package
   pthread_t thread; //thread handler
   int rc = pthread_create(&thread, NULL, speaker_thread, (void*)pkg);
@@ -79,13 +81,17 @@ audiobuffer* create_speaker_thread(snd_pcm_t* pcm_handle, size_t period, size_t 
   return buffer; //return the device's audio buffer
 }
 
-void create_mic_thread(snd_pcm_t* pcm_handle, sender_handle* sender, size_t period, size_t frame_size){
+void create_mic_thread(snd_pcm_t* pcm_handle, sender_handle* sender, size_t period, size_t frame_size, int vc_only){
   //allocate a microphone buffer (just one period)
   char* buffer = (char*)malloc(period*frame_size);
   
   //finish populating the sender info
-  sender->buf = buffer;
-  sender->len = period*frame_size;
+  if(!vc_only){
+    sender->buf = buffer;
+    sender->len = period*frame_size;
+  }
+    
+  mic_kill_flag = !vc_only;  //reset the kill on normal operations
   
   //store in package
   mic_pcm_package* pkg = (mic_pcm_package*)malloc(sizeof(mic_pcm_package));
@@ -98,13 +104,13 @@ void create_mic_thread(snd_pcm_t* pcm_handle, sender_handle* sender, size_t peri
   pthread_t thread; //thread handler
   int rc = pthread_create(&thread, NULL, mic_thread, (void*)pkg);
   if (rc) printf("ERROR: Could not create device thread, rc=%d\n", rc); //print errors
+  
 }
 
 void *speaker_thread(void* ptr){
   audiobuffer* buf = ((spk_pcm_package*)ptr)->buffer; //cast pointer, get buffer struct
   snd_pcm_t* speaker_handle = ((spk_pcm_package*)ptr)->pcm_handle; //cast pointer, get device pointer
   free(ptr); //free message memory
-  speaker_kill_flag = 0;  //reset the kill signal (smallish race condition, not concerned)
     
   char started = 0;  //track when to start reading data
   while(!global_kill && !speaker_kill_flag) { //loop until program stops us
@@ -144,9 +150,8 @@ void *mic_thread(void* ptr){
   snd_pcm_t* mic_handle = ((mic_pcm_package*)ptr)->pcm_handle; //cast pointer, get device pointer
   size_t length = snd_handle->len; //get the buffer size
   free(ptr); //clean up memory
-  mic_kill_flag = 0;  //reset the kill signal (smallish race condition, not concerned)
   
-  while(!global_kill && !mic_kill_flag) { //loop until program stops us
+  while(!global_kill && (!mic_kill_flag || vc_flag)) { //loop until program stops us
     //write data to speaker buffer, check response codes
     int rc = snd_pcm_readi(mic_handle, buf, period);
     //printf("Mic Data Read\n");
@@ -157,7 +162,7 @@ void *mic_thread(void* ptr){
     } else if (rc < 0) fprintf(stderr, "error from read: %s\n", snd_strerror(rc));
     else if (rc != (int)period) fprintf(stderr, "short read, read %d frames\n", rc);
     else{ //read was good, send the data
-      send_packet(snd_handle); //send the packet over network
+      if(!mic_kill_flag) send_packet(snd_handle); //send the packet over network
       if(vc_flag){ //write to voice control pipe if flag set
         vc_hold_flag = 1; //start of write
         //printf("Writing data to pipe...\n"); //DEBUG
