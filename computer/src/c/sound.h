@@ -18,7 +18,8 @@ typedef struct{
 typedef struct{
   snd_pcm_t*      pcm_handle; //device handler
   char*           buffer;     //buffer for device
-  size_t          period;     //length of the buffer
+  size_t          period;     //length of the buffer (in samples)
+  size_t          length;     //length of the buffer (in bytes)
   sender_handle*  snd_handle; //sender handler
 } mic_pcm_package;
 
@@ -27,7 +28,7 @@ typedef struct{
 snd_pcm_t* start_snd_device(size_t period, unsigned int rate, int stereo, int direction);
 
 audiobuffer* create_speaker_thread(snd_pcm_t* pcm_handle, size_t period, size_t frame_size);
-void create_mic_thread(snd_pcm_t* pcm_handle, sender_handle* sender, size_t period, size_t frame_size);
+void create_mic_thread(snd_pcm_t* pcm_handle, sender_handle* sender, size_t period, size_t frame_size, int vc_only);
 
 //thread functions (grab/send data over network); pointer should be a snd_pcm_package
 void *speaker_thread(void* ptr);

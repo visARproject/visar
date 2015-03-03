@@ -1,6 +1,8 @@
 /* 
  * File handles sound processing (start/stop/buffer structure)
  * TODO: multiplexing, volume
+ * BUGS: Starting comms while in vc mode breaks program
+ *       Errors when stopping and resuming vc_mode (^likely related)
  */
 
 //library includes 
@@ -86,10 +88,8 @@ void create_mic_thread(snd_pcm_t* pcm_handle, sender_handle* sender, size_t peri
   char* buffer = (char*)malloc(period*frame_size);
   
   //finish populating the sender info
-  if(!vc_only){
-    sender->buf = buffer;
-    sender->len = period*frame_size;
-  }
+  sender->buf = buffer;
+  sender->len = period*frame_size;
     
   mic_kill_flag = !vc_only;  //reset the kill on normal operations
   
@@ -98,7 +98,10 @@ void create_mic_thread(snd_pcm_t* pcm_handle, sender_handle* sender, size_t peri
   pkg->pcm_handle = pcm_handle; //store the device handler
   pkg->buffer = buffer; //store the buffer pointer
   pkg->period = period; //store the period size
+  pkg->length = period*frame_size; //buffer size
   pkg->snd_handle = sender; //store the handler
+
+  if(!vc_only) mic_kill_flag = 0;  //reset the kill signal
 
   //create thread and send it the package
   pthread_t thread; //thread handler
@@ -137,7 +140,6 @@ void *speaker_thread(void* ptr){
   // notify kernel to empty/close the speakers
   snd_pcm_drain(speaker_handle);  //finish transferring the audio
   snd_pcm_close(speaker_handle);  //close the device
-  //free_buffer(buf); //free the audiobuffer
   printf("Audio Controller: Speaker Thread shutdown\n");
   
   pthread_exit(NULL); //exit thread safetly
@@ -148,7 +150,7 @@ void *mic_thread(void* ptr){
   size_t period  = ((mic_pcm_package*)ptr)->period;  //cast pointer, get period size
   sender_handle* snd_handle = ((mic_pcm_package*)ptr)->snd_handle; //cast pointer, get handler
   snd_pcm_t* mic_handle = ((mic_pcm_package*)ptr)->pcm_handle; //cast pointer, get device pointer
-  size_t length = snd_handle->len; //get the buffer size
+  size_t length = ((mic_pcm_package*)ptr)->length; //get the buffer size
   free(ptr); //clean up memory
   
   while(!global_kill && (!mic_kill_flag || vc_flag)) { //loop until program stops us
