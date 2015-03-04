@@ -4,7 +4,7 @@
  */
 
 
-#include <speex/speex.h>
+#include <speex/speex.h> //package:libspeex-dev
 #include <stdio.h>
 #include "encode.h"
 

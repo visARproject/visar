@@ -96,7 +96,7 @@ int main(int argc, char** argv){
         }
         
         //setup the mic
-        if((direction & 1) && !mic_kill_flag){ 
+        if((direction & 1) && mic_kill_flag){ 
           if(vc_flag){
             vc_flag = 0;    //stop voice control
             printf("Audio Controller: Stopping VC for comms setup\n");
@@ -162,6 +162,7 @@ int main(int argc, char** argv){
   
   destroy_codecs();        //clean up the encoder
   destroy_voice_control(); //shutdown the voice controller
+  sleep(TIMEOUT);          //wait for process to exit
   
   printf("Audio Controller: Exiting\n");
   return 0;
