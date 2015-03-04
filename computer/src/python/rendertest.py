@@ -9,7 +9,7 @@ import keyboard
 
 im1 = np.flipud(np.fliplr(io.imread('images/Red_Apple.jpg')))
 im2 = np.flipud(np.fliplr(io.imread('images/Blue_Apple.jpg')))
-FPS = 60
+FPS = 10
 
 renderer = rendering.getRenderer() # init the renderer
 

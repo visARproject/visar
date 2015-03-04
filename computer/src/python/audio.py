@@ -1,7 +1,8 @@
 from subprocess import *
-import time
+import time, os
 import threading
 import socket
+import interface
 
 AUDIO_PROGRAM = '../c/audio' # path to audio module
 CONTROL_CLIENT = 19101        # TCP comms port for handshaking (server)
@@ -24,13 +25,13 @@ def thread_lock(func):
 
 # audio controller class, interfaces with other units and the standalone audio module
 # interface events send string tuples (status, host/argument)
-class audio_controller(interface):
-  def _init_(self):
+class AudioController(interface.Interface):
+  def __init__(self):
+    interface.Interface.__init__(self)
     self.connection = None    # connection state (host, port, mode)
     self.voice_event = None   # event handler for voice comms
-    self.child = Popen(AUDIO_PROGRAM, buffer=1, stdin=PIPE, stdout=PIPE) # open subprocess
+    self.child = Popen(AUDIO_PROGRAM, bufsize=0, stdin=PIPE, stdout=PIPE, universal_newlines=True) # open subprocess
     self.kill_flag = False
-    self.comms_buffer = ''
     self.input_buffer = ''
     
     # create the socket objects
@@ -58,58 +59,67 @@ class audio_controller(interface):
       return None;
   
     self.connection = (host, port, mode) # store connection information
-    self.c_sock.bind((host, port)) # connect to the server
+    '''self.c_sock.bind((host, port)) # connect to the server
     
     # send the mode to the server
     if(mode == 'mic'): self.c_sock.send('spk\n')
     elif(mode == 'spk'): self.c_sock.send('mic\n')    
-    else self.c_sock.send('both\n')    
+    else: self.c_sock.send('both\n')    
+    '''
+    command = 'start ' + mode + ' -host ' + host + ' -port ' + str(AUDIO_CLIENT) + '\n'
+    self.child.stdin.write(command) # send start command
     
-    self.comms_buffer += 'start ' + mode + ' -host ' + host + ' -port ' + AUDIO_CLIENT + '\n' # send start command
-    
-    self.do_update('Connected', host) # notify connection success
+    self.do_updates('Connected', host) # notify connection success
    
   # stop audio communication
   @thread_lock
   def stop(self):
+    '''
     self.c_sock.send('shutdown\n') # send shutdown command
     self.c_sock.close() # close the client socket
     self.c_sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM) # reset the socket
+    '''
+    self.child.stdin.write('stop both\n')    # send stop command
+    if(self.voice_event is not None): self.connection = ('voice', None, 'mic') # check if voice was active (prevents shutdown)
+    else: self.connection = None              # connection is no longer active
     
-    self.comms_buffer += 'stop both\n'    # send stop command
-    if(voice_event is not None): self.connection = ('voice', None, 'mic') # check if voice was active (prevents shutdown)
-    else self.connection = None              # connection is no longer active
-    
-    self.do_update('Disconnected',None) # notify connection termination
+    self.do_updates('Disconnected',None) # notify connection termination
     
   # start the voice controller, requires an event handler
   # Events are passed back as tuples of (type, command/error text)
   @thread_lock
   def start_voice(self, event):
-    self.comms_buffer += 'voice_start\n'
+    self.child.stdin.write('voice_start\n')
     self.voice_event = event
-    if(connection is None):
-      connection = ('voice', None, 'mic') # connection is in voice mode
+    if(self.connection is None):
+      self.connection = ('voice', None, 'mic') # connection is in voice mode
   
   # stops the voice controller
-  @thread_lock
   def stop_voice(self):
-    self.comms_buffer += 'voice_stop\n'
-    self.voice_event.do_update(('VCERR','shutdown')) # send shutdown update
+    global lock
+    lock.acquire()
+    self.child.stdin.write('voice_stop\n')
+    lock.release()
+    self.voice_event.do_updates(('VCERR','shutdown')) # send shutdown update
     self.voice_event = None # remove the event handler
-    if(connection[0] == 'voice'): connection = None  # clear the connection state
+    if(self.connection is not None and self.connection[0] == 'voice'): 
+      self.connection = None  # clear the connection state
   
   # thread to handle communicating with child process
   def comms_thread(self):
     while(not self.kill_flag): self.do_comms() # do the comms
-    self.child.communicate('shutdown\n') # shutdown thread when the module dies
+    print 'shutdown'
+    lock.acquire()
+    self.child.stdin.write('shutdown\n') # shutdown thread when the module dies
+    lock.release()
   
   # do the communcation to child process
-  @thread_lock
   def do_comms(self):
-    out,err = self.child.communicate(comms_buffer) # get data out
-    input_buffer += out # append responses to input buffer
-    comms_buffer = '' # clear the buffer
+    out = os.read(self.child.stdout.fileno(),80) # get data out
+    global lock
+    lock.acquire()
+    self.input_buffer += out # append responses to input buffer
+    lock.release()
   
   # thread to handle parsing the output from the child process
   def parse_thread(self):
@@ -120,8 +130,8 @@ class audio_controller(interface):
   # split the parse into seperate commands
   @thread_lock
   def split_parse_buffer(self):
-    comms = input_buffer.split('\n') # split the input on newlines
-    input_buffer = comms.pop()  # put the last result back on the buffer (might be incomplete)
+    comms = self.input_buffer.split('\n') # split the input on newlines
+    self.input_buffer = comms.pop()  # put the last result back on the buffer (might be incomplete)
     return comms    # return the comands
   
   # iterate over input and parse commands
@@ -129,13 +139,14 @@ class audio_controller(interface):
     for line in parse:
       part = line.split(':') # split line across colon
       if len(part) < 2: part.insert(0,'') # make sure we have 2 inputs
-      self.voice_event.do_update(part[0], part[1]) # send the event
+      if(self.voice_event is not None): 
+        self.voice_event.do_updates((part[0], part[1])) # send the event
   
   # server handler thread
   def server_thread(self):
     self.s_sock.bind(('',CONTROL_SERVER))
     self.s_sock.listen(1)
-    self.s_sock.set_timeout(SERVER_TIMEOUT) # timeout after 1 second
+    self.s_sock.settimeout(SERVER_TIMEOUT) # timeout after 1 second
     global lock # use the global lock object
     while(not self.kill_flag):
       try: conn, addr = self.s_sock.accept() # accept a connection
@@ -144,7 +155,8 @@ class audio_controller(interface):
       datas = data.split('\n') # split the input args
       lock.acquire()
       self.connection(addr[0], AUDIO_CLIENT, datas[0]) # setup connection
-      self.comms_buffer += 'start ' + datas[0] + ' -host ' + addr[0] + ' -port ' + AUDIO_SERVER + '\n' # send start command
+      command = 'start ' + datas[0] + ' -host ' + addr[0] + ' -port ' + str(AUDIO_SERVER) + '\n'
+      self.child.stdin.write(command) # send start command
       lock.release()
       while conn is not None:
         try:
@@ -155,13 +167,8 @@ class audio_controller(interface):
       
       # shutdown the module
       lock.acquire()
-      self.comms_buffer += 'stop both\n'    # send stop command
+      self.child.stdin.write('stop both\n')    # send stop command
       if(voice_event is not None): self.connection = ('voice', None, 'mic') # check if voice was active (prevents shutdown)
-      else self.connection = None              # connection is no longer active
+      else: self.connection = None              # connection is no longer active
       lock.release()
-    
-      
-class audio_server:
-  
-
 

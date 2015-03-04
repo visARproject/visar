@@ -1,33 +1,37 @@
-import time
-import socket
+import sys, time
+from socket import *
 import threading
+import interface
 
 BROADCAST_PORT = 19105  # UDP port for status broadcast
+UPDATE_PORT    = 19106  # UDP port for status update
 TIMEOUT        = 1      # socket timeout (seconds)    
 UPDATE_TIMER   = 60     # how often to send updates/ping dead clients
 
-class network_state(interface):
+class NetworkState(interface.Interface):
   ''' Class maintains a list of all peers on the network and polls for updates.
       Interface event consists of the entire peer dictionary at every update. '''
        
-  def __init__(self, id, name, status=''):
+  def __init__(self, id_code, name, status=''):
+    interface.Interface.__init__(self)
+  
     # setup the sockets
-    self.b_sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM) # broadcast socket, publishes status info
-    self.c_sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM) # client socket, pings peers to see if alive
-    self.s_sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM) # server socket, handles pings/broadcasts
+    self.b_sock = socket(AF_INET, SOCK_DGRAM) # broadcast socket, publishes status info
+    self.c_sock = socket(AF_INET, SOCK_DGRAM) # client socket, pings peers to see if alive
+    self.s_sock = socket(AF_INET, SOCK_DGRAM) # server socket, handles pings/broadcasts
     self.b_sock.setsockopt(SOL_SOCKET, SO_BROADCAST, 1) # enable broadcasting
     
     # setup other object details
     self.kill_flag = False
-    self.id = id
+    self.id_code = id_code
     self.name = name
     self.status = status
-    self.peers = {id : ('self', name, '')} # list of peers as dictionary
+    self.peers = {id_code : ('self', name, '')} # list of peers as dictionary
     self.lock = threading.RLock() # lock object
     
     # setup and start the treads
-    self.blistener = threading.Thread(target=broadcast_listener) 
-    self.ulistener = threading.Thread(target=update_thread) 
+    self.blistener = threading.Thread(target=self.broadcast_listener) 
+    self.ulistener = threading.Thread(target=self.update_thread) 
     self.blistener.start()
     self.ulistener.start()
     self.send_update() # send initial update
@@ -40,13 +44,13 @@ class network_state(interface):
   def send_update(self):
     '''Broadcast an update'''
     self.lock.acquire()
-    peers[id] = (self.id, self.name, status) # update our status
+    self.peers[self.id_code] = (self.id_code, self.name, self.status) # update our status
     status = self.status
     self.lock.release()
-    self.b_sock.sendto(self.id + '~' + self.name + '~' + status + '\n', ('<broadcast>',BROADCAST_PORT))
+    self.b_sock.sendto(self.id_code + '~' + self.name + '~' + status + '\n', ('<broadcast>',BROADCAST_PORT))
 
   def broadcast_listener(self):
-  '''Thread listens for broadcasts/pings and updates peer list as new information is avliable'''
+    '''Thread listens for broadcasts/pings and updates peer list as new information is avliable'''
     self.s_sock.bind(('',BROADCAST_PORT)) # attach to the port
     self.s_sock.settimeout(TIMEOUT)       # set the timeout
     while(not self.kill_flag):
@@ -61,7 +65,7 @@ class network_state(interface):
       peer_copy = self.peers
       self.lock.release()
       
-      self.do_update(peer_copy) # send an update event
+      self.do_updates(peer_copy) # send an update event
       
     self.s_sock.close() # shutdown, close the socket
       
@@ -73,9 +77,10 @@ class network_state(interface):
     
     while(not self.kill_flag):
       time.sleep(UPDATE_TIMER/2) # wait before doing the ping
+      if(self.kill_flag): break
       removal_list = []
       for peer in self.peers:
-        self.c_sock.sendto('ping',(self.peers[peer][0], BROADCAST_PORT)
+        self.c_sock.sendto('ping',(self.peers[peer][0], BROADCAST_PORT))
         try: data, addr = self.c_sock.recvfrom(16) # get the ack
         except: removal_list.append(peer) # no response, peer is dead
       
@@ -84,9 +89,10 @@ class network_state(interface):
       peer_copy = self.peers # copy list of peers
       self.lock.release()
       
-      if len(removal_list) > 0: self.do_update(peer_copy) # send an event
+      if len(removal_list) > 0: self.do_updates(peer_copy) # send an event
       
       time.sleep(UPDATE_TIMER/2) # wait again
+      if(self.kill_flag): break
       self.send_update() # send an update
       
     self.c_sock.close() # shutdown, close the socket

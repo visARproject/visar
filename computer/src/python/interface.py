@@ -1,6 +1,6 @@
 # Extensible class for interfaces between modules
 # Manages callabck functions and updates
-class Interface:
+class Interface(object):
   def __init__(self):
     self.update_list = []
     

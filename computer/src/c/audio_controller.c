@@ -82,17 +82,9 @@ int main(int argc, char** argv){
         channels = DEFAULT_CHNS;
       
         printf("Rate: %d, Channels: %d, Period: %d\n", rate, channels, period);
-        
-        //have to pause vc before starting threads
-        int vc_resume = vc_flag;
-        if(vc_flag){
-          printf("Audio Controller: Pausing VC\n");
-          vc_flag = 0;
-          sleep(TIMEOUT);  //wait for vc to stop
-        }
       
         //setup the speaker
-        if(direction & 2){
+        if((direction & 2) && speaker_kill_flag){
           snd_pcm_t* handle = start_snd_device(period, rate, (channels==2), PLAYBACK_DIR); //start the device
           audiobuffer* spk_buf = create_speaker_thread(handle, period, 2*channels); //spawn the speaker thread
           reciever_kill_flag = 0;  //reset the kill flag
@@ -104,7 +96,7 @@ int main(int argc, char** argv){
         }
         
         //setup the mic
-        if(direction & 1){ 
+        if((direction & 1) && !mic_kill_flag){ 
           if(vc_flag){
             vc_flag = 0;    //stop voice control
             printf("Audio Controller: Stopping VC for comms setup\n");
@@ -114,12 +106,6 @@ int main(int argc, char** argv){
           sender_handle* sndr = start_sender(addr, port, 0, 0); //setup partial sender
           create_mic_thread(handle, sndr, period, 2*(channels), 0); //spawn the thread
           printf("Audio Controller: Started microphone transmission\n");
-        }
-        
-        if(vc_resume){
-          vc_flag = 1;
-          printf("Audio Controller: Resuming VC\n");
-          sleep(TIMEOUT);
         }
       
       //Stop Command
