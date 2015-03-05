@@ -6,7 +6,7 @@ import interface
 BROADCAST_PORT = 19105  # UDP port for status broadcast
 UPDATE_PORT    = 19106  # UDP port for status update
 TIMEOUT        = 1      # socket timeout (seconds)    
-UPDATE_TIMER   = 60     # how often to send updates/ping dead clients
+UPDATE_TIMER   = 30     # how often to send updates/ping dead clients
 
 class NetworkState(interface.Interface):
   ''' Class maintains a list of all peers on the network and polls for updates.
@@ -57,18 +57,18 @@ class NetworkState(interface.Interface):
       try: data, addr = self.s_sock.recvfrom(1024) # get updates
       except: continue # loop on timeouts
       update = data.split('~') # split input on newline
+      if update[0] == self.id_code: continue # ignore local traffic
       self.s_sock.sendto('ack',addr) # send an ack
-      print 'sent ack'
+      print 'sent ack', addr
       if len(update) < 3: continue # ping, ignore it
       
-      # add the peer unless the peer is us
-      if not update[0] == self.id_code: 
-        self.lock.acquire()
-        self.peers[update[0]] = (addr[0],update[1],update[2]) # update peer info
-        peer_copy = self.peers
-        self.lock.release()
-        self.do_updates(peer_copy) # send an update event
-        
+      # update the peer's info
+      self.lock.acquire()
+      self.peers[update[0]] = (addr[0],update[1],update[2]) # update peer info
+      peer_copy = self.peers
+      self.lock.release()
+      self.do_updates(peer_copy) # send an update event
+      
     print 'b_listner thread shutdown'      
     self.s_sock.close() # shutdown, close the socket
       
@@ -110,5 +110,7 @@ class NetworkState(interface.Interface):
     '''update our current status'''
     self.lock.acquire()
     self.status = status
+    peer_copy = self.peers
     self.lock.release()
     self.send_update()
+    self.do_updates(peer_copy)
