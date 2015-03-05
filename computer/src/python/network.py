@@ -67,8 +67,8 @@ class NetworkState(interface.Interface):
         self.peers[update[0]] = (addr[0],update[1],update[2]) # update peer info
         peer_copy = self.peers
         self.lock.release()
-      
         self.do_updates(peer_copy) # send an update event
+        
     print 'b_listner thread shutdown'      
     self.s_sock.close() # shutdown, close the socket
       
