@@ -1,8 +1,10 @@
 /* 
  * File handles sound processing (start/stop/buffer structure)
  * TODO: multiplexing, volume
- * BUGS: Starting comms while in vc mode breaks program
- *       Errors when stopping and resuming vc_mode (^likely related)
+ * BUGS: speaker underruns on ARM, can't recover
+ *         -seems to destabalize with time
+ *         -time to failure is shorter with usleep in spin loop
+ *       
  */
 
 //library includes 
@@ -10,7 +12,7 @@
 #include <pthread.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <unistd.h>
+#include <unistfd.h>
 
 //project includes
 #include "audio_controller.h"
@@ -122,14 +124,16 @@ void *speaker_thread(void* ptr){
       //printf("Speaker Waiting\n");
       usleep(PERIOD_UTIME/2); //wait to reduce CPU usage
       continue;     //don't start yet
-    } else started = 1; //indicate that we've startd
+    } else {
+      if(!started) snd_pcm_prepare(speaker_handle); //reset speaker
+      started = 1; //indicate that we've startd
+    }
     
     //write data to speaker buffer, check responses
     int rc = snd_pcm_writei(speaker_handle, GET_QUEUE_HEAD(*buf), buf->period);
     INC_QUEUE_HEAD(*buf);
     if (rc == -EPIPE){ //Catch underruns (not enough data)
       fprintf(stderr, "underrun occurred\n");
-      snd_pcm_prepare(speaker_handle); //reset speaker
       started = 0;  //stop and wait for buffer to buildup
     } else if (rc < 0) fprintf(stderr, "error from writei: %s\n", snd_strerror(rc)); //other errors
     else if (rc != (int)buf->period) fprintf(stderr, "short write, write %d frames\n", rc);

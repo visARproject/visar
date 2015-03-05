@@ -60,10 +60,12 @@ class NetworkState(interface.Interface):
       self.s_sock.sendto('ack',addr) # send an ack
       if len(update) < 3: continue # ping, ignore it
       
-      self.lock.acquire()
-      self.peers[update[0]] = (addr[0],update[1],update[2]) # update peer info
-      peer_copy = self.peers
-      self.lock.release()
+      # add the peer unless the peer is us
+      if not update[0] == self.id_code: 
+        self.lock.acquire()
+          self.peers[update[0]] = (addr[0],update[1],update[2]) # update peer info
+        peer_copy = self.peers
+        self.lock.release()
       
       self.do_updates(peer_copy) # send an update event
       
@@ -80,6 +82,7 @@ class NetworkState(interface.Interface):
       if(self.kill_flag): break
       removal_list = []
       for peer in self.peers:
+        if peer==self.id_code: continue # don't ping ourselves
         self.c_sock.sendto('ping',(self.peers[peer][0], BROADCAST_PORT))
         try: data, addr = self.c_sock.recvfrom(16) # get the ack
         except: removal_list.append(peer) # no response, peer is dead
