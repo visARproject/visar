@@ -1,7 +1,10 @@
 /* 
  * File handles the the speaker/mic control interface
  *  Program expects control inputs from stdin (done via redirects) 
- * TODO: test voice control, multiple streams?
+ * TODO: multiple streams?
+ * BUGS: Starting comms while in vc mode breaks program
+ *       Errors when stopping and resuming vc_mode (^likely related)
+ *       Segfault on ARM stop command
  */
  
 #include <stdio.h>
@@ -123,11 +126,11 @@ int main(int argc, char** argv){
           }
         }
         
-        //shutdown the producers, wait if requested, then shutdown consumers
+        //issue shutdown signals to the threads
         if(direction & 1) mic_kill_flag = 1;      //assert microphone kill flag
-        if(direction & 2) reciever_kill_flag = 1; //assert server kill flag
-        if(!kill_f) sleep(TIMEOUT);  //wait for data to finish processing
         if(direction & 2) speaker_kill_flag = 1;  //assert speaker kill flag
+        if(!kill_f) sleep(TIMEOUT);  //wait for data to finish processing
+        if(direction & 2) reciever_kill_flag = 1; //assert server kill flag
         printf("Audio Controller: Devices shutdown\n");
       
       } else if(0 == strcmp(token, "shutdown")){
