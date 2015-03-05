@@ -12,7 +12,7 @@
 #include <pthread.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <unistfd.h>
+#include <unistd.h>
 
 //project includes
 #include "audio_controller.h"
