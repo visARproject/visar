@@ -18,13 +18,13 @@ def voiceCallback(event):
   print event
   
 def test():
+  print 'Starting Network'
   network_state = network.NetworkState(socket.gethostname(), 'testname', 'status')
   network_state.add_callback(networkCallback)
-  print 'Started Network'
   
+  #print 'Starting Audio'
   #audio_state = audio.AudioController()
   #audio_state.add_callback(audioCallback)
-  #print 'Started Audio'
   
   #time.sleep(1)
   #print 'starting audio'

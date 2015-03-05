@@ -43,6 +43,7 @@ class NetworkState(interface.Interface):
     
   def send_update(self):
     '''Broadcast an update'''
+    print 'Sending Broadcast'
     self.lock.acquire()
     self.peers[self.id_code] = ('self', self.name, self.status) # update our status
     status = self.status
@@ -64,10 +65,12 @@ class NetworkState(interface.Interface):
       
       # update the peer's info
       self.lock.acquire()
+      old_peers = self.peers
       self.peers[update[0]] = (addr[0],update[1],update[2]) # update peer info
       peer_copy = self.peers
       self.lock.release()
-      self.do_updates(peer_copy) # send an update event
+      if(not old_peers == peer_copy): # don't send frivilous updates
+        self.do_updates(peer_copy) # send an update event
       
     print 'b_listner thread shutdown'      
     self.s_sock.close() # shutdown, close the socket
