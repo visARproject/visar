@@ -63,7 +63,11 @@ class NetworkState(interface.Interface):
       # add the peer unless the peer is us
       if not update[0] == self.id_code: 
         self.lock.acquire()
+<<<<<<< HEAD
         self.peers[update[0]] = (addr[0],update[1],update[2]) # update peer info
+=======
+          self.peers[update[0]] = (addr[0],update[1],update[2]) # update peer info
+>>>>>>> 5d96bb375d25fb87fd1cbdad23f778965f97f4b9
         peer_copy = self.peers
         self.lock.release()
       

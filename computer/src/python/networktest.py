@@ -17,7 +17,11 @@ def voiceCallback(event):
   print event
   
 def test():
+<<<<<<< HEAD
   network_state = network.NetworkState('test_jetson', 'testname', 'status')
+=======
+  network_state = network.NetworkState('test_laptop', 'testname', 'status')
+>>>>>>> 5d96bb375d25fb87fd1cbdad23f778965f97f4b9
   network_state.add_callback(networkCallback)
   print 'Started Network'
   
