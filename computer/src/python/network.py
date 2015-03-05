@@ -84,6 +84,7 @@ class NetworkState(interface.Interface):
       removal_list = []
       for peer in self.peers:
         if peer==self.id_code: continue # don't ping ourselves
+        print 'pinging', peer
         self.c_sock.sendto('ping',(self.peers[peer][0], BROADCAST_PORT))
         try: 
           data, addr = self.c_sock.recvfrom(16) # get the ack

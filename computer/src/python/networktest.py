@@ -2,6 +2,7 @@ import network
 import audio
 import interface
 import time
+import socket
 
 def audioCallback(event1, event2):
   print event1, event2
@@ -17,7 +18,7 @@ def voiceCallback(event):
   print event
   
 def test():
-  network_state = network.NetworkState('test_laptop', 'testname', 'status')
+  network_state = network.NetworkState(socket.gethostname(), 'testname', 'status')
   network_state.add_callback(networkCallback)
   print 'Started Network'
   
