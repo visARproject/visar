@@ -43,14 +43,17 @@ def test():
   #print 'stopping audio'
   #audio_state.stop()
   
+  time.sleep(20)
+  print 'Updating Status'
+  network_state.update_status('part2')
+  
   #clean up the objects
-  time.sleep(1)
+  time.sleep(100)
   print 'cleanup'
   network_state.destroy()
   #audio_state.destroy()
   
-  time.sleep(1)
-  print 'Done'
+  print 'Waiting for update thread to timeout...'
   
 if __name__ == '__main__':
   test()

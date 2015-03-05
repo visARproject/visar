@@ -44,7 +44,7 @@ class NetworkState(interface.Interface):
   def send_update(self):
     '''Broadcast an update'''
     self.lock.acquire()
-    self.peers[self.id_code] = (self.id_code, self.name, self.status) # update our status
+    self.peers[self.id_code] = ('self', self.name, self.status) # update our status
     status = self.status
     self.lock.release()
     self.b_sock.sendto(self.id_code + '~' + self.name + '~' + status + '\n', ('<broadcast>',BROADCAST_PORT))
@@ -58,17 +58,18 @@ class NetworkState(interface.Interface):
       except: continue # loop on timeouts
       update = data.split('~') # split input on newline
       self.s_sock.sendto('ack',addr) # send an ack
+      print 'sent ack'
       if len(update) < 3: continue # ping, ignore it
       
       # add the peer unless the peer is us
       if not update[0] == self.id_code: 
         self.lock.acquire()
-          self.peers[update[0]] = (addr[0],update[1],update[2]) # update peer info
+        self.peers[update[0]] = (addr[0],update[1],update[2]) # update peer info
         peer_copy = self.peers
         self.lock.release()
       
-      self.do_updates(peer_copy) # send an update event
-      
+        self.do_updates(peer_copy) # send an update event
+    print 'b_listner thread shutdown'      
     self.s_sock.close() # shutdown, close the socket
       
   def update_thread(self):
@@ -84,8 +85,12 @@ class NetworkState(interface.Interface):
       for peer in self.peers:
         if peer==self.id_code: continue # don't ping ourselves
         self.c_sock.sendto('ping',(self.peers[peer][0], BROADCAST_PORT))
-        try: data, addr = self.c_sock.recvfrom(16) # get the ack
-        except: removal_list.append(peer) # no response, peer is dead
+        try: 
+          data, addr = self.c_sock.recvfrom(16) # get the ack
+          print 'got ack', peer
+        except: 
+          removal_list.append(peer) # no response, peer is dead
+          print 'ack timeout', peer
       
       self.lock.acquire()
       for key in removal_list: del self.peers[key] # remove dead peers
@@ -97,7 +102,8 @@ class NetworkState(interface.Interface):
       time.sleep(UPDATE_TIMER/2) # wait again
       if(self.kill_flag): break
       self.send_update() # send an update
-      
+    
+    print 'update thread shutdown'
     self.c_sock.close() # shutdown, close the socket
     
   def update_status(self, status):
@@ -105,3 +111,4 @@ class NetworkState(interface.Interface):
     self.lock.acquire()
     self.status = status
     self.lock.release()
+    self.send_update()
