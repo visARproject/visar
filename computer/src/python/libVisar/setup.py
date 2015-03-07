@@ -17,6 +17,6 @@ setup(name='libVisar',
     packages=[
         'libVisar',
         'libVisar.OpenGL', 'libVisar.OpenGL.shaders', 'libVisar.OpenGL.rift_parameters', 
-        'libVisar.visar', 'libVisar.visar.drawables', 'libVisar.visar.environments',
+        'libVisar.visar', 'libVisar.visar.drawables', 'libVisar.visar.environments', 'libVisar.visar.globals'
     ],
 )
