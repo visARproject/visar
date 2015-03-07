@@ -167,13 +167,13 @@ class Distorter(object):
         gloo.set_clear_color('black')
         with self.left_eye:
             gloo.clear(color=True, depth=True)
-            Drawables.translate(0, 0, -self.IPD / 2)
+            Drawables.translate(0, -self.IPD / 2, 0)
             Drawables.set_projection(self.L_projection)
             Drawables.draw()
 
         with self.right_eye:
             gloo.clear(color=True, depth=True)
-            Drawables.translate(0, 0, self.IPD / 2)
+            Drawables.translate(0, self.IPD / 2, 0)
             Drawables.set_projection(self.R_projection)
             Drawables.draw()
 
