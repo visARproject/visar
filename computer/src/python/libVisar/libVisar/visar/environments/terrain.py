@@ -96,7 +96,7 @@ varying vec4 v_color;
 void main (void) {
     gl_Position = projection * view * model * vec4(a_position.xy, a_position.z * 2, 1.0);
     float r = a_position[2] * a_position[2] / (u_height * u_height * u_height);
-    v_color = vec4(r / 1.4, r, 0.1, 1.0);
+    v_color = vec4(0.2, r, 0.1, 1.0);
 }
 """
 

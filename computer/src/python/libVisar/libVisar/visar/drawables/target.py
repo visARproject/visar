@@ -1,5 +1,10 @@
-from .drawable import Drawable
 import numpy as np
+from vispy.gloo import (Program, VertexBuffer, IndexBuffer, Texture2D, clear,
+                        FrameBuffer)
+from vispy.util.transforms import perspective, translate, rotate
+from vispy.geometry import create_sphere
+from .drawable import Drawable
+from ...OpenGL import utils
 
 
 class Targets(Drawable):
@@ -7,7 +12,27 @@ class Targets(Drawable):
     pass
 
 
-class Target(object):
+class Target(Drawable):
+    vertex_shader = """
+        #version 120
+        uniform mat4 model;
+        uniform mat4 view;
+        uniform mat4 projection;
+        attribute vec3 position;
+        void main()
+        {
+            gl_Position = projection * view * model * vec4(position, 1.0);
+        }
+    """
+    
+    frag_shader = """
+        #version 120
+        void main()
+        {
+            gl_FragColor = vec4(1, 0.2, 0.2, 1);
+        }
+    """
+
     def __init__(self, world_pos, color=(1.0, 0.0, 0.5)):
         '''Target(world_pos, color) -> Target
         Arguments:
@@ -15,38 +40,30 @@ class Target(object):
             color - specified as 3-tuple of floats with each element 
                 in range [0, 1]. It is the color of the marker
         '''
-        assert isinstance(worldpos, tuple), "World position specified invalid, should be tuple"
-        assert len(worldpos) == 3, "World position invalid (should be length 3)"
-        self.mesh = None
+        # Assertions
+        assert isinstance(world_pos, tuple), "World position specified invalid, should be tuple"
+        assert len(world_pos) == 3, "World position invalid (should be length 3)"
+        assert max(color) <= 1.0, "Color should be in range [0.0, 1.0]"
+        assert min(color) >= 0.0, "Color should be in range [0.0, 1.0]"
 
-    def mesh(self):
-        '''mesh(), virtual property
-        Generates and/or returns a triangle mesh
+        self.projection = np.eye(4)
+        self.view = np.eye(4)
+        self.model = translate(np.eye(4), *world_pos)
+        self.vertices = np.array([
+            [1, 0, 0],
+            [0, 1, 0],
+            [0, 0, 1],
+        ], dtype=np.float32)
 
-        treat it as though it is a property (i.e. not a function)
-        ex:
-        >>> x = Target((100, 100, 100))
-        >>> mesh = Target.mesh()
-        '''
-        if self.mesh is None:
-            self.mesh = np.zeros(3, 
-                dtype=[
-                    ('a_pos', np.float32, 3),
-                    ('a_color', np.float32, 3),
-                ]
-            )
+        # vbo = VertexBuffer(vertices)
+        # self.program.bind(vbo)
 
-        else:
-            return self.mesh
+        self.program = Program(self.vertex_shader, self.frag_shader)
+        self.program['position'] = self.vertices
+        self.program['view'] = self.view
+        self.program['model'] = self.model
+        self.program['projection'] = self.projection
 
-    def shader(self):
-        '''shader -> (vertex, fragment) 
-        Returns vertex and fragment shaders as 2-tuple of strings
-        '''
-        fragment = ''
-        vertex = ''
-        return vertex, fragment
-
-    @property
     def draw(self):
-        pass
+        self.program.draw('triangle_strip')
+        # utils.Logger.log("Drawing my stuff")

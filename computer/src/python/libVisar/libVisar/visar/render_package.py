@@ -9,29 +9,14 @@ from vispy.util.transforms import zrotate
 from vispy import gloo
 from vispy import app
 
-from ..OpenGL.utils.transformations import quaternion_matrix
 from ..OpenGL.utils import Logger
 from ..OpenGL.shaders import Distorter
-from .drawables import Context, Example
+from .drawables import Context, Example, Target
 from .environments import Terrain
 
 # Presets
 HUD_DEPTH = 5 # Minimum depth (Specified by Oculus docs)
 FPS = 60 # Maximum FPS (how often needs_update is checked)
-
-vPosition_full = np.array([[-1.0, -1.0, 0.0], [+1.0, -1.0, 0.0],
-                           [-1.0, +1.0, 0.0], [+1.0, +1.0, 0.0]], np.float32)
-vTexcoord_full = np.array([[0.0, 0.0], [0.0, 1.0],
-                           [1.0, 0.0], [1.0, 1.0]], np.float32)
-
-def main():
-    ex_quat = {"x": 0.50155109,  "y": 0.03353513,  "z": 0.05767266, "w": 0.86255189}
-    orientation_quaternion = (0.50155109, 0.03353513, 0.05767266, 0.86255189)
-    matrix =  quaternion_matrix(orientation_quaternion)
-    Logger.set_verbosity('log')
-    Logger.log( matrix )
-    Logger.log( type(matrix) )
-    Logger.warn( matrix.shape )
 
 class Renderer(app.Canvas): # Canvas is a GUI object
     def __init__(self, size=(1980, 1020)):    
@@ -39,19 +24,22 @@ class Renderer(app.Canvas): # Canvas is a GUI object
         Logger.set_verbosity('log')
         ex = Example()
         terrain = Terrain()
-        self.default_view = np.array([[0.8, 0.2, -0.48, 0],
-                                     [-0.5, 0.3, -0.78, 0],
-                                     [-0.01, 0.9, -0.3, 0],
-                                     [-4.5, -21.5, -7.4, 1]],
-                                     dtype=np.float32)
-        self.view = self.default_view
+        target = Target((1, 1, 1))
 
+        self.default_view = np.array(
+            [[0.8, 0.2, -0.48, 0],
+             [-0.5, 0.3, -0.78, 0],
+             [-0.01, 0.9, -0.3, 0],
+             [-4.5, -21.5, -7.4, 1]],
+             dtype=np.float32
+        )
 
-        self.Render_List = Context(ex, terrain)
+        self.view = np.eye(4)
+        self.Render_List = Context(ex, terrain, target)
         self.Render_List.translate(0, 0, -7)
         projection = perspective(30.0, 1920 / float(1080), 2.0, 10.0)
         self.Render_List.set_projection(projection)
-        self.Render_List.set_view(self.default_view)
+        self.Render_List.set_view(self.view)
         # Initialize gloo context
         app.Canvas.__init__(self, keys='interactive')
         self.size = size 
@@ -74,14 +62,11 @@ class Renderer(app.Canvas): # Canvas is a GUI object
     
     def on_draw(self, event):
         # Draw each drawable using the distorter
-        # self.Distorter.draw(self.renderList)
         gloo.set_viewport(0, 0, *self.size)
         gloo.clear(color=True)
         gloo.set_clear_color('white')
 
         gloo.set_state(depth_test=True)
-
-        # self.Render_List.draw()
         self.Distorter.draw(self.Render_List)
 
     def on_key_press(self, event):
@@ -137,9 +122,7 @@ class Renderer(app.Canvas): # Canvas is a GUI object
         zrotate(self.view, self.rotate[2])
 
     
-if __name__ == '__main__':
-    
+def main():
     c = Renderer()
     c.show()
     c.app.run()
-    # main()
