@@ -15,11 +15,19 @@ Do this! You don't have to run this every time you make a change
 ## Permanent Install
     sudo python setup.py install
 
+## Uninstall from permanent install
+    sudo pip uninstall libVisar
+
+
 ## Use
 Type
     vsr
-to start the render package
+to start the render package, once you have installed libVisar.
 
+Or cd into the libVisar directory
+(The output of ls should be 'libVisar', 'libVisar.egg-info', 'readme.md', 'setup.py')
+and run 
+    python -m libVisar.visar.render_package
 
 
 # Features

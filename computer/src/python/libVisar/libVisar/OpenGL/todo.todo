@@ -1,4 +1,12 @@
-glReadPixels - Read pixels from the FBO
+- Move the drawables to the OpenGL package
+- Add a UI context
+- Make the Targets appear tangent to the view
+- Make the targets "glow" (Animated texture? Animate somehow)
+- Add global state-tracker
+- Help Val with Action class
+- Add map (Use Targets to figure out how to do live-updating map texture)
+-- Will have to do active stitching of a region larger than the available texture
+-- How do you do long/lat stuff?
 
 
 def rotate_to_body(body, inv=False):
