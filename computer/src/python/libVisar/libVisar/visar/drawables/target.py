@@ -1,3 +1,4 @@
+from __future__ import division
 import numpy as np
 from vispy.gloo import (Program, VertexBuffer, IndexBuffer, Texture2D, clear,
                         FrameBuffer)
@@ -13,6 +14,15 @@ class Targets(Drawable):
 
 
 class Target(Drawable):
+    '''
+
+    Bibliography:
+
+
+    [1] Billboard drawing;
+        http://stackoverflow.com/questions/5467007/inverting-rotation-in-3d-to-make-an-object-always-face-the-camera/5487981#5487981
+
+    '''
     vertex_shader = """
         #version 120
         uniform mat4 model;
@@ -21,7 +31,18 @@ class Target(Drawable):
         attribute vec3 position;
         void main()
         {
-            gl_Position = projection * view * model * vec4(position, 1.0);
+            // Prevent rotation of the object relative to camera view
+            mat4 T = projection * view * model;
+
+            float d = length(T[0]); // Length of 0th column of the transformation
+
+            mat4 T_billboard;
+            T_billboard[0] = vec4(d, 0., 0., 0.);
+            T_billboard[1] = vec4(0., d, 0., 0.);
+            T_billboard[2] = vec4(0., 0., d, 0.);
+            T_billboard[3] = T[3]; // Maintain original translation
+
+            gl_Position = T_billboard * vec4(position, 1.0);
         }
     """
     
@@ -49,14 +70,15 @@ class Target(Drawable):
         self.projection = np.eye(4)
         self.view = np.eye(4)
         self.model = translate(np.eye(4), *world_pos)
-        self.vertices = np.array([
-            [1, 0, 0],
-            [0, 1, 0],
-            [0, 0, 1],
-        ], dtype=np.float32)
 
-        # vbo = VertexBuffer(vertices)
-        # self.program.bind(vbo)
+        height = 5.0 # Meters
+
+        # This is a triangle of height $height
+        self.vertices = np.array([
+            [height / 2,           0, 0],
+            [0,          -height / 2, 0],
+            [0,           height / 2, 0],
+        ], dtype=np.float32)
 
         self.program = Program(self.vertex_shader, self.frag_shader)
         self.program['position'] = self.vertices
