@@ -7,7 +7,7 @@
 - Add map (Use Targets to figure out how to do live-updating map texture)
 -- Will have to do active stitching of a region larger than the available texture
 -- How do you do long/lat stuff?
-
+-- Add function binding capablity for globals bind
 
 def rotate_to_body(body, inv=False):
     R = body.getRotation()
