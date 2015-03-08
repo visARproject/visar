@@ -21,4 +21,5 @@
  *     -Make sure to close this pipe before exiting.
  */
  
+//Function prototypes
 void start_voice(int* fd);
