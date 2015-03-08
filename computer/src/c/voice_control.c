@@ -5,12 +5,17 @@
  */
 
 #include <pocketsphinx.h>
+#include <stdlib.h>
+#include <stdio.h>
+#include <unistd.h>
+#include <string.h>
 
 void start_voice(int* fd) {
+  uint8 utt_started = FALSE;
+  uint8 in_speech;
+  int32 k;
   char const *hyp;
-  char buffer[80];
-  int16 buf[512];
-  int32 score;
+  int16 buffer[2048];
 
   cmd_ln_t *config = cmd_ln_init(NULL, ps_args(), TRUE,
     "-hmm", MODELDIR "/en-us/en-us",
@@ -22,30 +27,36 @@ void start_voice(int* fd) {
 
   int rv = ps_start_utt(ps);
 
-  while(read(fd[0], buffer, 80) > 0) {
+  while((k = read(fd[0], buffer, 2048)) > 0) {
     char *sentence = "";
 
-    while(!feof(fd[0])) {
-      size_t nsamp = fread(buf, 2, 512, fd[0]);
-      rv = ps_process_raw(ps, buf, nsamp, FALSE, FALSE);
+    ps_process_raw(ps, buffer, k, FALSE, FALSE);
+
+    in_speech = ps_get_in_speech(ps);
+
+    if(in_speech && !utt_started) {
+      utt_started = TRUE;
     }
 
-    rv = ps_end_utt(ps);
-    hyp = ps_get_hyp(ps, &score);
+    if(!in_speech && utt_started) {
+      ps_end_utt(ps);
+      hyp = ps_get_hyp(ps, NULL);
 
-    if(rv < 0) {
-      sentence = "VCERR:frame searching error\n"
-    } else if(hyp == NULL) {
-      sentence = "VCERR:decoding error\n"
-    } else {
-      sentence = "VCCOM:" + hyp + "\n";
+      if(hyp == NULL) {
+        sentence = "VCERR:decoding error\n";
+      } else if(ps_start_utt(ps) < 0) {
+        sentence = "VCERR:Failed to start utterance\n";
+      } else {
+        strcat(sentence, "VCCOM:");
+        strcat(sentence, hyp);
+        strcat(sentence, "\n");
+      }
+
+      write(fd[1], sentence, 80);
+
+      utt_started = FALSE;
     }
-
-    write(fd[1], sentence, 80);
   }
-
-  ps_free(ps);
-  cmd_ln_free_r(config);
 
   close(fd[1]);
 }
