@@ -30,5 +30,8 @@ sound.o: sound.c
 encode.o: encode.c
 	$(CC) $(CFLAGS) encode.c
 
+voice_control.o: voice_control.c
+	$(CC) $(CFLAGS) voice_control.c
+
 clean: 
 	rm *o audio

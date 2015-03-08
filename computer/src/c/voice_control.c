@@ -5,9 +5,6 @@
  */
 
 #include <pocketsphinx.h>
-#include <stdlib.h>
-#include <stdio.h>
-#include <unistd.h>
 
 void start_voice(int* fd) {
   char const *hyp;
