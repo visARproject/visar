@@ -9,6 +9,22 @@
 -- How do you do long/lat stuff?
 -- Add function binding capablity for globals bind
 
+
+MAP:
+    - Buffering non-visible sections
+    - Piece-wise loading
+    - Allow the user to leave the prepared region
+    - Come up with a better cacheing scheme
+
+
+TARGETS:
+    - Make overlay appear above everything
+        Options:
+        -- Ignore depth-buffer
+        -- Use a third "overlay" context distinct from UI and world objects
+        -- NOTE: Without environments, these make no difference
+
+
 def rotate_to_body(body, inv=False):
     R = body.getRotation()
     p = body.getPosition()
