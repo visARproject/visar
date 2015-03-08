@@ -3,7 +3,16 @@ libVisar
 
 Contains everything you've ever wanted in a Python augmented reality package.
 
-# Usage
+# Setup
+
+## Requirements
+* vispy (Install from source, git clone git@github.com:vispy/vispy.git)
+* numpy
+* PyOpenGL
+* QT4
+* scipy (For terrain generator)
+
+Install all of these for things to work!
 
 ## Install
 Do this! You don't have to run this every time you make a change
@@ -19,7 +28,7 @@ Do this! You don't have to run this every time you make a change
     sudo pip uninstall libVisar
 
 
-## Use
+# Usage
 Type
     vsr
 to start the render package, once you have installed libVisar.
