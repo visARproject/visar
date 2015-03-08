@@ -8,6 +8,8 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
+#include <errno.h>
+#include <string.h>
 
 #include "audio_controller.h"
 #include "buffer.h"
@@ -23,11 +25,13 @@ void *reciever_thread(void *ptr){
   
   //setup the scoket
   int sock = socket(PF_INET, SOCK_DGRAM, 0); // setup UDP socket
+  if(sock == 0) printf("Error, couldn't create reciever\n"); //report the error
   struct sockaddr_in addr, client; //create address structs for socket/clients
   addr.sin_family = AF_INET;  //using internet protocols
   addr.sin_port = htons(port); //convert to correct byte format
   addr.sin_addr.s_addr = htonl(INADDR_ANY); //socket is server, must accept any connection
-  bind(sock, (struct sockaddr*)&addr, sizeof(addr)); //bind socket
+  if(bind(sock, (struct sockaddr*)&addr, sizeof(addr))) //bind socket
+    printf("Error, couldn't bind read socket: %s\n", strerror(errno)); //report the error 
   struct timeval tv;  //setup the timeout
   tv.tv_sec = 1;
   tv.tv_usec = 0;
@@ -51,7 +55,7 @@ void *reciever_thread(void *ptr){
         //write(stdout, GET_QUEUE_TAIL(*buf), buf->per_size); //DEBUG
         INC_QUEUE_TAIL(*buf); //increment if successful
         //bytes = sendto(sock, &ack, 1, 0, (struct sockaddr *)&client,sizeof(client)); //send an ack
-      } else printf("Error, bad socket read: %d\n",bytes); //report the error
+      } else printf("Error, bad socket read: %s\n", strerror(errno)); //report the error
       //printf("buffer: (%d, %d, %d)\n", buf->start, buf->end, BUFFER_SIZE(*buf));
     } else {
       printf("Reciever Waiting\n");
@@ -74,6 +78,8 @@ int start_reciever(int port, audiobuffer* buf, int* flag){
   pkg->buf  = buf;
   pkg->flag = flag;
   
+  printf("Port: %d",port);
+  
   //create thread and send it the package
   pthread_t thread; //thread handler
   int rc = pthread_create(&thread, NULL, reciever_thread, (void*)pkg);
@@ -88,6 +94,7 @@ int send_packet(sender_handle* snd){
   int bytes = encode(snd->buf, encode_buf, snd->len); //encode the data
   bytes = sendto(snd->sock, encode_buf, bytes, 0, (struct sockaddr *)&(snd->dest), sizeof(snd->dest)); //send the packet
   //int bytes = sendto(snd->sock, snd->buf, snd->len, 0, (struct sockaddr *)&(snd->dest), sizeof(snd->dest)); //send the packet
+  if(bytes <= 0) printf("Error, bad socket write: %s\n", strerror(errno)); //report the error
   return bytes;
 }
 
@@ -95,11 +102,13 @@ int send_packet(sender_handle* snd){
 sender_handle* start_sender(const char* host, int port, char* buf, size_t len){
   //setup the scoket
   int sock = socket(PF_INET, SOCK_DGRAM, 0); // setup UDP socket
+  if(sock == 0) printf("Error creating write socket\n");
   struct sockaddr_in addr, dest; //create address structs for socket
   addr.sin_family = AF_INET;  //using internet protocols
   addr.sin_port = htons(0);   //port doesn't matter
   addr.sin_addr.s_addr = htonl(INADDR_ANY); //don't care what our address is
-  bind(sock, (struct sockaddr*)&addr, sizeof(addr)); //bind socket
+  if(bind(sock, (struct sockaddr*)&addr, sizeof(addr))) //bind socket
+    printf("Error, couldn't bind write socket: %s\n", strerror(errno)); //report the error 
   dest.sin_family = AF_INET;  //setup the target address
   dest.sin_port = htons(port); //set the destination port
   inet_aton(host, &dest.sin_addr); //set the target address

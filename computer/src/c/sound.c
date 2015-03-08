@@ -1,8 +1,10 @@
 /* 
  * File handles sound processing (start/stop/buffer structure)
  * TODO: multiplexing, volume
- * BUGS: Starting comms while in vc mode breaks program
- *       Errors when stopping and resuming vc_mode (^likely related)
+ * BUGS: speaker underruns on ARM, can't recover
+ *         -seems to destabalize with time
+ *         -time to failure is shorter with usleep in spin loop
+ *       
  */
 
 //library includes 
@@ -74,7 +76,7 @@ audiobuffer* create_speaker_thread(snd_pcm_t* pcm_handle, size_t period, size_t 
   pkg->buffer = buffer;
 
   speaker_kill_flag = 0;  //reset the kill signal
-
+  
   //create thread and send it the package
   pthread_t thread; //thread handler
   int rc = pthread_create(&thread, NULL, speaker_thread, (void*)pkg);
@@ -90,6 +92,8 @@ void create_mic_thread(snd_pcm_t* pcm_handle, sender_handle* sender, size_t peri
   //finish populating the sender info
   sender->buf = buffer;
   sender->len = period*frame_size;
+    
+  mic_kill_flag = !vc_only;  //reset the kill on normal operations
   
   //store in package
   mic_pcm_package* pkg = (mic_pcm_package*)malloc(sizeof(mic_pcm_package));
@@ -105,6 +109,7 @@ void create_mic_thread(snd_pcm_t* pcm_handle, sender_handle* sender, size_t peri
   pthread_t thread; //thread handler
   int rc = pthread_create(&thread, NULL, mic_thread, (void*)pkg);
   if (rc) printf("ERROR: Could not create device thread, rc=%d\n", rc); //print errors
+  
 }
 
 void *speaker_thread(void* ptr){
@@ -119,14 +124,16 @@ void *speaker_thread(void* ptr){
       //printf("Speaker Waiting\n");
       usleep(PERIOD_UTIME/2); //wait to reduce CPU usage
       continue;     //don't start yet
-    } else started = 1; //indicate that we've startd
+    } else {
+      if(!started) snd_pcm_prepare(speaker_handle); //reset speaker
+      started = 1; //indicate that we've startd
+    }
     
     //write data to speaker buffer, check responses
     int rc = snd_pcm_writei(speaker_handle, GET_QUEUE_HEAD(*buf), buf->period);
     INC_QUEUE_HEAD(*buf);
     if (rc == -EPIPE){ //Catch underruns (not enough data)
       fprintf(stderr, "underrun occurred\n");
-      snd_pcm_prepare(speaker_handle); //reset speaker
       started = 0;  //stop and wait for buffer to buildup
     } else if (rc < 0) fprintf(stderr, "error from writei: %s\n", snd_strerror(rc)); //other errors
     else if (rc != (int)buf->period) fprintf(stderr, "short write, write %d frames\n", rc);

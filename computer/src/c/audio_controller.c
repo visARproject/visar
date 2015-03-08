@@ -1,7 +1,10 @@
 /* 
  * File handles the the speaker/mic control interface
  *  Program expects control inputs from stdin (done via redirects) 
- * TODO: test voice control, multiple streams?
+ * TODO: multiple streams?
+ * BUGS: Starting comms while in vc mode breaks program
+ *       Errors when stopping and resuming vc_mode (^likely related)
+ *       Segfault on ARM stop command
  */
  
 #include <stdio.h>
@@ -29,6 +32,7 @@ int vc_flag;          //voice control active flag
 int vc_hold_flag;     //voice control pipe active flag
 static pid_t child;   //pid of child process
 static int reciever_kill_flag; //kill flag for network reciever thread
+static int period;    //period (samples/frame) required by the codecs
 
 //main function for the program, listens on stdin for commands
 int main(int argc, char** argv){  
@@ -41,7 +45,7 @@ int main(int argc, char** argv){
   mic_kill_flag = 1;
   speaker_kill_flag = 1;
      
-  int period = setup_codecs(); //setup the codecs and get the period size  
+  period = setup_codecs(); //setup the codecs and get the period size  
   
   //handler loop, runs until program is killed
   while(!global_kill){
@@ -81,17 +85,9 @@ int main(int argc, char** argv){
         channels = DEFAULT_CHNS;
       
         printf("Rate: %d, Channels: %d, Period: %d\n", rate, channels, period);
-        
-        //have to pause vc before starting threads
-        int vc_resume = vc_flag;
-        if(vc_flag){
-          printf("Audio Controller: Pausing VC\n");
-          vc_flag = 0;
-          sleep(TIMEOUT);  //wait for vc to stop
-        }
       
         //setup the speaker
-        if(direction & 2){
+        if((direction & 2) && speaker_kill_flag){
           snd_pcm_t* handle = start_snd_device(period, rate, (channels==2), PLAYBACK_DIR); //start the device
           audiobuffer* spk_buf = create_speaker_thread(handle, period, 2*channels); //spawn the speaker thread
           reciever_kill_flag = 0;  //reset the kill flag
@@ -103,17 +99,16 @@ int main(int argc, char** argv){
         }
         
         //setup the mic
-        if(direction & 1){ 
+        if((direction & 1) && mic_kill_flag){ 
+          if(vc_flag){
+            vc_flag = 0;    //stop voice control
+            printf("Audio Controller: Stopping VC for comms setup\n");
+            wait(TIMEOUT);  //let thread die
+          }
           snd_pcm_t* handle = start_snd_device(period, rate, (channels==2), CAPTURE_DIR); //start the device
           sender_handle* sndr = start_sender(addr, port, 0, 0); //setup partial sender
-          create_mic_thread(handle, sndr, period, 2*(channels),0); //spawn the thread
+          create_mic_thread(handle, sndr, period, 2*(channels), 0); //spawn the thread
           printf("Audio Controller: Started microphone transmission\n");
-        }
-        
-        if(vc_resume){
-          vc_flag = 1;
-          printf("Audio Controller: Resuming VC\n");
-          sleep(TIMEOUT);
         }
       
       //Stop Command
@@ -131,11 +126,11 @@ int main(int argc, char** argv){
           }
         }
         
-        //shutdown the producers, wait if requested, then shutdown consumers
+        //issue shutdown signals to the threads
         if(direction & 1) mic_kill_flag = 1;      //assert microphone kill flag
-        if(direction & 2) reciever_kill_flag = 1; //assert server kill flag
-        if(!kill_f) sleep(TIMEOUT);  //wait for data to finish processing
         if(direction & 2) speaker_kill_flag = 1;  //assert speaker kill flag
+        if(!kill_f) sleep(TIMEOUT);  //wait for data to finish processing
+        if(direction & 2) reciever_kill_flag = 1; //assert server kill flag
         printf("Audio Controller: Devices shutdown\n");
       
       } else if(0 == strcmp(token, "shutdown")){
@@ -170,6 +165,7 @@ int main(int argc, char** argv){
   
   destroy_codecs();        //clean up the encoder
   destroy_voice_control(); //shutdown the voice controller
+  sleep(TIMEOUT);          //wait for process to exit
   
   printf("Audio Controller: Exiting\n");
   return 0;
@@ -202,7 +198,7 @@ int setup_voice_control(){
     close(pipe_fd[0]);    //parent closes reciever side of pipe
     vc_pipe = pipe_fd[1]; //save the pipe's fd
   }
-
+  
   printf("Audio Controller: Voice Controller Started\n");
   return 0;
 }
@@ -213,7 +209,7 @@ void destroy_voice_control(){
   
   vc_flag = 0;          //signal thread to stop writing data
   while(vc_hold_flag);  //wait for pending writes to finish
-  close(vc_pipe);    //close the pipe, signaling that child should close
+  close(vc_pipe);       //close the pipe, signaling that child should close
   sleep(TIMEOUT);       //wait for child to respond
   
   //check if child pid is valid, try to kill the child, check if it existed
