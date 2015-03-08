@@ -6,7 +6,8 @@ Contains everything you've ever wanted in a Python augmented reality package.
 # Setup
 
 ## Requirements
-* vispy (Install from source, git clone git@github.com:vispy/vispy.git)
+* vispy (Install from source, ```git clone git@github.com:vispy/vispy.git```)
+* OSMViz (For mapping, install from source, ```git clone https://github.com/cbick/osmviz.git```)
 * numpy
 * PyOpenGL
 * QT4
