@@ -70,27 +70,34 @@ begin
     
     ram_in.cmd.clk <= clock;
     
-    process (ram_out.cmd.full, rd_cmd_fifo_read_empty, rd_cmd_fifo_read_data, wr_cmd_fifo_read_empty, wr_cmd_fifo_read_data) is
+    process (ram_out.cmd.full, rd_cmd_fifo_read_empty, rd_cmd_fifo_read_data, wr_cmd_fifo_read_empty, wr_cmd_fifo_read_data, clock) is
     begin
-        ram_in.cmd.en <= '0';
-        ram_in.cmd.instr <= (others => '-');
-        ram_in.cmd.bl <= (others => '-');
-        ram_in.cmd.byte_addr <= (others => '-');
         rd_cmd_fifo_read_enable <= '0';
         wr_cmd_fifo_read_enable <= '0';
         if ram_out.cmd.full = '0' then
             if rd_cmd_fifo_read_empty = '0' then
-                ram_in.cmd.en <= '1';
-                ram_in.cmd.instr <= rd_cmd_fifo_read_data(COMMAND_WIDTH-1 downto COMMAND_WIDTH-ram_port_cmd_in.instr'length);
-                ram_in.cmd.bl <= rd_cmd_fifo_read_data(COMMAND_WIDTH-ram_port_cmd_in.instr'length-1 downto ram_port_cmd_in.byte_addr'length);
-                ram_in.cmd.byte_addr <= rd_cmd_fifo_read_data(ram_port_cmd_in.byte_addr'length-1 downto 0);
                 rd_cmd_fifo_read_enable <= '1';
             elsif wr_cmd_fifo_read_empty = '0' then
-                ram_in.cmd.en <= '1';
-                ram_in.cmd.instr <= wr_cmd_fifo_read_data(COMMAND_WIDTH-1 downto COMMAND_WIDTH-ram_port_cmd_in.instr'length);
-                ram_in.cmd.bl <= wr_cmd_fifo_read_data(COMMAND_WIDTH-ram_port_cmd_in.instr'length-1 downto ram_port_cmd_in.byte_addr'length);
-                ram_in.cmd.byte_addr <= wr_cmd_fifo_read_data(ram_port_cmd_in.byte_addr'length-1 downto 0);
                 wr_cmd_fifo_read_enable <= '1';
+            end if;
+        end if;
+        if rising_edge(clock) then
+            ram_in.cmd.en <= '0';
+            ram_in.cmd.instr <= (others => '-');
+            ram_in.cmd.bl <= (others => '-');
+            ram_in.cmd.byte_addr <= (others => '-');
+            if ram_out.cmd.full = '0' then
+                if rd_cmd_fifo_read_empty = '0' then
+                    ram_in.cmd.en <= '1';
+                    ram_in.cmd.instr <= rd_cmd_fifo_read_data(COMMAND_WIDTH-1 downto COMMAND_WIDTH-ram_port_cmd_in.instr'length);
+                    ram_in.cmd.bl <= rd_cmd_fifo_read_data(COMMAND_WIDTH-ram_port_cmd_in.instr'length-1 downto ram_port_cmd_in.byte_addr'length);
+                    ram_in.cmd.byte_addr <= rd_cmd_fifo_read_data(ram_port_cmd_in.byte_addr'length-1 downto 0);
+                elsif wr_cmd_fifo_read_empty = '0' then
+                    ram_in.cmd.en <= '1';
+                    ram_in.cmd.instr <= wr_cmd_fifo_read_data(COMMAND_WIDTH-1 downto COMMAND_WIDTH-ram_port_cmd_in.instr'length);
+                    ram_in.cmd.bl <= wr_cmd_fifo_read_data(COMMAND_WIDTH-ram_port_cmd_in.instr'length-1 downto ram_port_cmd_in.byte_addr'length);
+                    ram_in.cmd.byte_addr <= wr_cmd_fifo_read_data(ram_port_cmd_in.byte_addr'length-1 downto 0);
+                end if;
             end if;
         end if;
     end process;

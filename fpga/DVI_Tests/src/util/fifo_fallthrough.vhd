@@ -48,14 +48,18 @@ begin
         fifo_read_enable <= '0';
         if fifo_read_empty = '0' and have_data = '0' then
             fifo_read_enable <= '1';
-            if rising_edge(read_clock) then
-                have_data <= '1';
-            end if;
         elsif read_enable = '1' and have_data = '1' then
             if fifo_read_empty = '0' then
                 fifo_read_enable <= '1';
             else
-                if rising_edge(read_clock) then
+            end if;
+        end if;
+        if rising_edge(read_clock) then
+            if fifo_read_empty = '0' and have_data = '0' then
+                have_data <= '1';
+            elsif read_enable = '1' and have_data = '1' then
+                if fifo_read_empty = '0' then
+                else
                     have_data <= '0';
                 end if;
             end if;

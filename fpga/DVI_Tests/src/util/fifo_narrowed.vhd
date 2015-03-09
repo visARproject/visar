@@ -67,10 +67,6 @@ begin
         fifo_write_data(WRITE_WIDTH*(0+1)-1 downto WRITE_WIDTH*0) <= (others => 'U'); -- prevent inferring latches
         if write_state /= 0 then
             if write_enable = '1' then
-                if rising_edge(write_clock) then
-                    fifo_write_data(WRITE_WIDTH*(write_state+1)-1 downto WRITE_WIDTH*write_state) <= write_data;
-                    write_state <= 0;
-                end if;
             end if;
         else
             if fifo_write_full = '1' then
@@ -79,7 +75,19 @@ begin
                 if write_enable = '1' then
                     fifo_write_data(WRITE_WIDTH*(write_state+1)-1 downto WRITE_WIDTH*write_state) <= write_data;
                     fifo_write_enable <= '1';
-                    if rising_edge(write_clock) then
+                end if;
+            end if;
+        end if;
+        if rising_edge(write_clock) then
+            if write_state /= 0 then
+                if write_enable = '1' then
+                    fifo_write_data(WRITE_WIDTH*(write_state+1)-1 downto WRITE_WIDTH*write_state) <= write_data;
+                    write_state <= 0;
+                end if;
+            else
+                if fifo_write_full = '1' then
+                else
+                    if write_enable = '1' then
                         write_state <= WRITE_CHUNKS-1;
                     end if;
                 end if;
@@ -94,9 +102,6 @@ begin
         read_data <= fifo_read_data(READ_WIDTH*(read_state+1)-1 downto READ_WIDTH*read_state);
         if read_state /= 0 then
             if read_enable = '1' then
-                if rising_edge(read_clock) then
-                    read_state <= read_state - 1;
-                end if;
             end if;
         else
             if fifo_read_empty = '1' then
@@ -104,7 +109,18 @@ begin
             else
                 if read_enable = '1' then
                     fifo_read_enable <= '1';
-                    if rising_edge(read_clock) then
+                end if;
+            end if;
+        end if;
+        if rising_edge(read_clock) then
+            if read_state /= 0 then
+                if read_enable = '1' then
+                    read_state <= read_state - 1;
+                end if;
+            else
+                if fifo_read_empty = '1' then
+                else
+                    if read_enable = '1' then
                         read_state <= READ_CHUNKS - 1;
                     end if;
                 end if;
