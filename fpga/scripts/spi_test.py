@@ -71,6 +71,7 @@ class SPIer(object):
             return res
 
 s = SPIer()
+print s.do_spi(10, 9, [1, 0, 0, 0, 0, 0, 0, 0, 0, 0])
 assert s.do_spi(10, 9, [1, 0, 0, 0, 0, 0, 0, 0, 0, 0]) == [1, 0, 1, 0, 0, 1, 1, 0, 0, 1]
 '''while True:
     print '{0:025b}'.format(s._r.read(32*1024*1024))
@@ -186,6 +187,15 @@ camera_write( 72, 0x0203)
 camera_write( 40, 0x0003)
 camera_write( 48, 0x0001)
 camera_write(112, 0x0007)
+
+
+
+camera_write(192, list_to_int(camera_read(192)) | 0b10) # enable rolling shutter
+camera_write(198, 4095) # dummy lines
+camera_write(160, 0x0011) # enable AEC
+camera_write(170, 0xffff) # enable AEC max exposure (note relation to dummy lines)
+camera_write(171, 0b1111111111111101) # enable AEC max gain
+
 # ENABLE SEQUENCER REGISTER UPLOAD
 camera_write(192, list_to_int(camera_read(192)) | 0b1)
 

@@ -6,13 +6,14 @@ use work.simple_mac_pkg.all;
 
 entity udp_wrapper is
     generic (
-        SRC_MAC   : std_logic_vector(47 downto 0) := x"FFFFFFFFFFFF";
-        DST_MAC   : std_logic_vector(47 downto 0) := x"FFFFFFFFFFFF";
-        SRC_IP    : std_logic_vector(31 downto 0) := x"00000000"; -- 0.0.0.0
-        DST_IP    : std_logic_vector(31 downto 0) := x"FFFFFFFF"; -- 255.255.255.255 
-        SRC_PORT  : std_logic_vector(15 downto 0) := x"7A69";     -- 31337
-        DST_PORT  : std_logic_vector(15 downto 0) := x"9001";     -- 36865
-        DATA_SIZE : natural);
+        SRC_MAC     : std_logic_vector(47 downto 0) := x"FFFFFFFFFFFF";
+        DST_MAC     : std_logic_vector(47 downto 0) := x"FFFFFFFFFFFF";
+        SRC_IP      : std_logic_vector(31 downto 0) := x"00000000"; -- 0.0.0.0
+        DST_IP      : std_logic_vector(31 downto 0) := x"FFFFFFFF"; -- 255.255.255.255 
+        IP_CHECKSUM : std_logic_vector(15 downto 0);
+        SRC_PORT    : std_logic_vector(15 downto 0) := x"7A69";     -- 31337
+        DST_PORT    : std_logic_vector(15 downto 0) := x"9001";     -- 36865
+        DATA_SIZE   : natural);
     port (
         clk_125M : in std_logic;
         reset    : in std_logic; -- must be synchronous to clk_125M
@@ -46,7 +47,7 @@ architecture Behavioral of udp_wrapper is
         x"00", x"00", -- identification = 0
         x"40", x"00", -- Flags + Fragment offset = 0x4000 (Don't Fragment, no fragment offset),
         x"40", x"11", -- TTL = 64 (0x40), IP Protocol: UDP (17, or 0x11)
-        x"37", x"a6", -- IP Checksum = 0
+        IP_CHECKSUM(15 downto 8), IP_CHECKSUM(7 downto 0), -- IP Checksum = 0
         SRC_IP(31 downto 24), SRC_IP(23 downto 16), SRC_IP(15 downto 8), SRC_IP(7 downto 0),
         DST_IP(31 downto 24), DST_IP(23 downto 16), DST_IP(15 downto 8), DST_IP(7 downto 0),
         --- UDP header ---
@@ -93,8 +94,9 @@ begin
                 when TX_PREPEND =>
                     next_mac_in.tx_data <= prepend_data(prepend_counter);
                     next_mac_in.tx_eop <= '0';
-                    next_prepend_counter <= prepend_counter + 1;
-                    if prepend_counter = PREPEND_LENGTH - 1 then
+                    if prepend_counter /= PREPEND_LENGTH - 1 then
+                        next_prepend_counter <= prepend_counter + 1;
+                    else
                         next_state <= TX_PAYLOAD;
                         data_out.tx_rd <= '1';
                     end if;

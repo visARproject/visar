@@ -15,6 +15,7 @@ entity camera_ethernet_writer is
         ram_out : in  ram_rd_port_out;
         
         clock_ethernet : std_logic; -- must be 125MHz
+        reset : std_logic;
         
         phy_in  : out PHYInInterface;
         phy_out : in  PHYOutInterface);
@@ -29,11 +30,11 @@ architecture arc of camera_ethernet_writer is
     
     signal clock : std_logic;
     
-    signal packet_index : integer range 0 to COUNT-1 := 0;
-    signal state : integer range 0 to 1 := 0;
-    signal read_index : integer range 0 to DATA_SIZE/BURST_LENGTH_BYTES := 0;
-    signal words_in_flight : integer range 0 to 2*RAM_FIFO_LENGTH-1 := 0;
-    signal words_committed : integer range 0 to 1+DATA_SIZE/4 := 0;
+    signal packet_index, next_packet_index : integer range 0 to COUNT-1;
+    signal state, next_state : integer range 0 to 1;
+    signal read_index, next_read_index : integer range 0 to DATA_SIZE/BURST_LENGTH_BYTES;
+    signal words_in_flight, next_words_in_flight : integer range 0 to 2*RAM_FIFO_LENGTH-1;
+    signal words_committed, next_words_committed : integer range 0 to 1+DATA_SIZE/4;
     
     signal fifo_write_enable : std_logic := '0';
     signal fifo_write_data   : std_logic_vector(35 downto 0);
@@ -41,7 +42,7 @@ architecture arc of camera_ethernet_writer is
     
     signal fifo_read_data : std_logic_vector(8 downto 0);
     
-    signal tx_flag : std_logic := '0';
+    signal tx_flag, next_tx_flag : std_logic;
     
     signal data_in  : MACInInterface;
     signal data_out : MACOutInterface;
@@ -62,13 +63,26 @@ begin
         fifo_write_enable <= '0';
         fifo_write_data <= (others => '-');
         ram_in.rd.en <= '0';
-        if state = 0 then
+        
+        next_packet_index <= packet_index;
+        next_state <= state;
+        next_read_index <= read_index;
+        next_words_in_flight <= words_in_flight;
+        next_words_committed <= words_committed;
+        next_tx_flag <= tx_flag;
+        
+        if reset = '1' then
+            next_packet_index <= 0;
+            next_state <= 0;
+            next_read_index <= 0;
+            next_words_in_flight <= 0;
+            next_words_committed <= 0;
+            next_tx_flag <= '0';
+        elsif state = 0 then
             if fifo_write_full = '0' then
                 fifo_write_enable <= '1';
                 fifo_write_data <= "0" & "00000000" & "0" & "00000000" & "0" & std_logic_vector(to_unsigned(packet_index/256, 8)) & "0" & std_logic_vector(to_unsigned(packet_index mod 256, 8));
-                if rising_edge(clock) then
-                    state <= 1;
-                end if;
+                next_state <= 1;
             end if;
         elsif state = 1 then
             if words_in_flight <= RAM_FIFO_LENGTH/2 and read_index /= DATA_SIZE/BURST_LENGTH_BYTES then
@@ -76,10 +90,8 @@ begin
                 ram_in.cmd.instr <= READ_PRECHARGE_COMMAND;
                 ram_in.cmd.byte_addr <= std_logic_vector(to_unsigned(BUFFER_ADDRESS + DATA_SIZE * packet_index + BURST_LENGTH_BYTES * read_index, ram_in.cmd.byte_addr'length));
                 ram_in.cmd.bl <= std_logic_vector(to_unsigned(BURST_LENGTH_WORDS-1, ram_in.cmd.bl'length));
-                if rising_edge(clock) then
-                    words_in_flight <= words_in_flight + BURST_LENGTH_WORDS;
-                    read_index <= read_index + 1;
-                end if;
+                next_words_in_flight <= words_in_flight + BURST_LENGTH_WORDS;
+                next_read_index <= read_index + 1;
             elsif fifo_write_full = '0' then
                 if ram_out.rd.empty = '0' then
                     fifo_write_enable <= '1';
@@ -88,22 +100,30 @@ begin
                         fifo_write_data(8) <= '1'; -- end of packet
                     end if;
                     ram_in.rd.en <= '1';
-                    if rising_edge(clock) then
-                        words_in_flight <= words_in_flight - 1;
-                        if words_committed = DATA_SIZE/4-1 then
-                            tx_flag <= not tx_flag;
-                            if packet_index /= COUNT-1 then
-                                packet_index <= packet_index + 1;
-                            else
-                                packet_index <= 0;
-                            end if;
-                            read_index <= 0;
-                            state <= 0;
+                    next_words_in_flight <= words_in_flight - 1;
+                    next_words_committed <= words_committed + 1;
+                    if words_committed = DATA_SIZE/4-1 then
+                        next_tx_flag <= not tx_flag;
+                        if packet_index /= COUNT-1 then
+                            next_packet_index <= packet_index + 1;
+                        else
+                            next_packet_index <= 0;
                         end if;
-                        words_committed <= words_committed + 1;
+                        next_read_index <= 0;
+                        next_state <= 0;
+                        next_words_committed <= 0;
                     end if;
                 end if;
             end if;
+        end if;
+        
+        if rising_edge(clock) then
+            packet_index <= next_packet_index;
+            state <= next_state;
+            read_index <= next_read_index;
+            words_in_flight <= next_words_in_flight;
+            words_committed <= next_words_committed;
+            tx_flag <= next_tx_flag;
         end if;
     end process;
     
@@ -129,16 +149,17 @@ begin
     
     U_UDP : entity work.udp_wrapper
         generic map(
-            SRC_MAC   => x"000000000000",
-            DST_MAC   => x"00249b09740d",
-            SRC_IP    => x"00000000", -- 0.0.0.0
-            DST_IP    => x"FFFFFFFF", -- 255.255.255.255
-            SRC_PORT  => x"0000",
-            DST_PORT  => x"1441",
-            DATA_SIZE => PAYLOAD_SIZE)
+            SRC_MAC     => x"000000000000",
+            DST_MAC     => x"00249b09740d",
+            SRC_IP      => x"00000000", -- 0.0.0.0
+            DST_IP      => x"FFFFFFFF", -- 255.255.255.255
+            IP_CHECKSUM => x"36ce",
+            SRC_PORT    => x"0000",
+            DST_PORT    => x"1441",
+            DATA_SIZE   => PAYLOAD_SIZE)
         port map(
             clk_125M => clock_ethernet,
-            reset    => '0',
+            reset    => reset,
             phy_in   => phy_in,
             phy_out  => phy_out,
             data_in  => data_in,

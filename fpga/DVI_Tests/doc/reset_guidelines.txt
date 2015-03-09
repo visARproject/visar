@@ -1,0 +1,7 @@
+reset generator at root that does power on reset and makes sure pulses are long enough (async reg reset pulse length)
+asynchronous resets go to everything
+everything generates own reset by ORing master reset and dependency nonready signals (e.g. DRAM's c3_calib_done)
+everything synchronizes reset into own clock domain - if clock is known to always run, synchronous result, if clock might not always run, asynchronous assert, synchronous deassert
+everything should have some correct behavior during reset - FIFOs should be full so nothing is loaded, etc
+
+clock providers don't ever get reset, so that as many things as possible can internally use synchronous resets

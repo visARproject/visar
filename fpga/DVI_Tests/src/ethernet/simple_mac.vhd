@@ -95,8 +95,9 @@ begin
             elsif state = PREAMBLE then
                 next_phy_in.txd <= x"55";
                 next_phy_in.txen <= '1';
-                next_counter <= counter + 1;
-                if counter = PREAMBLE_LENGTH - 1 then
+                if counter /= PREAMBLE_LENGTH - 1 then
+                    next_counter <= counter + 1;
+                else
                     next_state <= SFD;
                 end if;
             elsif state = SFD then
@@ -166,8 +167,9 @@ begin
                 next_state <= IFG;
                 next_counter <= 0;
             elsif state = IFG then
-                next_counter <= counter + 1;
-                if counter = IFG_LENGTH - 1 then
+                if counter /= IFG_LENGTH - 1 then
+                    next_counter <= counter + 1;
+                else
                     next_state <= IDLE;
                 end if;
             end if;

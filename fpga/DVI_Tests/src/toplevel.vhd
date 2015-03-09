@@ -503,6 +503,7 @@ begin
             ram_in => c3_p1_rdonly_in,
             ram_out => c3_p1_rdonly_out,
             clock_ethernet => clk_ethernet,
+            reset => reset or not c3_calib_done or c3_rst0,
             phy_in => phy_in,
             phy_out => phy_out);
     
