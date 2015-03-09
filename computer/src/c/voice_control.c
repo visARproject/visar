@@ -32,7 +32,7 @@ void start_voice(int* fd) {
 
   //go as long as there's a pipe
   while((k = read(fd[0], buffer, 2048)) > 0) {
-    char *sentence = ""; //output
+    char *sentence; //output
 
     ps_process_raw(ps, buffer, k, FALSE, FALSE); //begins decoding using the number of frames it could read
 
@@ -56,19 +56,23 @@ void start_voice(int* fd) {
         printf("here1\n");
         sentence = "VCERR:Failed to start utterance\n";
       } else { //place command in correct form
+        sentence = malloc(strlen("VCCOM:") + strlen(hyp) + strlen("\n") + 1);
         printf("%s\n", "here2\n");
-        strcat(sentence, "VCCOM:");
+        strcpy(sentence, "VCCOM:");
         strcat(sentence, hyp);
         strcat(sentence, "\n");
+        printf("%s\n", "1");
       }
 
       printf("%s\n", sentence);
-      printf("%s\n", hyp);
 
-      write(fd[1], sentence, 80); //send results to output pipe
+      // write(fd[1], sentence, 80); //send results to output pipe
 
       utt_started = FALSE; //reset check back to FALSE
     }
+
+    // usleep(7500);
+    memset(buffer, 0, 2048);
   }
 
   close(fd[1]); //close output pipe
