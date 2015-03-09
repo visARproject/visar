@@ -420,7 +420,6 @@ begin
                  sel       => received_video.sync.valid,
                  video_out => overlay_video);
 
-    XXX : if false generate
     U_DISTORTER : entity work.video_distorter
         generic map (
             LEFT_CAMERA_MEMORY_LOCATION => LEFT_CAMERA_MEMORY_LOCATION,
@@ -436,7 +435,6 @@ begin
             ram2_out => c3_p3_out,
             ram3_in  => c3_p1_rdonly_in,
             ram3_out => c3_p1_rdonly_out);
-    end generate;
 
     U_OVERLAY : entity work.video_overlay
         port map(video_sync  => overlay_video.sync,
