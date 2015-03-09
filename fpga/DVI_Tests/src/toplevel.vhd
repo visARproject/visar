@@ -169,24 +169,24 @@ begin
         LOCKED                => clk_locked);
     
 
-    --U_LEFT_CAMERA_WRAPPER : entity work.camera_wrapper
-    --    generic map (
-    --        SYNC_INVERTED  => false,
-    --        DATA3_INVERTED => false,
-    --        DATA2_INVERTED => true,
-    --        DATA1_INVERTED => false,
-    --        DATA0_INVERTED => false)
-    --    port map (
-    --        clock_camera_unbuf => clk_camera_unbuf,
-    --        clock_camera_over_2 => clk_camera_over_2,
-    --        clock_camera_over_5 => clk_camera_over_5,
-    --        clock_locked => clk_locked,
-    --        reset        => reset,
-    --        
-    --        camera_out => left_camera_out,
-    --        camera_in  => left_camera_in,
-    --        
-    --        output => left_camera_output);
+    U_LEFT_CAMERA_WRAPPER : entity work.camera_wrapper
+        generic map (
+            SYNC_INVERTED  => false,
+            DATA3_INVERTED => false,
+            DATA2_INVERTED => true,
+            DATA1_INVERTED => false,
+            DATA0_INVERTED => false)
+        port map (
+            clock_camera_unbuf => clk_camera_unbuf,
+            clock_camera_over_2 => clk_camera_over_2,
+            clock_camera_over_5 => clk_camera_over_5,
+            clock_locked => clk_locked,
+            reset        => reset,
+            
+            camera_out => left_camera_out,
+            camera_in  => left_camera_in,
+            
+            output => left_camera_output);
     
     U_RIGHT_CAMERA_WRAPPER : entity work.camera_wrapper
         generic map (
@@ -207,14 +207,14 @@ begin
             
             output => right_camera_output);
     
-    --U_LEFT_CAMERA_WRITER : entity work.camera_writer
-    --    generic map (
-    --        BUFFER_ADDRESS => LEFT_CAMERA_MEMORY_LOCATION)
-    --    port map (
-    --        camera_output => left_camera_output,
-    --        
-    --        ram_in  => c3_p4_in,
-    --        ram_out => c3_p4_out);
+    U_LEFT_CAMERA_WRITER : entity work.camera_writer
+        generic map (
+            BUFFER_ADDRESS => LEFT_CAMERA_MEMORY_LOCATION)
+        port map (
+            camera_output => left_camera_output,
+            
+            ram_in  => c3_p4_in,
+            ram_out => c3_p4_out);
     
     U_RIGHT_CAMERA_WRITER : entity work.camera_writer
         generic map (
