@@ -60,7 +60,7 @@ begin
     
     ram_in.cmd.clk <= clock;
     ram_in.rd.clk <= clock;
-    process (words_in_flight, read_index, packet_index, clock, state, fifo_write_full, ram_out, words_committed) is
+    process (words_in_flight, read_index, packet_index, clock, state, fifo_write_full, ram_out, words_committed, tx_flag, reset_synchronized) is
     begin
         ram_in.cmd.en <= '0';
         ram_in.cmd.instr <= (others => '-');

@@ -36,7 +36,7 @@ architecture Behavioral of udp_wrapper is
     constant PREPEND_LENGTH : natural := 42;
     
     type prepend_t is array (0 to PREPEND_LENGTH - 1) of std_logic_vector(7 downto 0);
-    signal prepend_data : prepend_t := (
+    constant prepend_data : prepend_t := (
         --- Ethernet header ---
         DST_MAC(47 downto 40), DST_MAC(39 downto 32), DST_MAC(31 downto 24), DST_MAC(23 downto 16), DST_MAC(15 downto 8), DST_MAC(7 downto 0),
         SRC_MAC(47 downto 40), SRC_MAC(39 downto 32), SRC_MAC(31 downto 24), SRC_MAC(23 downto 16), SRC_MAC(15 downto 8), SRC_MAC(7 downto 0),
@@ -81,7 +81,7 @@ begin
         end if;
     end process seq;
 
-    comb : process(state, mac_out, prepend_data, prepend_counter, data_in, mac_in)
+    comb : process(state, mac_out, prepend_counter, data_in, mac_in)
     begin
         next_state <= state;
         next_prepend_counter <= 0; -- prevent latches from being inferred
