@@ -30,6 +30,8 @@ architecture arc of camera_ethernet_writer is
     
     signal clock : std_logic;
     
+    signal reset_synchronized : std_logic;
+    
     signal packet_index, next_packet_index : integer range 0 to COUNT-1;
     signal state, next_state : integer range 0 to 1;
     signal read_index, next_read_index : integer range 0 to DATA_SIZE/BURST_LENGTH_BYTES;
@@ -51,6 +53,11 @@ begin
     
     clock <= clock_ethernet;
     
+    U_RESET_GEN : entity work.reset_gen port map (
+        clock     => clock,
+        reset_in  => reset,
+        reset_out => reset_synchronized);
+    
     ram_in.cmd.clk <= clock;
     ram_in.rd.clk <= clock;
     process (words_in_flight, read_index, packet_index, clock, state, fifo_write_full, ram_out, words_committed) is
@@ -71,7 +78,7 @@ begin
         next_words_committed <= words_committed;
         next_tx_flag <= tx_flag;
         
-        if reset = '1' then
+        if reset_synchronized = '1' then
             next_packet_index <= 0;
             next_state <= 0;
             next_read_index <= 0;
@@ -159,7 +166,7 @@ begin
             DATA_SIZE   => PAYLOAD_SIZE)
         port map(
             clk_125M => clock_ethernet,
-            reset    => reset,
+            reset    => reset_synchronized,
             phy_in   => phy_in,
             phy_out  => phy_out,
             data_in  => data_in,

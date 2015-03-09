@@ -124,6 +124,8 @@ architecture RTL of toplevel is
 
     signal c3_p5_in  : ram_wr_port_in;
     signal c3_p5_out : ram_wr_port_out;
+    
+    signal reset_for_ram_user : std_logic;
 
 
     signal dummy_video : video_bus;
@@ -496,6 +498,8 @@ begin
             pair14P => pair14P,
             pair14N => pair14N);
     
+    reset_for_ram_user <= reset or not c3_calib_done or c3_rst0;
+    
     U_CAMERA_ETHERNET_WRITER : entity work.camera_ethernet_writer
         generic map (
             BUFFER_ADDRESS => RIGHT_CAMERA_MEMORY_LOCATION)
@@ -503,7 +507,7 @@ begin
             ram_in => c3_p1_rdonly_in,
             ram_out => c3_p1_rdonly_out,
             clock_ethernet => clk_ethernet,
-            reset => reset or not c3_calib_done or c3_rst0,
+            reset => reset_for_ram_user,
             phy_in => phy_in,
             phy_out => phy_out);
     

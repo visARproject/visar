@@ -107,3 +107,6 @@ NET "phymdi"    LOC = "N17" | IOSTANDARD = LVCMOS33; # Bank = 1, Pin name = IO_L
 NET "phyint"    LOC = "L16" | IOSTANDARD = LVCMOS33; # Bank = 1, Pin name = IO_L42N_GCLK6_TRDY1_M1LDM,  Sch name = E-INT
 NET "phycrs"    LOC = "C18" | IOSTANDARD = LVCMOS33;
 NET "phycol"    LOC = "C17" | IOSTANDARD = LVCMOS33;
+
+
+NET "/reset_for_ram_user" TIG;
