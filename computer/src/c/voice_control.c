@@ -11,52 +11,65 @@
 #include <string.h>
 
 void start_voice(int* fd) {
-  uint8 utt_started = FALSE;
-  uint8 in_speech;
-  int32 k;
-  char const *hyp;
-  int16 buffer[2048];
+  uint8 utt_started = FALSE; //a new utterance check
+  uint8 in_speech; //currently taking in speech
+  int32 k; //number of frames read
+  char const *hyp; //hypothesis of decoding, i.e. what pocketsphinx thinks was said
+  int16 buffer[2048]; //buffer used to store input
 
+  //initial configuration for pocketsphinx
   cmd_ln_t *config = cmd_ln_init(NULL, ps_args(), TRUE,
     "-hmm", MODELDIR "/en-us/en-us",
-    "-lm", MODELDIR "/en-us/en-us.lm.dmp"
+    "-lm", MODELDIR "/en-us/en-us.lm.dmp",
     "-dict", MODELDIR "/en-us/cmudict-en-us.dict",
     NULL);
 
+  //setup decoder
   ps_decoder_t *ps = ps_init(config);
 
-  int rv = ps_start_utt(ps);
+  //begin utterance
+  ps_start_utt(ps);
 
+  //go as long as there's a pipe
   while((k = read(fd[0], buffer, 2048)) > 0) {
-    char *sentence = "";
+    char *sentence = ""; //output
 
-    ps_process_raw(ps, buffer, k, FALSE, FALSE);
+    ps_process_raw(ps, buffer, k, FALSE, FALSE); //begins decoding using the number of frames it could read
 
-    in_speech = ps_get_in_speech(ps);
+    in_speech = ps_get_in_speech(ps); //checks to see if there's silence
 
+    //when speech is introduced in each new utterance
     if(in_speech && !utt_started) {
       utt_started = TRUE;
     }
 
+    //once speech is done and utterance has started
     if(!in_speech && utt_started) {
-      ps_end_utt(ps);
-      hyp = ps_get_hyp(ps, NULL);
+      ps_end_utt(ps); //end the utterance
+      hyp = ps_get_hyp(ps, NULL); //get the hypothesis
 
+      //if there was no hypothesis, then error
       if(hyp == NULL) {
         sentence = "VCERR:decoding error\n";
-      } else if(ps_start_utt(ps) < 0) {
+        printf("here0\n");
+      } else if(ps_start_utt(ps) < 0) { //if a new utterance can't begin, then error
+        printf("here1\n");
         sentence = "VCERR:Failed to start utterance\n";
-      } else {
+      } else { //place command in correct form
+        printf("%s\n", "here2\n");
         strcat(sentence, "VCCOM:");
         strcat(sentence, hyp);
         strcat(sentence, "\n");
       }
 
-      write(fd[1], sentence, 80);
+      printf("%s\n", sentence);
+      printf("%s\n", hyp);
 
-      utt_started = FALSE;
+      write(fd[1], sentence, 80); //send results to output pipe
+
+      utt_started = FALSE; //reset check back to FALSE
     }
   }
 
-  close(fd[1]);
+  close(fd[1]); //close output pipe
 }
