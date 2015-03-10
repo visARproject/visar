@@ -39,6 +39,7 @@ class Mesh(object):
         oBlue_xy = blue_xy;
         oBlue_xy.y = 1 - oBlue_xy.y;
         
+        // These corrections are not exact...there is quite a bit of texture clipping at the bottom...not sure why
         oRed_xy = vec2(oRed_xy.x + 1.2, oRed_xy.y + 0.13);
         oGreen_xy = vec2(oGreen_xy.x + 1.2, oGreen_xy.y + 0.13);
         oBlue_xy = vec2(oBlue_xy.x + 1.2, oBlue_xy.y + 0.13);
@@ -98,10 +99,6 @@ class Mesh(object):
         if (test == 2) {
             gl_FragColor = vec4(oRed_xy.x * tex_scale, oRed_xy.y * tex_scale, 1, 1);
         }
-
-        //gl_FragColor = vec4(oGreen_xy.x * 2, oGreen_xy.y * 2, 1, 1);
-        // gl_FragColor = vec4(1, 0.5, b, 1);
-
     }
     '''
 
@@ -156,7 +153,7 @@ class Distorter(object):
         self.L_projection = parameters.projection_left.T
         self.R_projection = parameters.projection_right.T
 
-    def draw(self, Drawables):
+    def draw(self, *Contexts):
         '''Distorter.draw(list_of_drawables)
         Draw the drawables to the right and left-eye render buffers,
         then apply the distortion and display these buffers to the screen
@@ -164,18 +161,19 @@ class Distorter(object):
         How can we globally handle view?
         Should we even bother trying to find the 'right' way to do this?
         '''
-        gloo.set_clear_color('black')
         with self.left_eye:
             gloo.clear(color=True, depth=True)
-            Drawables.translate(0, -self.IPD / 2, 0)
-            Drawables.set_projection(self.L_projection)
-            Drawables.draw()
+            for context in Contexts:
+                context.translate(0, -self.IPD / 2, 0)
+                context.set_projection(self.L_projection)
+                context.draw()
 
         with self.right_eye:
             gloo.clear(color=True, depth=True)
-            Drawables.translate(0, self.IPD / 2, 0)
-            Drawables.set_projection(self.R_projection)
-            Drawables.draw()
+            for context in Contexts:
+                context.translate(0, self.IPD / 2, 0)
+                context.set_projection(self.R_projection)
+                context.draw()
 
         gloo.clear(color=True, depth=True)
         self.left_eye_program.draw('triangles', self.left_eye_indices)
