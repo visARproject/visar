@@ -8,7 +8,7 @@
  */
 
 //library includes 
-#include <alsa/asoundlib.h>
+#include <alsa/asoundlib.h> //libasound2-dev
 #include <pthread.h>
 #include <stdio.h>
 #include <stdlib.h>
