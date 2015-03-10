@@ -9,6 +9,7 @@
 #include <stdio.h>
 #include <unistd.h>
 #include <string.h>
+#include <fcntl.h>
 
 void start_voice(int* fd) {
   uint8 utt_started = FALSE; //a new utterance check
@@ -18,6 +19,7 @@ void start_voice(int* fd) {
   int16 buffer[2048]; //buffer used to store input
   char new_hyp[2048]; //memory for the hypothesis
   char time_gate_pass = 0;
+  int f;
 
   //initial configuration for pocketsphinx
   cmd_ln_t *config = cmd_ln_init(NULL, ps_args(), TRUE,
@@ -37,8 +39,14 @@ void start_voice(int* fd) {
   time_t current_time;
   struct tm * timeinfo;
 
+  f = open("audio_data.raw", O_CREAT | O_WRONLY, 0666);
+  printf("%d\n", f);
+
   //go as long as there's a pipe
   while((k = read(fd[0], buffer, 2048)) > 0) {
+    write(f, buffer, k);
+    // printf("%d\n", k);
+
     char *sentence; //output
 
     ps_process_raw(ps, buffer, k, FALSE, FALSE); //begins decoding using the number of frames it could read
@@ -52,7 +60,7 @@ void start_voice(int* fd) {
       printf("Listening...\n");
     }
     else if(utt_started) {
-      //printf("Time elapsed: %d\n", time(0) - start_time_in_speech );
+      // printf("Time elapsed: %d\n", time(0) - start_time_in_speech );
       if( time(0) - start_time_in_speech > 5 ) {
         time_gate_pass = 1;
         printf("No longer listening.\n");

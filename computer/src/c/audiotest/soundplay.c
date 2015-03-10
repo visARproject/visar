@@ -1,11 +1,14 @@
-// Code taken from linux-journal examples
+//Code taken from linux-journal examples
+//Audio format is 16-bit LE 16000Hz mono
 
 /*
 This example reads standard from input and writes
-to the default PCM device for 5 seconds of data.
+to the default PCM device for up to 5 seconds of data.
 */
 
 /* Use the newer ALSA API */
+
+
 #define ALSA_PCM_NEW_HW_PARAMS_API
 
 #include <alsa/asoundlib.h>
@@ -48,10 +51,10 @@ int main() {
                               SND_PCM_FORMAT_S16_LE);
 
   /* Two channels (stereo) */
-  snd_pcm_hw_params_set_channels(handle, params, 2);
+  snd_pcm_hw_params_set_channels(handle, params, 1);
 
   /* 44100 bits/second sampling rate (CD quality) */
-  val = 44100;
+  val = 16000;
   snd_pcm_hw_params_set_rate_near(handle, params,
                                   &val, &dir);
 
@@ -72,7 +75,7 @@ int main() {
   /* Use a buffer large enough to hold one period */
   snd_pcm_hw_params_get_period_size(params, &frames,
                                     &dir);
-  size = frames * 4; /* 2 bytes/sample, 2 channels */
+  size = frames * 2; /* 2 bytes/sample, 2 channels */
   buffer = (char *) malloc(size);
 
   /* We want to loop for 5 seconds */
