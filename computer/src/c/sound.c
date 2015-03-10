@@ -184,7 +184,7 @@ void *mic_thread(void* ptr){
   // notify kernel to empty/close the speakers, free the buffer
   snd_pcm_drain(mic_handle);
   snd_pcm_close(mic_handle);
-  destroy_sender(snd_handle); //cleans up the sender socket and buffer
+  if(snd_handle != NULL) destroy_sender(snd_handle); //cleans up the sender socket and buffer
   printf("Audio Controller: Microphone Thread shutdown\n");
   
   pthread_exit(NULL); //exit thread safetly
