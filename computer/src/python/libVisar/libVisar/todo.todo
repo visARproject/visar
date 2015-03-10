@@ -1,20 +1,26 @@
 - Move the drawables to the OpenGL package
-- Add a UI context
-- Make the Targets appear tangent to the view
 - Make the targets "glow" (Animated texture? Animate somehow)
-- Add global state-tracker
 - Help Val with Action class
 - Add map (Use Targets to figure out how to do live-updating map texture)
--- Will have to do active stitching of a region larger than the available texture
--- How do you do long/lat stuff?
--- Add function binding capablity for globals bind
+
+OVERALL:
+    - Figure out how to handle spatial positioning of UI
 
 
-MAP:
+
+DISTORTION:
+    - Must do manual calibration of the texture size/scaling, this has been causing issues
+        -- Have not tried using the Rift's exact recommended shaders (since we don't need to correct for motion)
+        >> I suspect the problem has to do with the use of tan-eye coordinates. Should not be assuming manifold
+
+MAP:   
+    Goals:
     - Buffering non-visible sections
     - Piece-wise loading
     - Allow the user to leave the prepared region
     - Come up with a better cacheing scheme
+    - Add the ability to move (at all)
+    - Rotate to look cooler (Facing in toward the user's eyes?)
 
 
 TARGETS:
@@ -24,17 +30,6 @@ TARGETS:
         -- Use a third "overlay" context distinct from UI and world objects
         -- NOTE: Without environments, these make no difference
 
-
-def rotate_to_body(body, inv=False):
-    R = body.getRotation()
-    p = body.getPosition()
-    rot = [[R[0], R[3], R[6], 0.],
-        [R[1], R[4], R[7], 0.],
-        [R[2], R[5], R[8], 0.],
-        [p[0], p[1], p[2], 1.]]
-    if inv:
-        rot = numpy.linalg.inv(rot)
-    rot = list(rot[0])+list(rot[1])+list(rot[2])+list(rot[3])
 
 
 Val; is there a reason not using Vispy text rendering?
