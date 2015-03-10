@@ -161,6 +161,9 @@ class Distorter(object):
         How can we globally handle view?
         Should we even bother trying to find the 'right' way to do this?
         '''
+        gloo.set_clear_color('black')
+        gloo.set_state(depth_test=True)
+
         with self.left_eye:
             gloo.clear(color=True, depth=True)
             for context in Contexts:

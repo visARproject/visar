@@ -15,8 +15,16 @@ from ..OpenGL.drawing import Drawable, Context
 from .drawables import Example, Target, Map
 from .environments import Terrain
 
+import argparse
+
+parser = argparse.ArgumentParser(description='Process some integers.')
+parser.add_argument('--draw_terrain', dest='draw_terrain', action='store_true',
+                   default=False,
+                   help='Draw simulated terrain')
+
+args = parser.parse_args()
+
 # Presets
-HUD_DEPTH = 5 # Minimum depth (Specified by Oculus docs)
 FPS = 60 # Maximum FPS (how often needs_update is checked)
 
 class Renderer(app.Canvas): # Canvas is a GUI object
@@ -24,11 +32,9 @@ class Renderer(app.Canvas): # Canvas is a GUI object
         # Create a rendering context (A render list)
         Logger.set_verbosity('log')
         ex = Example()
-        terrain = Terrain()
         target = Target((1, 1, 1))
 
         _map = Map()
-
 
         self.default_view = np.array(
             [[0.8, 0.2, -0.48, 0],
@@ -39,8 +45,10 @@ class Renderer(app.Canvas): # Canvas is a GUI object
         )
 
         self.view = np.eye(4)
-        self.Render_List = Context(ex, terrain, target)
-        # self.Render_List = Context(_map)
+        self.Render_List = Context(ex, target)
+        if args.draw_terrain:
+            terrain = Terrain()
+            self.Render_List.append(terrain)
 
         self.Render_List.translate(0, 0, -7)
         projection = perspective(30.0, 1920 / float(1080), 2.0, 10.0)
@@ -73,13 +81,7 @@ class Renderer(app.Canvas): # Canvas is a GUI object
     def on_draw(self, event):
         # Draw each drawable using the distorter
         gloo.set_viewport(0, 0, *self.size)
-        gloo.set_clear_color('white')
-
-        gloo.set_state(depth_test=True)
-
-        # gloo.clear(color=True, depth=True)
         self.Distorter.draw(self.Render_List, self.UI_elements)
-        # self.Distorter.draw(self.UI_elements)  # Draw UI on top always
 
     def on_key_press(self, event):
         """Controls -

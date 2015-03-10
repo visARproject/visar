@@ -12,6 +12,7 @@ from ...OpenGL.drawing import Drawable
 from ...OpenGL.utils import Logger
 from ..globals import State
 
+
 class Map(Drawable):
     ''' Map
 
@@ -192,7 +193,10 @@ class Map(Drawable):
         # Convert Forrest's ecef position to lla
         position_lla = self.ecef2llh(State.position_ecef)[:2]
         self.program['user_position'] = position_lla
+        # Disable depth test - UI element
+        set_state(depth_test=False)
         self.program.draw('triangles', self.indices)
+        set_state(depth_test=True)
 
     @classmethod
     def get_map(self, (latitude, longitude), zoom=9, region_size=1):
