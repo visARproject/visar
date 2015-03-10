@@ -6,7 +6,7 @@ import numpy as np
 from vispy.gloo import Program, gl
 from vispy import app, gloo
 import threading
-from libVisar.OpenGL.shaders import make_distortion
+#from libVisar.OpenGL.shaders import make_distortion
 
 
 HUD_DEPTH = 0.2 # minimum depth
@@ -55,7 +55,7 @@ def renderLock(func):
   return locked
                       
 class Renderer(app.Canvas): # canvas is a GUI object
-  def __init__(self, size=(1600, 900)):    
+  def __init__(self, size=(800,600)):    
     self.renderList = [] # list of modules to render
     self.key_listener = None
     self.needs_update = False
@@ -64,20 +64,30 @@ class Renderer(app.Canvas): # canvas is a GUI object
     app.Canvas.__init__(self, keys='interactive')
     self.size = size # get the size    
     # create texture rendering program
-    self.tex_program = gloo.Program(VERT_SHADER_TEX, FRAG_SHADER_TEX)  
+
+    # hacked together render texture
+    shape = self.size[1], self.size[0]
+    self._rendertex = gloo.Texture2D(shape=shape+(3,))
+    self._fbo = gloo.FrameBuffer(self._rendertex, gloo.RenderBuffer(shape))
+    self._program2 = gloo.Program(VERT_SHADER_TEX, FRAG_SHADER_TEX)
+    self._program2['position'] = gloo.VertexBuffer(vPosition_full)
+    self._program2['texcoord'] = gloo.VertexBuffer(vTexcoord_full)
+    self._program2['texture']  = self._rendertex
+    self._program2['model'] = np.eye(4, dtype=np.float32)
+
     # create texture to render modules to
     shape = self.size[1], self.size[0]
-    self.left_eye_tex = gloo.Texture2D(shape=(4096, 4096) + (3,))
+    #self.left_eye_tex = gloo.Texture2D(shape=(4096, 4096) + (3,))
   
     # create Frame Buffer Object, attach color/depth buffers
-    self.left_eye_buffer = gloo.FrameBuffer(self.left_eye_tex, gloo.RenderBuffer(shape))
+    #self.left_eye_buffer = gloo.FrameBuffer(self.left_eye_tex, gloo.RenderBuffer(shape))
     
     # create texture rendering program
-    self.tex_program = gloo.Program(VERT_SHADER_TEX, FRAG_SHADER_TEX)
+    #self.tex_program = gloo.Program(VERT_SHADER_TEX, FRAG_SHADER_TEX)
   
     # create program to render the results (TEST ONLY, same as before)
 
-    self.left_eye_program, self.left_eye_indices = make_distortion(self.left_eye_tex)
+    #self.left_eye_program, self.left_eye_indices = make_distortion(self.left_eye_tex)
 
     # set an update timer to run every FPS
     self.interval = 1/FPS
@@ -89,7 +99,7 @@ class Renderer(app.Canvas): # canvas is a GUI object
     
   def on_draw(self, event):
     # draw scene to FBO instead of output buffer
-    with self.left_eye_buffer:
+    with self._fbo:
       gloo.set_clear_color('black')
       gloo.clear(color=True, depth=True)
       gloo.set_viewport(0,0, *self.size)
@@ -101,7 +111,8 @@ class Renderer(app.Canvas): # canvas is a GUI object
     # draw to full screen
     # gloo.set_clear_color('black')
     gloo.clear(color=True,depth=True)
-    self.left_eye_program.draw('triangles', self.left_eye_indices)
+    #self.left_eye_program_draw('triangles', self.left_eye_indices)
+    self._program2.draw('triangle_strip')
   
   # update the display
   @renderLock  

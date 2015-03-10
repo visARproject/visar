@@ -11,3 +11,11 @@ def rotate_to_body(body, inv=False):
     if inv:
         rot = numpy.linalg.inv(rot)
     rot = list(rot[0])+list(rot[1])+list(rot[2])+list(rot[3])
+
+
+Val; is there a reason not using Vispy text rendering?
+Val; Create a human-readable menu configuration file
+Val; Add capability for drawing menu title in menu`
+
+Jacob; Try different target shapes
+--> Use a picture of Mike's face as the object indicator
