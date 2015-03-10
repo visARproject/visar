@@ -279,16 +279,15 @@ generic (
       p4_cmd_empty                          : out std_logic;
       p4_cmd_full                           : out std_logic;
 
-      --Data Wr Port signals
-      p4_wr_clk                             : in std_logic;
-      p4_wr_en                              : in std_logic;
-      p4_wr_mask                            : in std_logic_vector(3 downto 0) ;
-      p4_wr_data                            : in std_logic_vector(31 downto 0) ;
-      p4_wr_full                            : out std_logic;
-      p4_wr_empty                           : out std_logic;
-      p4_wr_count                           : out std_logic_vector(6 downto 0) ;
-      p4_wr_underrun                        : out std_logic;
-      p4_wr_error                           : out std_logic;
+      --Data Rd Port signals
+      p4_rd_clk                             : in std_logic;
+      p4_rd_en                              : in std_logic;
+      p4_rd_data                            : out std_logic_vector(31 downto 0) ;
+      p4_rd_full                            : out std_logic;
+      p4_rd_empty                           : out std_logic;
+      p4_rd_count                           : out std_logic_vector(6 downto 0) ;
+      p4_rd_overflow                        : out std_logic;
+      p4_rd_error                           : out std_logic;
 
       --User Port5 Interface Signals
 
@@ -669,7 +668,7 @@ signal uo_data : std_logic_vector(7 downto 0);
 
  constant C_PORT_ENABLE              : std_logic_vector(5 downto 0) := "111111";
 
-constant C_PORT_CONFIG             : string :=  "B32_B32_R32_R32_W32_W32";
+constant C_PORT_CONFIG             : string :=  "B32_B32_R32_R32_R32_W32";
 
 
 constant ARB_TIME_SLOT_0    : bit_vector(17 downto 0) := (C_ARB_TIME_SLOT_0(17 downto 15) & C_ARB_TIME_SLOT_0(14 downto 12) & C_ARB_TIME_SLOT_0(11 downto 9) & C_ARB_TIME_SLOT_0(8 downto 6) & C_ARB_TIME_SLOT_0(5 downto 3) & C_ARB_TIME_SLOT_0(2 downto 0));
@@ -983,23 +982,23 @@ port map
    p4_cmd_byte_addr                     =>  p4_cmd_byte_addr,
    p4_cmd_empty                         =>  p4_cmd_empty,
    p4_cmd_full                          =>  p4_cmd_full,
-   p4_rd_clk                            =>  '0',
-   p4_rd_en                             =>  '0',
-   p4_rd_data                           =>  open,
-   p4_rd_full                           =>  open,
-   p4_rd_empty                          =>  open,
-   p4_rd_count                          =>  open,
-   p4_rd_overflow                       =>  open,
-   p4_rd_error                          =>  open,
-   p4_wr_clk                            =>  p4_wr_clk,
-   p4_wr_en                             =>  p4_wr_en,
-   p4_wr_mask                           =>  p4_wr_mask,
-   p4_wr_data                           =>  p4_wr_data,
-   p4_wr_full                           =>  p4_wr_full,
-   p4_wr_empty                          =>  p4_wr_empty,
-   p4_wr_count                          =>  p4_wr_count,
-   p4_wr_underrun                       =>  p4_wr_underrun,
-   p4_wr_error                          =>  p4_wr_error,
+   p4_rd_clk                            =>  p4_rd_clk,
+   p4_rd_en                             =>  p4_rd_en,
+   p4_rd_data                           =>  p4_rd_data,
+   p4_rd_full                           =>  p4_rd_full,
+   p4_rd_empty                          =>  p4_rd_empty,
+   p4_rd_count                          =>  p4_rd_count,
+   p4_rd_overflow                       =>  p4_rd_overflow,
+   p4_rd_error                          =>  p4_rd_error,
+   p4_wr_clk                            =>  '0',
+   p4_wr_en                             =>  '0',
+   p4_wr_mask                           =>  (others => '0'),
+   p4_wr_data                           =>  (others => '0'),
+   p4_wr_full                           =>  open,
+   p4_wr_empty                          =>  open,
+   p4_wr_count                          =>  open,
+   p4_wr_underrun                       =>  open,
+   p4_wr_error                          =>  open,
    p5_arb_en                            =>  '1',
    p5_cmd_clk                           =>  p5_cmd_clk,
    p5_cmd_en                            =>  p5_cmd_en,

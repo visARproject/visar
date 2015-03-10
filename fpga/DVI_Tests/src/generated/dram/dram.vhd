@@ -210,15 +210,14 @@ generic
    c3_p4_cmd_byte_addr                     : in std_logic_vector(29 downto 0);
    c3_p4_cmd_empty                         : out std_logic;
    c3_p4_cmd_full                          : out std_logic;
-   c3_p4_wr_clk                            : in std_logic;
-   c3_p4_wr_en                             : in std_logic;
-   c3_p4_wr_mask                           : in std_logic_vector(3 downto 0);
-   c3_p4_wr_data                           : in std_logic_vector(31 downto 0);
-   c3_p4_wr_full                           : out std_logic;
-   c3_p4_wr_empty                          : out std_logic;
-   c3_p4_wr_count                          : out std_logic_vector(6 downto 0);
-   c3_p4_wr_underrun                       : out std_logic;
-   c3_p4_wr_error                          : out std_logic;
+   c3_p4_rd_clk                            : in std_logic;
+   c3_p4_rd_en                             : in std_logic;
+   c3_p4_rd_data                           : out std_logic_vector(31 downto 0);
+   c3_p4_rd_full                           : out std_logic;
+   c3_p4_rd_empty                          : out std_logic;
+   c3_p4_rd_count                          : out std_logic_vector(6 downto 0);
+   c3_p4_rd_overflow                       : out std_logic;
+   c3_p4_rd_error                          : out std_logic;
    c3_p5_cmd_clk                           : in std_logic;
    c3_p5_cmd_en                            : in std_logic;
    c3_p5_cmd_instr                         : in std_logic_vector(2 downto 0);
@@ -464,15 +463,14 @@ component memc3_wrapper is
       p4_cmd_byte_addr                      : in std_logic_vector(29 downto 0);
       p4_cmd_empty                          : out std_logic;
       p4_cmd_full                           : out std_logic;
-      p4_wr_clk                             : in std_logic;
-      p4_wr_en                              : in std_logic;
-      p4_wr_mask                            : in std_logic_vector(3 downto 0);
-      p4_wr_data                            : in std_logic_vector(31 downto 0);
-      p4_wr_full                            : out std_logic;
-      p4_wr_empty                           : out std_logic;
-      p4_wr_count                           : out std_logic_vector(6 downto 0);
-      p4_wr_underrun                        : out std_logic;
-      p4_wr_error                           : out std_logic;
+      p4_rd_clk                             : in std_logic;
+      p4_rd_en                              : in std_logic;
+      p4_rd_data                            : out std_logic_vector(31 downto 0);
+      p4_rd_full                            : out std_logic;
+      p4_rd_empty                           : out std_logic;
+      p4_rd_count                           : out std_logic_vector(6 downto 0);
+      p4_rd_overflow                        : out std_logic;
+      p4_rd_error                           : out std_logic;
       p5_cmd_clk                            : in std_logic;
       p5_cmd_en                             : in std_logic;
       p5_cmd_instr                          : in std_logic_vector(2 downto 0);
@@ -828,15 +826,14 @@ port map
    p4_cmd_byte_addr                     =>  c3_p4_cmd_byte_addr,
    p4_cmd_empty                         =>  c3_p4_cmd_empty,
    p4_cmd_full                          =>  c3_p4_cmd_full,
-   p4_wr_clk                            =>  c3_p4_wr_clk,
-   p4_wr_en                             =>  c3_p4_wr_en,
-   p4_wr_mask                           =>  c3_p4_wr_mask,
-   p4_wr_data                           =>  c3_p4_wr_data,
-   p4_wr_full                           =>  c3_p4_wr_full,
-   p4_wr_empty                          =>  c3_p4_wr_empty,
-   p4_wr_count                          =>  c3_p4_wr_count,
-   p4_wr_underrun                       =>  c3_p4_wr_underrun,
-   p4_wr_error                          =>  c3_p4_wr_error,
+   p4_rd_clk                            =>  c3_p4_rd_clk,
+   p4_rd_en                             =>  c3_p4_rd_en,
+   p4_rd_data                           =>  c3_p4_rd_data,
+   p4_rd_full                           =>  c3_p4_rd_full,
+   p4_rd_empty                          =>  c3_p4_rd_empty,
+   p4_rd_count                          =>  c3_p4_rd_count,
+   p4_rd_overflow                       =>  c3_p4_rd_overflow,
+   p4_rd_error                          =>  c3_p4_rd_error,
    p5_cmd_clk                           =>  c3_p5_cmd_clk,
    p5_cmd_en                            =>  c3_p5_cmd_en,
    p5_cmd_instr                         =>  c3_p5_cmd_instr,
