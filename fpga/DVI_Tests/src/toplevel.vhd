@@ -119,8 +119,8 @@ architecture RTL of toplevel is
     signal c3_p3_in  : ram_rd_port_in;
     signal c3_p3_out : ram_rd_port_out;
 
-    signal c3_p4_in  : ram_wr_port_in;
-    signal c3_p4_out : ram_wr_port_out;
+    signal c3_p4_in  : ram_rd_port_in;
+    signal c3_p4_out : ram_rd_port_out;
 
     signal c3_p5_in  : ram_wr_port_in;
     signal c3_p5_out : ram_wr_port_out;
@@ -213,8 +213,8 @@ begin
         port map (
             camera_output => left_camera_output,
             
-            ram_in  => c3_p4_in,
-            ram_out => c3_p4_out);
+            ram_in  => c3_p1_wronly_in,
+            ram_out => c3_p1_wronly_out);
     
     U_RIGHT_CAMERA_WRITER : entity work.camera_writer
         generic map (
@@ -343,15 +343,14 @@ begin
         c3_p4_cmd_byte_addr => c3_p4_in.cmd.byte_addr,
         c3_p4_cmd_empty     => c3_p4_out.cmd.empty,
         c3_p4_cmd_full      => c3_p4_out.cmd.full,
-        c3_p4_wr_clk        => c3_p4_in.wr.clk,
-        c3_p4_wr_en         => c3_p4_in.wr.en,
-        c3_p4_wr_mask       => c3_p4_in.wr.mask,
-        c3_p4_wr_data       => c3_p4_in.wr.data,
-        c3_p4_wr_full       => c3_p4_out.wr.full,
-        c3_p4_wr_empty      => c3_p4_out.wr.empty,
-        c3_p4_wr_count      => c3_p4_out.wr.count,
-        c3_p4_wr_underrun   => c3_p4_out.wr.underrun,
-        c3_p4_wr_error      => c3_p4_out.wr.error,
+        c3_p4_rd_clk        => c3_p4_in.rd.clk,
+        c3_p4_rd_en         => c3_p4_in.rd.en,
+        c3_p4_rd_data       => c3_p4_out.rd.data,
+        c3_p4_rd_full       => c3_p4_out.rd.full,
+        c3_p4_rd_empty      => c3_p4_out.rd.empty,
+        c3_p4_rd_count      => c3_p4_out.rd.count,
+        c3_p4_rd_overflow   => c3_p4_out.rd.overflow,
+        c3_p4_rd_error      => c3_p4_out.rd.error,
 
 
         c3_p5_cmd_clk       => c3_p5_in.cmd.clk,
@@ -423,8 +422,8 @@ begin
             ram1_out => c3_p2_out,
             ram2_in  => c3_p3_in,
             ram2_out => c3_p3_out,
-            ram3_in  => c3_p1_rdonly_in,
-            ram3_out => c3_p1_rdonly_out);
+            ram3_in  => c3_p4_in,
+            ram3_out => c3_p4_out);
 
     U_OVERLAY : entity work.video_overlay
         port map(video_sync  => overlay_video.sync,
