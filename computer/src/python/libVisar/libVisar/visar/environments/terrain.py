@@ -1,14 +1,12 @@
 '''This is from vispy.org, excepting rift stuff'''
 from vispy import gloo
-from vispy import app
 import numpy as np
 from scipy.spatial import Delaunay
-from vispy.geometry import create_cube
 from vispy.util.transforms import perspective, translate, rotate
 from vispy.gloo import (Program, VertexBuffer, IndexBuffer, Texture2D, clear,
                         FrameBuffer, RenderBuffer, set_viewport, set_state)
 
-from ..drawables import Drawable
+from ...OpenGL.drawing import Drawable
 from ...OpenGL.utils import Logger
 
 
