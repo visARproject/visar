@@ -1,14 +1,14 @@
 import numpy as np
 from ...OpenGL import utils
 from vispy.geometry import create_cube
-from vispy.util.transforms import perspective, translate, rotate, scale
+from vispy.util.transforms import perspective, translate, rotate, scale, xrotate, yrotate, zrotate
 from vispy.gloo import (Program, VertexBuffer, IndexBuffer, Texture2D, clear,
                         FrameBuffer, RenderBuffer, set_viewport, set_state)
 
 from osmviz.manager import PILImageManager, OSMManager
 import PIL.Image as Image
 
-from ..drawables import Drawable
+from ...OpenGL.drawing import Drawable
 from ...OpenGL.utils import Logger
 from ..globals import State
 
@@ -60,13 +60,6 @@ class Map(Drawable):
     wgs84_a2 = wgs84_a**2
     wgs84_b2 = wgs84_b**2
 
-    '''
-    def scale_between(value, v_min, v_max, _min, _max):
-    v_ranged = (value - v_min) / (v_max - v_min)
-    normalized = ((_max - _min) * v_ranged) + _min
-    return normalized
-    '''
-
     frame_vertex_shader = """
         #version 120
         uniform mat4 model;
@@ -108,7 +101,8 @@ class Map(Drawable):
             vec2 top_right = corners.zw; // Of map (in lat,long)
 
             texcoord = default_texcoord;
-            gl_Position = projection * view * model * vec4(vertex_position, 1.0);
+            mat4 T = projection * view * model;
+            gl_Position = T * vec4(vertex_position, 1.0);
         }
     """
     
@@ -126,7 +120,6 @@ class Map(Drawable):
         {
             vec4 color = texture2D(map_texture, texcoord);
             gl_FragColor = vec4(color.rgb, 1);
-            // gl_FragColor = vec4(1, 0.5, 0, 1);
         }
     """
 
@@ -144,7 +137,11 @@ class Map(Drawable):
         self.projection = np.eye(4)
         self.view = np.eye(4)
 
-        self.model = translate(scale(np.eye(4), 1), 0.0, 0.0, -10)
+        self.model = scale(np.eye(4), 1, -1, 1)
+        # rotate(self.model, 3.0, 0, 0, 1)
+        xrotate(self.model, 1.5)
+        translate(self.model, 0.7, -4, -5)
+
 
         height, width = 5.0, 5.0  # Meters
 

@@ -3,7 +3,7 @@ from vispy.util.transforms import perspective, translate, rotate
 from vispy.gloo import (Program, VertexBuffer, IndexBuffer, Texture2D, clear,
                         FrameBuffer)
 import numpy as np
-from . import Drawable
+from ...OpenGL.drawing import Drawable
 from ...OpenGL import utils
 
 

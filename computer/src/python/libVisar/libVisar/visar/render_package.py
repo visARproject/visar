@@ -11,7 +11,8 @@ from vispy import app
 
 from ..OpenGL.utils import Logger
 from ..OpenGL.shaders import Distorter
-from .drawables import Context, Example, Target
+from ..OpenGL.drawing import Drawable, Context
+from .drawables import Example, Target, Map
 from .environments import Terrain
 
 # Presets
@@ -26,6 +27,9 @@ class Renderer(app.Canvas): # Canvas is a GUI object
         terrain = Terrain()
         target = Target((1, 1, 1))
 
+        _map = Map()
+
+
         self.default_view = np.array(
             [[0.8, 0.2, -0.48, 0],
              [-0.5, 0.3, -0.78, 0],
@@ -36,10 +40,16 @@ class Renderer(app.Canvas): # Canvas is a GUI object
 
         self.view = np.eye(4)
         self.Render_List = Context(ex, terrain, target)
+        # self.Render_List = Context(_map)
+
         self.Render_List.translate(0, 0, -7)
         projection = perspective(30.0, 1920 / float(1080), 2.0, 10.0)
         self.Render_List.set_projection(projection)
         self.Render_List.set_view(self.view)
+
+        self.UI_elements = Context(_map)
+        self.UI_elements.set_projection(projection)
+
         # Initialize gloo context
         app.Canvas.__init__(self, keys='interactive')
         self.size = size 
@@ -63,11 +73,13 @@ class Renderer(app.Canvas): # Canvas is a GUI object
     def on_draw(self, event):
         # Draw each drawable using the distorter
         gloo.set_viewport(0, 0, *self.size)
-        gloo.clear(color=True)
         gloo.set_clear_color('white')
 
         gloo.set_state(depth_test=True)
-        self.Distorter.draw(self.Render_List)
+
+        # gloo.clear(color=True, depth=True)
+        self.Distorter.draw(self.Render_List, self.UI_elements)
+        # self.Distorter.draw(self.UI_elements)  # Draw UI on top always
 
     def on_key_press(self, event):
         """Controls -
