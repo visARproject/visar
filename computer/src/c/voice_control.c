@@ -4,6 +4,8 @@
  *  Program sends decoded audio stream to the audio controller
  */
 
+#define DEBUG 0
+
 #include <pocketsphinx.h>
 #include <stdlib.h>
 #include <stdio.h>
@@ -39,12 +41,14 @@ void start_voice(int* fd) {
   time_t current_time;
   struct tm * timeinfo;
 
-  f = open("audio_data.raw", O_CREAT | O_WRONLY, 0666);
+  f = open("audio_data.raw", O_TRUNC | O_CREAT | O_WRONLY, 0666);
   printf("%d\n", f);
 
   //go as long as there's a pipe
   while((k = read(fd[0], buffer, 2048)) > 0) {
-    write(f, buffer, k);
+    if(DEBUG) {
+      write(f, buffer, k);
+    }
     // printf("%d\n", k);
 
     char *sentence; //output
