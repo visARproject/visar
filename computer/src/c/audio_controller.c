@@ -197,6 +197,7 @@ int setup_voice_control(){
   } else {                //parent process
     close(pipe_fd[0]);    //parent closes reciever side of pipe
     vc_pipe = pipe_fd[1]; //save the pipe's fd
+    fcntl(vc_pipe, F_SETFL, O_NONBLOCK); //set output pipe in nonblocking mode
   }
   
   printf("Audio Controller: Voice Controller Started\n");
