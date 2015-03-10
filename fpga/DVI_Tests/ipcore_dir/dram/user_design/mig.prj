@@ -43,7 +43,7 @@
         <RzqPin>L6</RzqPin>
         <ZioPin>C2</ZioPin>
         <PortsSelected>Port0,Port1,Port2,Port3,Port4,Port5</PortsSelected>
-        <PortDirections>Bi-directional,Bi-directional,Read,Read,Write,Write</PortDirections>
+        <PortDirections>Bi-directional,Bi-directional,Read,Read,Read,Write</PortDirections>
         <UserMemoryAddressMap>BANK_ROW_COLUMN</UserMemoryAddressMap>
         <ArbitrationAlgorithm>Round Robin</ArbitrationAlgorithm>
         <TimeSlot0>012345</TimeSlot0>
