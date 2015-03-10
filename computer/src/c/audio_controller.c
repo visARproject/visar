@@ -142,8 +142,8 @@ int main(int argc, char** argv){
         vc_flag = 1; //signal that threads should send data to controller
         if(mic_kill_flag){
           snd_pcm_t* handle = start_snd_device(period, DEFAULT_RATE, DEFAULT_CHNS==2, CAPTURE_DIR); //start the device
-          sender_handle* sndr = (sender_handle*) malloc(sizeof(sender_handle));
-          create_mic_thread(handle, sndr, period, 2*DEFAULT_CHNS, 1); //spawn the thread
+          //sender_handle* sndr = (sender_handle*) malloc(sizeof(sender_handle)); // 20150309 mseese: not necessary as its only needed for voice control
+          create_mic_thread(handle, NULL, period, 2*DEFAULT_CHNS, 1); //spawn the thread
           printf("Audio Controller: Started microphone transmission\n");
         }
       
