@@ -16,6 +16,7 @@ void start_voice(int* fd) {
   int32 k; //number of frames read
   char const *hyp; //hypothesis of decoding, i.e. what pocketsphinx thinks was said
   int16 buffer[2048]; //buffer used to store input
+  char new_hyp[2048]; //memory for the hypothesis
 
   //initial configuration for pocketsphinx
   cmd_ln_t *config = cmd_ln_init(NULL, ps_args(), TRUE,
@@ -47,26 +48,23 @@ void start_voice(int* fd) {
     if(!in_speech && utt_started) {
       ps_end_utt(ps); //end the utterance
       hyp = ps_get_hyp(ps, NULL); //get the hypothesis
+      memcpy(new_hyp, hyp, 2048); //transfer hyp to prevent corruption
 
       //if there was no hypothesis, then error
       if(hyp == NULL) {
         sentence = "VCERR:decoding error\n";
-        printf("here0\n");
-      } else if(ps_start_utt(ps) < 0) { //if a new utterance can't begin, then error
-        printf("here1\n");
+      }
+      
+      if(ps_start_utt(ps) < 0) { //if a new utterance can't begin, then error
         sentence = "VCERR:Failed to start utterance\n";
       } else { //place command in correct form
-        sentence = malloc(strlen("VCCOM:") + strlen(hyp) + strlen("\n") + 1);
-        printf("%s\n", "here2\n");
+        sentence = malloc(strlen("VCCOM:") + strlen(new_hyp) + strlen("\n") + 1);
         strcpy(sentence, "VCCOM:");
-        strcat(sentence, hyp);
+        strcat(sentence, new_hyp);
         strcat(sentence, "\n");
-        printf("%s\n", "1");
       }
 
-      printf("%s\n", sentence);
-
-      // write(fd[1], sentence, 80); //send results to output pipe
+      write(fd[1], sentence, strlen(sentence)); //send results to output pipe
 
       utt_started = FALSE; //reset check back to FALSE
     }
