@@ -11,9 +11,19 @@ end entity decode_9to10;
 
 architecture RTL of decode_9to10 is
 begin
-    with input(8 downto 7) select output <=
-        "000" & input(6 downto 0) when "00",
-        "001" & input(6 downto 0) when "01",
-        "01" & input(6 downto 0) & "1" when "10",
-        "1" & input(6 downto 0) & "11" when "11";
+
+    process(input) is
+    begin
+        case input(8 downto 7) is
+            when "00" =>
+                output <= "000" & input(6 downto 0);
+            when "01" =>
+                output <= "001" & input(6 downto 0) ;
+            when "10" =>
+                output <= "01" & input(6 downto 0) & "1";
+            when others =>
+                output <= "1" & input(6 downto 0) & "11";
+        end case;
+    end process;
+
 end architecture RTL;
