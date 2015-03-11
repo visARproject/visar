@@ -8,7 +8,7 @@
  */
 
 //library includes 
-#include <alsa/asoundlib.h>
+#include <alsa/asoundlib.h> //libasound2-dev
 #include <pthread.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -89,9 +89,11 @@ void create_mic_thread(snd_pcm_t* pcm_handle, sender_handle* sender, size_t peri
   //allocate a microphone buffer (just one period)
   char* buffer = (char*)malloc(period*frame_size);
   
-  //finish populating the sender info
-  sender->buf = buffer;
-  sender->len = period*frame_size;
+  if(sender != NULL) {
+    //finish populating the sender info
+    sender->buf = buffer;
+    sender->len = period*frame_size;
+  }
     
   mic_kill_flag = !vc_only;  //reset the kill on normal operations
   
@@ -168,7 +170,7 @@ void *mic_thread(void* ptr){
     } else if (rc < 0) fprintf(stderr, "error from read: %s\n", snd_strerror(rc));
     else if (rc != (int)period) fprintf(stderr, "short read, read %d frames\n", rc);
     else{ //read was good, send the data
-      if(!mic_kill_flag) send_packet(snd_handle); //send the packet over network
+      if(!mic_kill_flag && snd_handle != NULL) send_packet(snd_handle); //send the packet over network
       if(vc_flag){ //write to voice control pipe if flag set
         vc_hold_flag = 1; //start of write
         //printf("Writing data to pipe...\n"); //DEBUG
@@ -182,7 +184,7 @@ void *mic_thread(void* ptr){
   // notify kernel to empty/close the speakers, free the buffer
   snd_pcm_drain(mic_handle);
   snd_pcm_close(mic_handle);
-  destroy_sender(snd_handle); //cleans up the sender socket and buffer
+  if(snd_handle != NULL) destroy_sender(snd_handle); //cleans up the sender socket and buffer
   printf("Audio Controller: Microphone Thread shutdown\n");
   
   pthread_exit(NULL); //exit thread safetly

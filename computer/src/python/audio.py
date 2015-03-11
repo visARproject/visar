@@ -48,8 +48,14 @@ class AudioController(interface.Interface):
     
   
   def destroy(self):
-    self.kill_flag = True
-    self.c_sock.close()
+    self.kill_flag = True # kill the process
+    
+    # send shutdown to child process
+    lock.acquire()
+    self.child.stdin.write('shutdown\n') # shutdown thread when the module dies
+    lock.release()
+    
+    self.c_sock.close() # close the socket
   
   # start audio communication with network device
   @thread_lock
@@ -59,13 +65,6 @@ class AudioController(interface.Interface):
       return None;
   
     self.connection = (host, port, mode) # store connection information
-    '''self.c_sock.bind((host, port)) # connect to the server
-    
-    # send the mode to the server
-    if(mode == 'mic'): self.c_sock.send('spk\n')
-    elif(mode == 'spk'): self.c_sock.send('mic\n')    
-    else: self.c_sock.send('both\n')    
-    '''
     command = 'start ' + mode + ' -host ' + host + ' -port ' + str(AUDIO_CLIENT) + '\n'
     self.child.stdin.write(command) # send start command
     
@@ -74,11 +73,6 @@ class AudioController(interface.Interface):
   # stop audio communication
   @thread_lock
   def stop(self):
-    '''
-    self.c_sock.send('shutdown\n') # send shutdown command
-    self.c_sock.close() # close the client socket
-    self.c_sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM) # reset the socket
-    '''
     self.child.stdin.write('stop both\n')    # send stop command
     if(self.voice_event is not None): self.connection = ('voice', None, 'mic') # check if voice was active (prevents shutdown)
     else: self.connection = None              # connection is no longer active
@@ -100,7 +94,7 @@ class AudioController(interface.Interface):
     lock.acquire()
     self.child.stdin.write('voice_stop\n')
     lock.release()
-    self.voice_event.do_updates(('VCERR','shutdown')) # send shutdown update
+    self.voice_event.do_updates(('VCERR','stopped_vc')) # send shutdown update
     self.voice_event = None # remove the event handler
     if(self.connection is not None and self.connection[0] == 'voice'): 
       self.connection = None  # clear the connection state
@@ -109,17 +103,16 @@ class AudioController(interface.Interface):
   def comms_thread(self):
     while(not self.kill_flag): self.do_comms() # do the comms
     print 'shutdown'
-    lock.acquire()
-    self.child.stdin.write('shutdown\n') # shutdown thread when the module dies
-    lock.release()
   
   # do the communcation to child process
   def do_comms(self):
-    out = os.read(self.child.stdout.fileno(),80) # get data out
-    global lock
-    lock.acquire()
-    self.input_buffer += out # append responses to input buffer
-    lock.release()
+    try: 
+      out = os.read(self.child.stdout.fileno(),80) # get data out
+      global lock
+      lock.acquire()
+      self.input_buffer += out # append responses to input buffer
+      lock.release()
+    except: print 'Comms Error, Possibly the result of a shutdown'
   
   # thread to handle parsing the output from the child process
   def parse_thread(self):

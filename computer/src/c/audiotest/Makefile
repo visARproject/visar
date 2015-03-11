@@ -1,2 +1,2 @@
-test: soundtest.c
-	gcc soundtest.c -lasound -lpthread -o test
+test: soundplay.c
+	gcc soundplay.c -lasound -lpthread -o test
