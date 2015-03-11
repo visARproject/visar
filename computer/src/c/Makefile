@@ -6,10 +6,7 @@ LIBS=-lasound -lpthread -lspeex
 LINK_PSPHINX=`pkg-config --cflags --libs pocketsphinx sphinxbase`
 COMP_PSPHINX=-DMODELDIR=\"`pkg-config --variable=modeldir pocketsphinx`\"
 
-all: audio voice_control
-
-audio: audio_controller.o buffer.o comms.o sound.o encode.o
-	$(CC) audio_controller.o buffer.o comms.o sound.o encode.o -o audio $(LIBS)
+all: voice_control
 
 test: audio_controller.o buffer.o comms.o sound.o encode.o test.o
 	$(CC) test.o audio_controller.o buffer.o comms.o sound.o encode.o -o audio $(LIBS)
@@ -38,8 +35,5 @@ sound.o: sound.c
 encode.o: encode.c
 	$(CC) $(CFLAGS) encode.c
 
-voice_control.o: voice_control.c
-	$(CC) $(CFLAGS) voice_control.c
-
 clean: 
-	rm *o audio
+	rm *.o audio

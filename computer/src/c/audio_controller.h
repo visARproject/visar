@@ -12,7 +12,8 @@ extern int vc_hold_flag; //mic thread is currently writing to pipe
 //Function prototypes
 int setup_voice_control();    //fork off a voice controller subprocess
 void destroy_voice_control(); //cleanup the subprocess
-void shutdown_prog();         //shutdown the controller
+void shutdown_prog();         //shutdown the controlle
+void change_volume(long volume); //change the system volume
 //int main(); --program's main funciton is defined in .c file
 
 /* Audio Control Protocol Documentation */
@@ -27,6 +28,9 @@ void shutdown_prog();         //shutdown the controller
  *    -Stop a device, will let buffers empty first (if dir is ommitted, will stop all devices).
  *    -Stops processing immediately instead if -f is present.
  *    -Will continue reading data while voice control is active
+ *  set [-volume <value>]
+ *    -Set an option (currently only volume)
+ *    -Volume must be between 0 and 100
  *  shutdown
  *    -Kills all operations, program exits
  *  voice_start/voice_stop

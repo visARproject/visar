@@ -78,6 +78,20 @@ class AudioController(interface.Interface):
     else: self.connection = None              # connection is no longer active
     
     self.do_updates('Disconnected',None) # notify connection termination
+  
+  @thread_lock
+  def set_volume(self, volume):
+    '''Set the speaker volume for the system.
+       Volume must be integer between 0 and 100
+    '''
+    
+    #check range and type of volume
+    if (type(volume) is not int) or volume > 100 or volume < 0: 
+      print 'Invalid Volume: ' + str(volume)
+      return
+    
+    self.child.stdin.write('set -volume ' + str(volume) + ' \n')
+    
     
   # start the voice controller, requires an event handler
   # Events are passed back as tuples of (type, command/error text)

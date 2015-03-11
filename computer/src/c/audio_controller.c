@@ -150,7 +150,22 @@ int main(int argc, char** argv){
       //Stop voice_control
       } else if(0 == strcmp(token, "voice_stop")){
         vc_flag = 0; //signal threads to stop sending data
-      
+
+      //set option
+      } else if(0 == strcmp(token, "set")){
+        int vol = -1;
+        while(token = strtok(0," ")){   //parse next token
+          if(0 == strcmp(token, "-volume")) vol = atoi(strtok(0," ")); //get hostname from next input
+          else{
+            printf("Audio Controller: Bad command argument: \"%s\"\n",token);
+            continue;
+          }
+        }
+        
+        change_volume(vol); //issue the command
+        printf("Audio Controller: Volume set to %d\n",vol);
+
+      //other input
       } else {
         printf("Audio Controller: Unrecognized command: \"%s\" \n", token);  
       }
@@ -169,6 +184,33 @@ int main(int argc, char** argv){
   
   printf("Audio Controller: Exiting\n");
   return 0;
+}
+
+// create an alsa mixer and use it to set the system volume
+void change_volume(long volume){
+  if(volume > 100 || volume < 0) return; //check range
+
+  /* Code taken from stackexchange */
+  long min, max;
+  snd_mixer_t *handle;
+  snd_mixer_selem_id_t *sid;
+  const char *card = "default";
+  const char *selem_name = "Master";
+
+  snd_mixer_open(&handle, 0);
+  snd_mixer_attach(handle, card);
+  snd_mixer_selem_register(handle, NULL, NULL);
+  snd_mixer_load(handle);
+
+  snd_mixer_selem_id_alloca(&sid);
+  snd_mixer_selem_id_set_index(sid, 0);
+  snd_mixer_selem_id_set_name(sid, selem_name);
+  snd_mixer_elem_t* elem = snd_mixer_find_selem(handle, sid);
+
+  snd_mixer_selem_get_playback_volume_range(elem, &min, &max);
+  snd_mixer_selem_set_playback_volume_all(elem, volume * max / 100);
+
+  snd_mixer_close(handle);
 }
 
 //setup the pipes and create a thread for the child process
