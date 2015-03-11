@@ -51,6 +51,7 @@ void start_voice(int* fd) {
   int rv;
   int16 buf[512];
   f_in = fopen("audio_data.raw","rb");
+  
   if(f_in == NULL)
     return;
   rv = ps_start_utt(ps);
@@ -65,7 +66,7 @@ void start_voice(int* fd) {
             size_t nsamp;
             nsamp = fread(buf, 2, 512, f_in);
             #ifdef WRITE_RAW_FILE
-              write(f_out, buf, nsamp);
+              write(f_out, buf, nsamp*2);
             #endif
             rv = ps_process_raw(ps, buf, nsamp, FALSE, FALSE);
         }
