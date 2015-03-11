@@ -42,7 +42,7 @@ void start_voice(int* fd) {
 #ifdef PROCESS_INPUT_FILE
   FILE *f_in;
   int rv;
-  int16 buf[512];
+  int16 buf[1024];
   f_in = fopen("goforward.raw","rb");
   if(f_in == NULL)
     return;
@@ -58,7 +58,7 @@ void start_voice(int* fd) {
             size_t nsamp;
             nsamp = fread(buf, 2, 512, f_in);
             #ifdef WRITE_RAW_FILE
-              write(f_out, buf, nsamp);
+              write(f_out, buf, nsamp*2);
             #endif
             rv = ps_process_raw(ps, buf, nsamp, FALSE, FALSE);
         }
