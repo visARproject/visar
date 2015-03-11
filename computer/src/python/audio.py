@@ -5,8 +5,8 @@ import socket
 import interface
 
 AUDIO_PROGRAM = '../c/audio' # path to audio module
-CONTROL_CLIENT = 19101        # TCP comms port for handshaking (server)
-CONTROL_SERVER = 19102        # TCP comms port for handshaking (client)
+CONTROL_CLIENT = 19101        # TCP comms port for handshaking (client)
+CONTROL_SERVER = 19102        # TCP comms port for handshaking (server)
 AUDIO_SERVER   = 19103        # UDP port for audio data (server mode)
 AUDIO_CLIENT   = 19104        # UDP port for audio data (client mode)
 AUDIO_WAIT_TM  = .05          # wait 50ms between operations
