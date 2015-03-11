@@ -81,7 +81,7 @@ begin
         if rising_edge(write_clock) then
             if write_state /= 0 then
                 if write_enable = '1' then
-                    fifo_write_data(WIDTH-1 downto WRITE_WIDTH)(WRITE_WIDTH*(write_state-1)-1 downto WRITE_WIDTH*(write_state-1)) <= write_data;
+                    fifo_write_data(WIDTH-1 downto WRITE_WIDTH)(WRITE_WIDTH*write_state-1 downto WRITE_WIDTH*(write_state-1)) <= write_data;
                     write_state <= 0;
                 end if;
             else
