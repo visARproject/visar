@@ -42,10 +42,13 @@ architecture arc of video_distorter_prefetcher is
     type CoordinateBuf is array (0 to BUF_SIZE-1) of CameraCoordinate;
     signal pos_buf : CoordinateBuf;
 begin
-    u_counter : entity work.video_counter port map (
-        sync => sync,
-        h_cnt => h_cnt,
-        v_cnt => v_cnt);
+    u_counter : entity work.video_counter
+        generic map (
+            DELAY => -5000)
+        port map (
+            sync => sync,
+            h_cnt => h_cnt,
+            v_cnt => v_cnt);
     
     process (v_cnt) is
     begin

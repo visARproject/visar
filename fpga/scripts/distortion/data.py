@@ -11,18 +11,27 @@ import constants
 with open(sys.argv[1], 'rb') as f:
     d = numpy.load(f)
 
+# generate right side of map from flipped left side
 for x in xrange(1920//2, 1920):
     for y in xrange(1080):
         d[x, y] = d[1919-x, y]
         for COLOR in xrange(3):
             if tuple(map(int, d[x, y][COLOR])) != (-1, -1):
-                d[x, y][COLOR][0] = 1600 + (1600-1 - d[x, y][COLOR][0])
+                d[x, y][COLOR][1] = constants.CAMERA_ROWS-1 - d[x, y][COLOR][1]
+                d[x, y][COLOR][1] = constants.CAMERA_ROWS + d[x, y][COLOR][1]
 
+# swap cameras
 for x in xrange(1920):
     for y in xrange(1080):
         for COLOR in xrange(3):
             if tuple(map(int, d[x, y][COLOR])) != (-1, -1):
-                d[x, y][COLOR][0] = (d[x, y][COLOR][0] + 1600) % (1600*2)
+                d[x, y][COLOR][1] = (d[x, y][COLOR][1] + constants.CAMERA_ROWS) % (constants.CAMERA_ROWS*2)
+
+# clear centermost 4 lines to allow opposite eye time to buffer
+for x in xrange(1920//2-2, 1920//2+2):
+    for y in xrange(1080):
+        for COLOR in xrange(3):
+            d[x, y][COLOR] = -1, -1
 
 SIZE = 33 # should be a power of 2 plus 1 so that interpolation is simple
 assert SIZE % 2 == 1
@@ -59,7 +68,7 @@ COLOR = 1
 # change coordinates to what interpolation would yield
 d2 = d.copy()
 for y in xrange(constants.V_MAX):
-    for x in xrange(0, constants.H_MAX, 33):
+    for x in xrange(0, constants.H_MAX, SIZE):
         ox = 1919-y
         oy = x
         if not (0 <= ox < 1920 and 0 <= oy < 1080): continue
@@ -67,20 +76,21 @@ for y in xrange(constants.V_MAX):
         src = tuple(map(int, d[ox, oy][COLOR]))
         if src == (-1, -1): src = (0, 0)
         try:
-            src2 = tuple(map(int, d[ox, oy+32][COLOR]))
+            src2 = tuple(map(int, d[ox, oy+SIZE-1][COLOR]))
             if src2 == (-1, -1): src2 = (0, 0)
         except IndexError:
             src2 = (0, 0)
         
-        for i in xrange(33):
+        for i in xrange(SIZE):
             
             if src == (0, 0) or src2 == (0, 0): continue
-            interp = (src[0] * 32 + (src2[0]-src[0])*i + 16)//32, (src[1] * 32 + (src2[1]-src[1])*i+16)//32
+            interp = (src[0] * (SIZE-1) + (src2[0]-src[0])*i + 16)//(SIZE-1), (src[1] * (SIZE-1) + (src2[1]-src[1])*i+16)//(SIZE-1)
             
             d2[ox, oy+i] = interp
 
 # generate initial schedule with every event happening at latest possible time
 
+READ_LENGTH = 32
 BEFORENESS = 1000
 
 res = [] # pairs of (time, pos)
@@ -100,8 +110,8 @@ for y in xrange(constants.V_MAX):
                 src = src[0]//2*2 + dx, src[1]//2*2 + dy
                 
                 if src not in present:
-                    choice = src[0]-src[0]%32, src[1]
-                    for i in xrange(32):
+                    choice = src[0]-src[0]%READ_LENGTH, src[1]
+                    for i in xrange(READ_LENGTH):
                         present.add((choice[0]+i, choice[1]))
                     #print 'ack', t, choice, src
                     res.append((t-BEFORENESS, choice))
@@ -124,9 +134,11 @@ for i, x in enumerate(res2):
 
 # simulate schedule, making sure that data is still there when we need it (having not been overwritten)
 
+BUFFER_THICKNESS = 64
+
 res3 = list(res2)
 res3.reverse()
-present = [[None]*(256*8) for i in xrange(8*8)]
+present = [[None]*BUFFER_THICKNESS for i in xrange(256*8)]
 t = -1
 good = 0
 bad = 0
@@ -141,12 +153,12 @@ for y in xrange(constants.V_MAX):
         
         while res3 and t >= res3[-1][0]:
             load_pos = res3.pop()[1]
-            for i in xrange(32):
+            for i in xrange(READ_LENGTH):
                 this = load_pos[0]+i, load_pos[1]
-                present[this[0]%64][this[1]] = this
+                present[this[0]][this[1]%BUFFER_THICKNESS] = this
         
-        if present[src[0]%64][src[1]] != src:
-            print 'error at', src, present[src[0]%64][src[1]]
+        if present[src[0]][src[1]%BUFFER_THICKNESS] != src:
+            print 'error at', (ox, oy), src, present[src[0]][src[1]%BUFFER_THICKNESS]
             bad += 1
         else:
             good += 1
@@ -156,7 +168,7 @@ if bad: assert False
 # convert events to commands with repetitions to effect longer delays
 
 res4 = [(100, (0, 0))]
-t = 1+2**9-1 + sum(1+c[0] for c in res4) # time at end of last command
+t = -5000 + 1+2**9-1 + sum(1+c[0] for c in res4) # time at end of last command
 for cmd_t, cmd_pos in res2:
     delay_required = cmd_t - t
     assert delay_required >= 1, (t, cmd_t)
@@ -205,13 +217,13 @@ test = numpy.zeros((1080, 1920, 3), dtype=numpy.uint8)
 COLOR = 1
 write_pos = constants.DISTORTER_MAP_MEMORY_LOCATION
 for v_cnt in xrange(1920):
-    for h_cnt in xrange(0, 1089, 33):
+    for h_cnt in xrange(0, 1089, SIZE):
         x = 1919 - v_cnt
         y = h_cnt
         src = tuple(map(int, d[x, y][COLOR]))
         if src == (-1, -1): src = (0, 0)
         try:
-            src2 = tuple(map(int, d[x, y+32][COLOR]))
+            src2 = tuple(map(int, d[x, y+(SIZE-1)][COLOR]))
             if src2 == (-1, -1): src2 = (0, 0)
         except IndexError:
             src2 = (0, 0)
@@ -229,12 +241,12 @@ for v_cnt in xrange(1920):
             for i in xrange(20):
                 print 'memory(%i) <= "%s";' % (1236+i, data[len(data)-i*8-8:len(data)-i*8])
             
-            for i in xrange(33):
+            for i in xrange(SIZE):
                 if h_cnt+i < 1080:
-                    interp = (src[0] * 32 + (src2[0]-src[0])*i + 16)//32, (src[1] * 32 + (src2[1]-src[1])*i+16)//32
+                    interp = (src[0] * (SIZE-1) + (src2[0]-src[0])*i + 16)//(SIZE-1), (src[1] * (SIZE-1) + (src2[1]-src[1])*i+16)//(SIZE-1)
                     img = left
-                    if interp[0] >= 1600:
-                        interp = interp[0] - 1600, interp[1]
+                    if interp[1] >= constants.CAMERA_ROWS:
+                        interp = interp[0], interp[1] - constants.CAMERA_ROWS
                         img = right
                     test[y+i, x, 0] = left[interp[1]//2*2+0, interp[0]//2*2+0]
                     test[y+i, x, 1] = left[interp[1]//2*2+0, interp[0]//2*2+1]
