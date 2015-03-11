@@ -5,7 +5,7 @@
  */
 
 // Comment these lines to disable
-//#define WRITE_RAW_FILE
+#define WRITE_RAW_FILE
 #define PROCESS_INPUT_FILE
 
 #include <pocketsphinx.h>
@@ -43,15 +43,23 @@ void start_voice(int* fd) {
   FILE *f_in;
   int rv;
   int16 buf[512];
-  f_in = fopen("audio_data.raw","rb");
+  f_in = fopen("goforward.raw","rb");
   if(f_in == NULL)
     return;
   rv = ps_start_utt(ps);
+  #ifdef WRITE_RAW_FILE
+    int f_out;
+    f_out = open("input_data.raw", O_TRUNC | O_CREAT | O_WRONLY, 0666);
+    printf("%d\n", f_out);
+#endif
   if (rv < 0)
       return;
         while (!feof(f_in)) {
             size_t nsamp;
             nsamp = fread(buf, 2, 512, f_in);
+            #ifdef WRITE_RAW_FILE
+              write(f_out, buf, nsamp);
+            #endif
             rv = ps_process_raw(ps, buf, nsamp, FALSE, FALSE);
         }
         rv = ps_end_utt(ps);
