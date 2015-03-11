@@ -41,6 +41,17 @@ architecture arc of video_distorter_prefetcher is
     constant BUF_SIZE : positive := 32;
     type CoordinateBuf is array (0 to BUF_SIZE-1) of CameraCoordinate;
     signal pos_buf : CoordinateBuf;
+
+    component encode_10to9
+        port(input  : in  std_logic_vector(9 downto 0);
+             output : out std_logic_vector(8 downto 0));
+    end component encode_10to9;
+
+    type Encoder10Array is array (0 to 3) of std_logic_vector(9 downto 0);
+    type Encoder9Array is array (0 to 3) of std_logic_vector(8 downto 0);
+    signal encoder_10bit : Encoder10Array;
+    signal encoder_9bit : Encoder9Array;
+
 begin
     u_counter : entity work.video_counter
         generic map (
@@ -140,9 +151,16 @@ begin
         end if;
     end process;
     
+    -- 10 bit to 9 bit encoder
+    U_ENCODER : for i in 0 to 2 generate
+        ENCODER : encode_10to9
+            port map(input  => ram1_out.rd.data(10*i+9 downto 10*i),
+                     output => encoder_9bit(i));
+    end generate;
+
     -- RAM reader/BRAM writer
     
-    process (sync, ram1_out, h_cnt, v_cnt, pos_buf, reset) is
+    process (sync, ram1_out, h_cnt, v_cnt, pos_buf, reset, encoder_9bit) is
         variable pos_buf_read_pos, next_pos_buf_read_pos : integer range 0 to BUF_SIZE-1;
         variable number_read, next_number_read : integer range 0 to BURST_SIZE_WORDS-1;
         variable command : CameraCoordinate;
@@ -156,13 +174,13 @@ begin
         for x in 0 to 7 loop
             for y in 0 to 7 loop
                 bram_ins(x, y).clk <= sync.pixel_clk;
-                bram_ins(x, y).dip <= (others => '-');
                 bram_ins(x, y).we <= (others => '1');
                 bram_ins(x, y).regce <= '-';
                 bram_ins(x, y).rst <= '0';
                 
                 next_bram_ins(x, y).en := '0';
                 next_bram_ins(x, y).di := (others => '-');
+                next_bram_ins(x, y).dip := (others => '-');
                 next_bram_ins(x, y).addr := (others => '-');
             end loop;
         end loop;
@@ -175,14 +193,15 @@ begin
             ram1_in.rd.en <= '1'; -- (try to) read extra to make sure FIFO is emptied
             next_number_read := 0;
         elsif ram1_out.rd.empty = '0' then
-            for i in 0 to 3 loop
-                p.x := command.x/4*4 + number_read * 4 + i;
+            for i in 0 to 2 loop
+                p.x := command.x/8*8 + number_read * 3 + i; -- XXX: is this the correct address logic to account for 3 pixels per word rather than 4?
                 p.y := command.y;
                 next_bram_ins(p.x mod 8, p.y mod 8).en := '1';
-                next_bram_ins(p.x mod 8, p.y mod 8).di := "------------------------" & ram1_out.rd.data(8*i+7 downto 8*i);
+                next_bram_ins(p.x mod 8, p.y mod 8).di := "------------------------" & encoder_9bit(i)(7 downto 0);
                 next_bram_ins(p.x mod 8, p.y mod 8).addr(13 downto 3) := std_logic_vector(to_unsigned(
                     256*((p.x/8) mod 8) + p.y/8
                 , next_bram_ins(p.x mod 8, p.y mod 8).addr(13 downto 3)'length));
+                next_bram_ins(p.x mod 8, p.y mod 8).dip := "---" & encoder_9bit(i)(8);
                 next_bram_ins(p.x mod 8, p.y mod 8).addr(2 downto 0) := (others => '-');
             end loop;
             ram1_in.rd.en <= '1';
@@ -206,6 +225,7 @@ begin
                 for y in 0 to 7 loop
                     bram_ins(x, y).en   <= next_bram_ins(x, y).en;
                     bram_ins(x, y).di   <= next_bram_ins(x, y).di;
+                    bram_ins(x, y).dip  <= next_bram_ins(x, y).dip;
                     bram_ins(x, y).addr <= next_bram_ins(x, y).addr;
                 end loop;
             end loop;
