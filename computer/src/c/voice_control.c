@@ -4,7 +4,9 @@
  *  Program sends decoded audio stream to the audio controller
  */
 
-#define DEBUG 0
+// Comment these lines to disable
+//#define WRITE_RAW_FILE
+#define PROCESS_INPUT_FILE
 
 #include <pocketsphinx.h>
 #include <stdlib.h>
@@ -21,7 +23,6 @@ void start_voice(int* fd) {
   int16 buffer[2048]; //buffer used to store input
   char new_hyp[2048]; //memory for the hypothesis
   char time_gate_pass = 0;
-  int f;
 
   //initial configuration for pocketsphinx
   cmd_ln_t *config = cmd_ln_init(NULL, ps_args(), TRUE,
@@ -34,21 +35,48 @@ void start_voice(int* fd) {
   //setup decoder
   ps_decoder_t *ps = ps_init(config);
 
-  //begin utterance
-  ps_start_utt(ps);
-
   time_t start_time_in_speech;
   time_t current_time;
   struct tm * timeinfo;
 
+#ifdef PROCESS_INPUT_FILE
+  FILE *f_in;
+  int rv;
+  int16 buf[512];
+  f_in = fopen("audio_data.raw","rb");
+  if(f_in == NULL)
+    return;
+  rv = ps_start_utt(ps);
+  if (rv < 0)
+      return;
+        while (!feof(f_in)) {
+            size_t nsamp;
+            nsamp = fread(buf, 2, 512, f_in);
+            rv = ps_process_raw(ps, buf, nsamp, FALSE, FALSE);
+        }
+        rv = ps_end_utt(ps);
+  if (rv < 0)
+    return;
+  hyp = ps_get_hyp(ps, NULL);
+  if (hyp == NULL)
+    return;
+  printf("Recognized from input file: %s\n", hyp);
+#endif
+
+  //begin utterance
+  ps_start_utt(ps);
+
+#ifdef WRITE_RAW_FILE
+  int f;
   f = open("audio_data.raw", O_TRUNC | O_CREAT | O_WRONLY, 0666);
   printf("%d\n", f);
+#endif
 
   //go as long as there's a pipe
   while((k = read(fd[0], buffer, 2048)) > 0) {
-    if(DEBUG) {
+#ifdef WRITE_RAW_FILE
       write(f, buffer, k);
-    }
+#endif
     // printf("%d\n", k);
 
     char *sentence; //output
