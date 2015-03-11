@@ -41,7 +41,11 @@ architecture arc of video_distorter_prefetcher is
     constant BUF_SIZE : positive := 32;
     type CoordinateBuf is array (0 to BUF_SIZE-1) of CameraCoordinate;
     signal pos_buf : CoordinateBuf;
-
+    
+    signal fifo_read_enable : std_logic;
+    signal fifo_read_data   : std_logic_vector(39 downto 0);
+    signal fifo_read_empty  : std_logic;
+    
     component encode_10to9
         port(input  : in  std_logic_vector(9 downto 0);
              output : out std_logic_vector(8 downto 0));
@@ -124,13 +128,13 @@ begin
                 
                 ram1_in.cmd.en <= '1';
                 ram1_in.cmd.instr <= READ_PRECHARGE_COMMAND;
-                if command.pos.x < CAMERA_COLUMNS then
+                if command.pos.y < CAMERA_ROWS then
                     ram1_in.cmd.byte_addr <= std_logic_vector(to_unsigned(
-                        LEFT_CAMERA_MEMORY_LOCATION + command.pos.y * CAMERA_STEP + command.pos.x
+                        LEFT_CAMERA_MEMORY_LOCATION + command.pos.y * CAMERA_STEP + command.pos.x*4
                     , ram1_in.cmd.byte_addr'length));
                 else
                     ram1_in.cmd.byte_addr <= std_logic_vector(to_unsigned(
-                        RIGHT_CAMERA_MEMORY_LOCATION + command.pos.y * CAMERA_STEP + (command.pos.x - CAMERA_COLUMNS)
+                        RIGHT_CAMERA_MEMORY_LOCATION + (command.pos.y - CAMERA_ROWS) * CAMERA_STEP + command.pos.x*4
                     , ram1_in.cmd.byte_addr'length));
                 end if;
                 ram1_in.cmd.bl <= std_logic_vector(to_unsigned(BURST_SIZE_WORDS - 1, ram1_in.cmd.bl'length));
@@ -150,26 +154,43 @@ begin
             command := next_command;
         end if;
     end process;
-    
-    -- 10 bit to 9 bit encoder
-    U_ENCODER : for i in 0 to 2 generate
-        ENCODER : encode_10to9
-            port map(input  => ram1_out.rd.data(10*i+9 downto 10*i),
-                     output => encoder_9bit(i));
-    end generate;
 
     -- RAM reader/BRAM writer
     
-    process (sync, ram1_out, h_cnt, v_cnt, pos_buf, reset, encoder_9bit) is
+    U_PIXEL_FIFO : entity work.util_fifo_fallthrough
+        generic map (
+            WIDTH => 120,
+            LOG_2_DEPTH => 4,
+            WRITE_WIDTH => 30,
+            READ_WIDTH => 40)
+        port map (
+            write_clock => sync.pixel_clk,
+            write_enable => not ram1_out.rd.empty,
+            write_full => ram1_in.rd.en,
+            write_data => ram1_out.rd.data(29 downto 0),
+            
+            read_clock => sync.pixel_clk,
+            read_enable => fifo_read_enable,
+            read_data => fifo_read_data,
+            read_empty => fifo_read_empty);
+    
+    -- 10 bit to 9 bit encoder
+    U_ENCODER : for i in 0 to 3 generate
+        ENCODER : encode_10to9
+            port map(input  => fifo_read_data(10*i+9 downto 10*i),
+                     output => encoder_9bit(i));
+    end generate;
+    
+    process (sync, fifo_read_empty, h_cnt, v_cnt, pos_buf, reset, encoder_9bit) is
         variable pos_buf_read_pos, next_pos_buf_read_pos : integer range 0 to BUF_SIZE-1;
-        variable number_read, next_number_read : integer range 0 to BURST_SIZE_WORDS-1;
+        variable number_read, next_number_read : integer range 0 to BURST_SIZE_WORDS*3/4-1;
         variable command : CameraCoordinate;
         variable p : CameraCoordinate;
         variable next_bram_ins : BRAMInArray;
     begin
         ram1_in.rd.clk <= sync.pixel_clk;
         
-        ram1_in.rd.en <= '0';
+        fifo_read_enable <= '0';
         
         for x in 0 to 7 loop
             for y in 0 to 7 loop
@@ -190,11 +211,11 @@ begin
         
         if reset = '1' then
             next_pos_buf_read_pos := 0;
-            ram1_in.rd.en <= '1'; -- (try to) read extra to make sure FIFO is emptied
+            fifo_read_enable <= '1'; -- (try to) read extra to make sure FIFO is emptied
             next_number_read := 0;
-        elsif ram1_out.rd.empty = '0' then
-            for i in 0 to 2 loop
-                p.x := command.x/8*8 + number_read * 3 + i; -- XXX: is this the correct address logic to account for 3 pixels per word rather than 4?
+        elsif fifo_read_empty = '0' then
+            for i in 0 to 3 loop
+                p.x := command.x/4*4 + number_read * 4 + i;
                 p.y := command.y;
                 next_bram_ins(p.x mod 8, p.y mod 8).en := '1';
                 next_bram_ins(p.x mod 8, p.y mod 8).di := "------------------------" & encoder_9bit(i)(7 downto 0);
@@ -204,8 +225,8 @@ begin
                 next_bram_ins(p.x mod 8, p.y mod 8).dip := "---" & encoder_9bit(i)(8);
                 next_bram_ins(p.x mod 8, p.y mod 8).addr(2 downto 0) := (others => '-');
             end loop;
-            ram1_in.rd.en <= '1';
-            if number_read /= BURST_SIZE_WORDS-1 then
+            fifo_read_enable <= '1';
+            if number_read /= BURST_SIZE_WORDS*3/4-1 then
                 next_number_read := number_read + 1;
             else
                 next_number_read := 0;

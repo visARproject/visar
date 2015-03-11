@@ -38,8 +38,8 @@ package camera is
     constant CAMERA_STEP : integer := 2048; -- should be CAMERA_COLUMNS rounded up to the next power of two
     
     type CameraCoordinate is record
-        x : integer range 0 to 2*CAMERA_COLUMNS-1; -- stacked left-right because distorter buffer moves left-right
-        y : integer range 0 to CAMERA_ROWS-1;
+        x : integer range 0 to CAMERA_COLUMNS-1;
+        y : integer range 0 to 2*CAMERA_ROWS-1; -- stacked up-down because distorter buffer moves up-down
     end record;
     
     type CameraTripleCoordinate is record

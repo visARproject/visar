@@ -41,8 +41,8 @@ begin
     begin
         ram_streamer_en <= en;
         
-        output.pos.x <= to_integer(unsigned(ram_streamer_output(12-1 downto  0)));
-        output.pos.y <= to_integer(unsigned(ram_streamer_output(23-1 downto 12)));
-        output.delay <= to_integer(unsigned(ram_streamer_output(32-1 downto 23)));
+        output.pos.x <= to_integer(unsigned(ram_streamer_output(11-1 downto  0)));
+        output.pos.y <= to_integer(unsigned(ram_streamer_output(22-1 downto 11)));
+        output.delay <= to_integer(unsigned(ram_streamer_output(32-1 downto 22)));
     end process;
 end architecture;

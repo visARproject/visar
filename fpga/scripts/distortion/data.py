@@ -90,7 +90,7 @@ for y in xrange(constants.V_MAX):
 
 # generate initial schedule with every event happening at latest possible time
 
-READ_LENGTH = 32
+READ_LENGTH = 24
 BEFORENESS = 1000
 
 res = [] # pairs of (time, pos)
@@ -200,9 +200,14 @@ rp = HEXWriter()
 
 print 'writing prefetcher table...'
 
+def safediv(a, b):
+    q, r = divmod(a, b)
+    assert r == 0, (a, b, q, r)
+    return q
+
 write_pos = constants.DISTORTER_PREFETCHER_TABLE_MEMORY_LOCATION
 for cmd_delay, cmd_pos in res4:
-    data = '{0:09b}{1:011b}{2:012b}'.format(cmd_delay, cmd_pos[1], cmd_pos[0])
+    data = '{0:10b}{1:011b}{2:011b}'.format(cmd_delay, cmd_pos[1], safediv(cmd_pos[0], 3))
     rp.write(write_pos, int(data, 2))
     write_pos += 4
 
