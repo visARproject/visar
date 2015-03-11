@@ -6,7 +6,7 @@
 
 // Comment these lines to disable
 #define WRITE_RAW_FILE
-#define PROCESS_INPUT_FILE
+// #define PROCESS_INPUT_FILE
 
 #include <pocketsphinx.h>
 #include <stdlib.h>
@@ -24,11 +24,18 @@ void start_voice(int* fd) {
   char new_hyp[2048]; //memory for the hypothesis
   char time_gate_pass = 0;
 
-  //initial configuration for pocketsphinx
+  // initial configuration for pocketsphinx
+  // cmd_ln_t *config = cmd_ln_init(NULL, ps_args(), TRUE,
+  //   "-hmm", MODELDIR "/en-us/en-us",
+  //   "-lm", MODELDIR "/en-us/en-us.lm.dmp",
+  //   "-dict", MODELDIR "/en-us/cmudict-en-us.dict",
+  //   "-logfn", "/dev/null",
+  //   NULL);
+
   cmd_ln_t *config = cmd_ln_init(NULL, ps_args(), TRUE,
     "-hmm", MODELDIR "/en-us/en-us",
-    "-lm", MODELDIR "/en-us/en-us.lm.dmp",
-    "-dict", MODELDIR "/en-us/cmudict-en-us.dict",
+    "-lm", "./4915.lm",
+    "-dict", "./4915.dic",
     "-logfn", "/dev/null",
     NULL);
 
@@ -43,7 +50,7 @@ void start_voice(int* fd) {
   FILE *f_in;
   int rv;
   int16 buf[512];
-  f_in = fopen("goforward.raw","rb");
+  f_in = fopen("audio_data.raw","rb");
   if(f_in == NULL)
     return;
   rv = ps_start_utt(ps);
