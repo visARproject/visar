@@ -110,3 +110,5 @@ NET "phycol"    LOC = "C17" | IOSTANDARD = LVCMOS33;
 
 
 NET "/reset_for_ram_user" TIG;
+NET "*/write_position_gray<*>" MAXDELAY = 2 ns;
+NET "*/read_position_gray<*>" MAXDELAY = 2 ns;
