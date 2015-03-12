@@ -1,6 +1,8 @@
 from ...OpenGL.utils.transformations import quaternion_matrix, euler_from_matrix, euler_from_quaternion
 from .menu_controller import Menu_Controller
 from ...OpenGL.utils import Logger
+from ..audio import AudioController
+from ..network import NetworkState
 
 import numpy as np
 
@@ -27,6 +29,17 @@ class State(object):
 
     menu_controller = Menu_Controller()
 
+    network_state = NetworkState() # create network state tracker
+    audio_controller = AudioController() # create audio manager
+    
+    # define a network status object and callback funciton
+    peers = None
+    def network_callback(event):
+      network_peers = event
+    network_state.add_callback(network_callback) # add the callback
+
+    call_target = '127.0.0.1' # default call target is ourselves
+  
     current_button = 3
 
     @classmethod
@@ -41,6 +54,11 @@ class State(object):
     def make_call(self):
         '''JOSH PUT STUFF HERE'''
         Logger.warn("Attempting to make a call")
+        audio_controller.start(call_target) # start a call
+
+    @classmethod
+    def end_call(self)
+        audio_controller.stop() # hang up
 
     @classmethod
     def set_orientation(self, quaternion):

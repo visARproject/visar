@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 
 from setuptools import setup
+from subprocess import call
 
 setup(name='libVisar',
     version='1.0',
@@ -22,3 +23,7 @@ setup(name='libVisar',
     test_suite="libVisar.test"
 
 )
+
+call(['make','-C','libVisar/visar/audio/','test']) # run the make command
+
+

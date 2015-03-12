@@ -12,6 +12,8 @@ Contains everything you've ever wanted in a Python augmented reality package.
 * PyOpenGL
 * QT4
 * scipy (For terrain generator)
+* libasound2-dev (audio)
+* libspeex-dev (audio compression)
 
 Install all of these for things to work!
 
@@ -43,6 +45,7 @@ and run
 # Features
 - Map
 - Terrain simulation
+- Audio Communication
 
 
 # Consideration
