@@ -2,7 +2,7 @@ from subprocess import *
 import time, os
 import threading
 import socket
-import interface
+from ..interface import Interface
 
 AUDIO_PROGRAM = './audio'     # path to audio module
 CONTROL_CLIENT = 19101        # TCP comms port for handshaking (client)
@@ -25,9 +25,9 @@ def thread_lock(func):
 
 # audio controller class, interfaces with other units and the standalone audio module
 # interface events send string tuples (status, host/argument)
-class AudioController(interface.Interface):
+class AudioController(Interface):
   def __init__(self):
-    interface.Interface.__init__(self)
+    Interface.__init__(self)
     self.connection = None    # connection state (host, port, mode)
     self.voice_event = None   # event handler for voice comms
     self.child = Popen(AUDIO_PROGRAM, bufsize=0, stdin=PIPE, stdout=PIPE, universal_newlines=True) # open subprocess

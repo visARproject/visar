@@ -57,7 +57,7 @@ class State(object):
         audio_controller.start(call_target) # start a call
 
     @classmethod
-    def end_call(self)
+    def end_call(self):
         audio_controller.stop() # hang up
 
     @classmethod

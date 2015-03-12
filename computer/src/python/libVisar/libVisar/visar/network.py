@@ -2,19 +2,19 @@ import sys, time
 from socket import *
 import threading
 import copy
-import interface
+from .globals.interface import Interface
 
 BROADCAST_PORT = 19105  # UDP port for status broadcast
 UPDATE_PORT    = 19106  # UDP port for status update
 TIMEOUT        = 1      # socket timeout (seconds)    
 UPDATE_TIMER   = 30     # how often to send updates/ping dead clients
 
-class NetworkState(interface.Interface):
+class NetworkState(Interface):
   ''' Class maintains a list of all peers on the network and polls for updates.
       Interface event consists of the entire peer dictionary at every update. '''
        
   def __init__(self, id_code, name, status=''):
-    interface.Interface.__init__(self)
+    Interface.__init__(self)
   
     # setup the sockets
     self.b_sock = socket(AF_INET, SOCK_DGRAM) # broadcast socket, publishes status info

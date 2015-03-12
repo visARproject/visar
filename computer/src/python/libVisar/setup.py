@@ -24,6 +24,7 @@ setup(name='libVisar',
 
 )
 
-call(['make','-C','libVisar/visar/audio/','test']) # run the make command
+# Janky way of running the make command, replace later
+call(['make','-C','libVisar/visar/audio/','test']) # build the c files
 
 
