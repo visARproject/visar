@@ -60,11 +60,11 @@ class State(object):
         '''JOSH PUT STUFF HERE'''
         Logger.warn("Attempting to make a call")
         if self.calling:
-          self.end_call()
-          self.calling = False
+            self.end_call()
+            self.calling = False
         else:
-          self.audio_controller.start(self.call_target) # start a call
-          self.calling = True
+            self.audio_controller.start(self.call_target) # start a call
+            self.calling = True
 
     @classmethod
     def end_call(self):
@@ -99,5 +99,5 @@ class State(object):
     
     @classmethod
     def destroy(self):  
-      network_state.destroy()
-      audio_controller.destroy()
+        self.network_state.destroy()
+        self.audio_controller.destroy()
