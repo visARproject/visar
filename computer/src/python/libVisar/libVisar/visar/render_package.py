@@ -53,9 +53,9 @@ class Renderer(app.Canvas): # Canvas is a GUI object
         ]
         UI_elements = [
             Map(),
-            Button('But1', self, position=1),
-            Button('Second button', self, position=2),
-            Button("SDKASDASDASDA", self, position=3)
+            Button('Hide Map', self, position=1),
+            Button('Make Call', self, position=2),
+            Button('Print Example', self, position=3)
         ]
 
         self.view = np.eye(4)
@@ -151,6 +151,8 @@ class Renderer(app.Canvas): # Canvas is a GUI object
         elif(event.text == 'Z'):
             self.rotate = [0, 0, -1]
         elif(event.text == ' '):
+            State.make_call()
+            return
             default_view = np.array(
                 [[0.8, 0.2, -0.48, 0],
                  [-0.5, 0.3, -0.78, 0],
@@ -165,19 +167,20 @@ class Renderer(app.Canvas): # Canvas is a GUI object
             State.button_up()
         elif(event.text == ']'):
             State.button_down()
-
+        elif event.key == 'Up':
+            State.button_up()
+        elif event.key == 'Down':
+            State.button_down()
+        elif event.key == 'Enter':
+            State.press_enter()
         else:
             Logger.warn('Unrecognized key', event.text)
+            Logger.warn(event.key)
         translate(self.view, -self.translate[0], -self.translate[1],
                   -self.translate[2])
         xrotate(self.view, self.rotate[0])
         yrotate(self.view, self.rotate[1])
         zrotate(self.view, self.rotate[2])
-
-
-
-        # State.set_view(self.view)
-
 
     
 def main():
