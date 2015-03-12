@@ -1,0 +1,42 @@
+--Reinstall the kernel (network drivers): 
+https://devtalk.nvidia.com/default/topic/795734/embedded-systems/-customkernel-the-grinch-21-2-1-for-jetson-tk1/
+#Install L4T 21.2 (usually unnessecarry)
+
+#get files:
+wget http://www.jarzebski.pl/files/jetsontk1/grinch-21.2.1/zImage
+wget http://www.jarzebski.pl/files/jetsontk1/grinch-21.2.1/jetson-tk1-grinch-21.2.1-modules.tar.bz2
+wget http://www.jarzebski.pl/files/jetsontk1/grinch-21.2.1/jetson-tk1-grinch-21.2.1-firmware.tar.bz2
+
+#Check MD5 sums
+md5sum zImage
+41aa767cd46e1b3774833cfb22870df9 zImage
+md5sum jetson-tk1-grinch-21.2.1-modules.tar.bz2
+984abc04f2b731c70bdcbd8db0b49abb jetson-tk1-grinch-21.2.1-modules.tar.bz2
+md5sum jetson-tk1-grinch-21.2.1-firmware.tar.bz2
+33e535ed970aa2343ead74ad757d9618 jetson-tk1-grinch-21.2.1-firmware.tar.bz2
+
+#Update kernel
+sudo tar -C /lib/modules -vxjf jetson-tk1-grinch-21.2.1-modules.tar.bz2
+sudo tar -C /lib -vxjf jetson-tk1-grinch-21.2.1-firmware.tar.bz2
+sudo cp zImage /boot/zImage
+
+#Reboot
+ 
+--Setting up the microphone: https://devtalk.nvidia.com/default/topic/772401/audio-input-on-jetson-tk1/
+amixer cset name="Stereo ADC MIXL ADC2 Switch" 0
+amixer cset name="Stereo ADC MIXR ADC2 Switch" 0
+amixer cset name="Int Mic Switch" 0
+amixer cset name="ADC Capture Switch" 1
+amixer cset name="RECMIXL BST1 Switch" 0
+amixer cset name="RECMIXR BST1 Switch" 0
+amixer cset name="RECMIXL BST2 Switch" 1
+amixer cset name="RECMIXR BST2 Switch" 1
+amixer cset name="Stereo ADC L1 Mux" "ADC"
+amixer cset name="Stereo ADC R1 Mux" "ADC"
+amixer cset name="Stereo ADC MIXL ADC1 Switch" 1
+amixer cset name="Stereo ADC MIXR ADC1 Switch" 1
+amixer cset name="Stereo ADC MIXL ADC2 Switch" 0
+amixer cset name="Stereo ADC MIXR ADC2 Switch" 0
+amixer cset name="IN1 Mode Control" "Single ended"
+amixer cset name="IN2 Mode Control" "Single ended"
+amixer cset name="Mic Jack Switch" 1
