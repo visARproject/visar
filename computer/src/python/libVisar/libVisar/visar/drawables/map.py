@@ -70,6 +70,8 @@ class Map(Drawable):
         uniform vec2 map_center; // Latitude, Longitude
         uniform vec4 corners; // min_lat, min_long, max_lat, max_long
 
+        uniform mat4 map_transform;
+
         uniform float zoom;
         uniform vec2 user_position; // Latitude, Longitude
         uniform float user_orientation; // Yaw, radians
@@ -101,7 +103,10 @@ class Map(Drawable):
             vec2 bottom_left = corners.xy; // Of map (in lat,long)
             vec2 top_right = corners.zw; // Of map (in lat,long)
 
-            texcoord = default_texcoord;
+            // Transform the texture coordinates
+            // 1. -0.5, * 2 is for transforming to centered coordinates
+            vec4 transformed_tex_coords = ((map_transform * vec4(2 * (default_texcoord.xy - 0.5), 0, 1)));
+            texcoord = vec2((transformed_tex_coords.xy / 2) + 0.5) / transformed_tex_coords.w;
             mat4 T = projection * view * model;
             gl_Position = T * vec4(vertex_position, 1.0);
         }
@@ -132,18 +137,19 @@ class Map(Drawable):
         #version 120
     """
 
+    name = "Map"
     def __init__(self):
         '''Map drawable - contains the goddamn map
         '''
         self.projection = np.eye(4)
         self.view = np.eye(4)
 
-        self.model = scale(np.eye(4), 1, -1, 1)
-        # rotate(self.model, 3.0, 0, 0, 1)
-        xrotate(self.model, 1.5)
-        translate(self.model, 0.7, -4, -5)
-
-
+        self.model = scale(np.eye(4), 0.4)
+        orientation_vector = (1, 1, 0)
+        unit_orientation_angle = np.array(orientation_vector) / np.linalg.norm(orientation_vector)
+        rotate(self.model, -30, *unit_orientation_angle)
+        translate(self.model, -0.2, -2.4, -5)
+        
         height, width = 5.0, 5.0  # Meters
 
         # Add texture coordinates
@@ -156,10 +162,10 @@ class Map(Drawable):
         ], dtype=np.float32)
 
         self.tex_coords = np.array([
-            [0, 0],
-            [1, 0],
-            [1, 1],
             [0, 1],
+            [1, 1],
+            [1, 0],
+            [0, 0],
         ], dtype=np.float32)
 
         self.indices = IndexBuffer([
@@ -169,12 +175,12 @@ class Map(Drawable):
 
         ###### TESTING
         lla = self.ecef2llh((738575.65, -5498374.10, 3136355.42))
-
-
         ###### TESTING
-        self.map, self.ranges = self.get_map(lla[:2])
 
+        self.map, self.ranges = self.get_map(lla[:2])
         self.program = Program(self.frame_vertex_shader, self.frame_frag_shader)
+
+        default_map_transform = np.eye(4)
 
         self.program['vertex_position'] = self.vertices
         self.program['default_texcoord'] = self.tex_coords
@@ -183,16 +189,27 @@ class Map(Drawable):
         self.program['model'] = self.model
         self.program['projection'] = self.projection
 
+        self.program['map_transform'] = default_map_transform
         self.program['map_center'] = lla[:2]
         self.program['map_texture'] = self.map
         self.program['corners'] = self.ranges
         self.program['user_position'] = lla[:2]
 
+    def update(self):
+        yaw = State.yaw
+        counter_yaw = 360 - np.degrees(yaw)
+        # Could use optimization by subtracting current yaw from previous yaw
+        map_transform = np.eye(4)
+        map_transform = zrotate(map_transform, 0)
+        scale(map_transform, 0.8)
+        
+        self.program['map_transform'] = map_transform
 
-    def draw(self):
         # Convert Forrest's ecef position to lla
         position_lla = self.ecef2llh(State.position_ecef)[:2]
         self.program['user_position'] = position_lla
+
+    def draw(self):        
         # Disable depth test - UI element
         set_state(depth_test=False)
         self.program.draw('triangles', self.indices)
