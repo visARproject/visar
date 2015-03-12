@@ -1,0 +1,6 @@
+create AudioController and NetworkState objects (should be done in main funciton)
+Subscribe to the network state updates (via the intrface add_callback). 
+	-These updates will produce a dictionary of all avaliable units in the form of {'id':('ip','name','stats')}
+Call the AudioController's start method, giving it the IP address of the unit you want to call as the only argument
+	-Stop the call with stop()
+

@@ -1,6 +1,7 @@
 import sys, time
 from socket import *
 import threading
+import copy
 import interface
 
 BROADCAST_PORT = 19105  # UDP port for status broadcast
@@ -67,7 +68,7 @@ class NetworkState(interface.Interface):
       self.lock.acquire()
       old_peers = self.peers
       self.peers[update[0]] = (addr[0],update[1],update[2]) # update peer info
-      peer_copy = self.peers
+      peer_copy = copy.deepcopy(self.peers)
       self.lock.release()
       if(not old_peers == peer_copy): # don't send frivilous updates
         self.do_updates(peer_copy) # send an update event
@@ -98,7 +99,7 @@ class NetworkState(interface.Interface):
       
       self.lock.acquire()
       for key in removal_list: del self.peers[key] # remove dead peers
-      peer_copy = self.peers # copy list of peers
+      peer_copy = copy.deepcopy(self.peers) # copy list of peers
       self.lock.release()
       
       if len(removal_list) > 0: self.do_updates(peer_copy) # send an event
@@ -114,7 +115,7 @@ class NetworkState(interface.Interface):
     '''update our current status'''
     self.lock.acquire()
     self.status = status
-    peer_copy = self.peers
+    peer_copy = copy.deepcopy(self.peers)
     self.lock.release()
     self.send_update()
     self.do_updates(peer_copy)

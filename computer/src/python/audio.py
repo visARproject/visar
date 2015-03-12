@@ -69,7 +69,11 @@ class AudioController(interface.Interface):
     self.child.stdin.write(command) # send start command
     
     self.do_updates('Connected', host) # notify connection success
-   
+  
+
+  # connect to to client using a name
+  
+  
   # stop audio communication
   @thread_lock
   def stop(self):
