@@ -6,9 +6,6 @@ from vispy.gloo import (Program, VertexBuffer, IndexBuffer, Texture2D, clear,
                         FrameBuffer, RenderBuffer, set_viewport, set_state)
 from vispy import app, visuals, gloo
 
-from osmviz.manager import PILImageManager, OSMManager
-import PIL.Image as Image
-
 from ...OpenGL.drawing import Drawable
 from ...OpenGL.utils import Logger
 from ..globals import State

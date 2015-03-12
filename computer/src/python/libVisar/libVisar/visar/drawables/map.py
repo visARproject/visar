@@ -5,7 +5,7 @@ from vispy.util.transforms import perspective, translate, rotate, scale, xrotate
 from vispy.gloo import (Program, VertexBuffer, IndexBuffer, Texture2D, clear,
                         FrameBuffer, RenderBuffer, set_viewport, set_state)
 
-from osmviz.manager import PILImageManager, OSMManager
+from ...osmviz import PILImageManager, OSMManager
 import PIL.Image as Image
 
 from ...OpenGL.drawing import Drawable
