@@ -8,6 +8,8 @@
 #include <stdio.h>
 #include "encode.h"
 
+#define QUALITY 6 //codec quality settings (higher is better, but more bandwidth)
+
 static void *enc_state, *dec_state;    //encoder/decoder state structs
 static SpeexBits enc_bits, dec_bits;  //encoder/decoder buffer structs
 
@@ -18,7 +20,7 @@ int setup_codecs(){
   dec_state = speex_decoder_init(&speex_wb_mode);
 
   //Set the quality to 8 (28 kbps)
-  int tmp=8;
+  int tmp=QUALITY;
   speex_encoder_ctl(enc_state, SPEEX_SET_QUALITY, &tmp);
   
   //enable the perceptual enhancer (reduce noise)
