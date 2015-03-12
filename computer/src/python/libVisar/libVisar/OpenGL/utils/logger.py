@@ -46,3 +46,12 @@ class Logger(object):
         if self.verbosity > 0:
             out_str = " ".join([str(i) for i in args])
             print Fore.RED + '[VISAR Warning]:', out_str + self.reset_color
+
+    @classmethod
+    def write_colored(self, color, *args):
+        r_color = color.upper
+        if hasattr(Fore, r_color):
+            out_str = " ".join([str(i) for i in args])
+            print getattr(Fore, r_color) + out_str
+        else:   
+            raise(Exception("Color {} unsupported".format(r_color)))
