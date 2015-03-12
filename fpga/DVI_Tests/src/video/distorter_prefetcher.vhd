@@ -42,6 +42,7 @@ architecture arc of video_distorter_prefetcher is
     type CoordinateBuf is array (0 to BUF_SIZE-1) of CameraCoordinate;
     signal pos_buf : CoordinateBuf;
     
+    signal fifo_write_full  : std_logic;
     signal fifo_read_enable : std_logic;
     signal fifo_read_data   : std_logic_vector(39 downto 0);
     signal fifo_read_empty  : std_logic;
@@ -166,13 +167,14 @@ begin
         port map (
             write_clock => sync.pixel_clk,
             write_enable => not ram1_out.rd.empty,
-            write_full => ram1_in.rd.en,
+            write_full => fifo_write_full,
             write_data => ram1_out.rd.data(29 downto 0),
             
             read_clock => sync.pixel_clk,
             read_enable => fifo_read_enable,
             read_data => fifo_read_data,
             read_empty => fifo_read_empty);
+    ram1_in.rd.en <= not fifo_write_full;
     
     -- 10 bit to 9 bit encoder
     U_ENCODER : for i in 0 to 3 generate
@@ -215,12 +217,12 @@ begin
             next_number_read := 0;
         elsif fifo_read_empty = '0' then
             for i in 0 to 3 loop
-                p.x := command.x/4*4 + number_read * 4 + i;
+                p.x := command.x/8*8 + command.x/8*8*2 + number_read * 4 + i;
                 p.y := command.y;
                 next_bram_ins(p.x mod 8, p.y mod 8).en := '1';
                 next_bram_ins(p.x mod 8, p.y mod 8).di := "------------------------" & encoder_9bit(i)(7 downto 0);
                 next_bram_ins(p.x mod 8, p.y mod 8).addr(13 downto 3) := std_logic_vector(to_unsigned(
-                    256*((p.x/8) mod 8) + p.y/8
+                    256*((p.y/8) mod 8) + p.x/8
                 , next_bram_ins(p.x mod 8, p.y mod 8).addr(13 downto 3)'length));
                 next_bram_ins(p.x mod 8, p.y mod 8).dip := "---" & encoder_9bit(i)(8);
                 next_bram_ins(p.x mod 8, p.y mod 8).addr(2 downto 0) := (others => '-');

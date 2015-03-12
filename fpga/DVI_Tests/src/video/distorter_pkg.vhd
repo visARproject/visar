@@ -34,6 +34,20 @@ package distorter_pkg is
         pos   : CameraCoordinate; -- .x is real x / 3
     end record;
     
+    function decode_9to10(input : std_logic_vector(8 downto 0)) return std_logic_vector is
+    begin
+        case input(8 downto 7) is
+            when "00" =>
+                return "000" & input(6 downto 0);
+            when "01" =>
+                return "001" & input(6 downto 0) ;
+            when "10" =>
+                return "01" & input(6 downto 0) & "1";
+            when others =>
+                return "1" & input(6 downto 0) & "11";
+        end case;
+    end decode_9to10;
+    
 end distorter_pkg;
 
 package body distorter_pkg is

@@ -61,10 +61,11 @@ begin
             read_empty => fifo_read_empty);
     
     process (fifo_write_full, write_state, write_enable, write_data, write_clock) is
+        variable tmp : std_logic_vector(WIDTH-1-WRITE_WIDTH downto 0);
     begin
         write_full <= '0';
         fifo_write_enable <= '0';
-        fifo_write_data(WRITE_WIDTH*(0+1)-1 downto WRITE_WIDTH*0) <= (others => 'U'); -- prevent inferring latches
+        fifo_write_data(WRITE_WIDTH-1 downto 0) <= (others => 'U'); -- prevent inferring latches
         if write_state /= 0 then
             if write_enable = '1' then
             end if;
@@ -81,8 +82,10 @@ begin
         if rising_edge(write_clock) then
             if write_state /= 0 then
                 if write_enable = '1' then
-                    fifo_write_data(WIDTH-1 downto WRITE_WIDTH)(WRITE_WIDTH*write_state-1 downto WRITE_WIDTH*(write_state-1)) <= write_data;
-                    write_state <= 0;
+                    tmp := fifo_write_data(WIDTH-1 downto WRITE_WIDTH);
+                    tmp(WRITE_WIDTH*write_state-1 downto WRITE_WIDTH*(write_state-1)) := write_data;
+                    fifo_write_data(WIDTH-1 downto WRITE_WIDTH) <= tmp;
+                    write_state <= write_state-1;
                 end if;
             else
                 if fifo_write_full = '1' then

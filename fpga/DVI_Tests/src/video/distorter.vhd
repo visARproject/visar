@@ -135,7 +135,7 @@ begin
         variable center_5, center_4, center_3, center_2, center_1 : CameraCoordinate;
         variable dx_5, dy_5 : integer range -4 to 3;
         variable px_5 : CameraCoordinate;
-        type SampleArray is array (7 downto 0, 7 downto 0) of integer range 0 to 255;
+        type SampleArray is array (7 downto 0, 7 downto 0) of integer range 0 to 2**10-1;
         variable samples_1 : SampleArray;
     begin
         center_5 := current_lookup_5.green;
@@ -150,7 +150,7 @@ begin
                 bram_portb_ins_4(memx, memy).clk <= sync.pixel_clk;
                 if rising_edge(sync.pixel_clk) then
                     bram_portb_ins_4(memx, memy).addr(13 downto 3) <= std_logic_vector(to_unsigned(
-                        256*((px_5.x/8) mod 8) + px_5.y/8
+                        256*((px_5.y/8) mod 8) + px_5.x/8
                     , bram_portb_ins_4(memx, memy).addr(13 downto 3)'length));
                     bram_portb_ins_4(memx, memy).addr(2 downto 0) <= (others => '-');
                     bram_portb_ins_4(memx, memy).di <= (others => '-');
@@ -160,7 +160,7 @@ begin
                     bram_portb_ins_4(memx, memy).regce <= '1';
                     bram_portb_ins_4(memx, memy).rst <= '0';
                     
-                    samples_1(memx, memy) := to_integer(unsigned(bram_portb_outs_2(memx, memy).do(7 downto 0)));
+                    samples_1(memx, memy) := to_integer(unsigned(decode_9to10(bram_portb_outs_2(memx, memy).dop(0) & bram_portb_outs_2(memx, memy).do(7 downto 0))));
                 end if;
             end loop;
         end loop;
@@ -171,9 +171,9 @@ begin
                 data_out.green <= x"10";
                 data_out.blue <= x"10";
             else
-                data_out.red   <= std_logic_vector(to_unsigned(samples_1((center_1.x mod 8)/2*2+1, (center_1.y mod 8)/2*2+0), data_out.red'length));
-                data_out.green <= std_logic_vector(to_unsigned(samples_1((center_1.x mod 8)/2*2+0, (center_1.y mod 8)/2*2+0), data_out.green'length)); -- 0 0 or 1 1
-                data_out.blue  <= std_logic_vector(to_unsigned(samples_1((center_1.x mod 8)/2*2+0, (center_1.y mod 8)/2*2+1), data_out.blue'length));
+                data_out.red   <= std_logic_vector(to_unsigned(samples_1((center_1.x mod 8)/2*2+1, (center_1.y mod 8)/2*2+0)/4, data_out.red'length));
+                data_out.green <= std_logic_vector(to_unsigned(samples_1((center_1.x mod 8)/2*2+0, (center_1.y mod 8)/2*2+0)/4, data_out.green'length)); -- 0 0 or 1 1
+                data_out.blue  <= std_logic_vector(to_unsigned(samples_1((center_1.x mod 8)/2*2+0, (center_1.y mod 8)/2*2+1)/4, data_out.blue'length));
             end if;
             center_1 := center_2;
             center_2 := center_3;

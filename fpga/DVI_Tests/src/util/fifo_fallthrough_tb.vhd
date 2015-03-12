@@ -28,7 +28,7 @@ architecture arc of util_fifo_fallthrough_tb is
 begin
     UUT : entity work.util_fifo_fallthrough
         generic map (
-            WIDTH => 2*WIDTH,
+            WIDTH => 8*WIDTH,
             LOG_2_DEPTH => LOG_2_DEPTH-1,
             WRITE_WIDTH => 2*WIDTH,
             READ_WIDTH => WIDTH)
