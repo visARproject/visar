@@ -5,13 +5,15 @@
 
 OVERALL:
     - Figure out how to handle spatial positioning of UI
-
+    - Remove errors from import the transformations
 
 
 DISTORTION:
     - Must do manual calibration of the texture size/scaling, this has been causing issues
         -- Have not tried using the Rift's exact recommended shaders (since we don't need to correct for motion)
         >> I suspect the problem has to do with the use of tan-eye coordinates. Should not be assuming manifold
+    - Turn off warnings from vispy for loading discontinuous data (Lots of errors)
+    - Make Context and Drawable translate() functions behave the same or add a set_view, set_model thing
 
 MAP:   
     Goals:
@@ -22,6 +24,9 @@ MAP:
     - Add the ability to move (at all)
     - Rotate to look cooler (Facing in toward the user's eyes?)
 
+MENU:
+    - Text has weird white outline
+    - Add partial transparency
 
 TARGETS:
     - Make overlay appear above everything

@@ -5,6 +5,7 @@ from vispy.gloo import (Program, VertexBuffer, IndexBuffer, Texture2D, clear,
                         FrameBuffer)
 from vispy.util.transforms import perspective, translate, xrotate, yrotate
 from vispy.util.transforms import zrotate
+from vispy.util.logs import set_log_level
 
 from vispy import gloo
 from vispy import app
@@ -12,15 +13,26 @@ from vispy import app
 from ..OpenGL.utils import Logger
 from ..OpenGL.shaders import Distorter
 from ..OpenGL.drawing import Drawable, Context
-from .drawables import Example, Target, Map
+from .drawables import Example, Target, Map, Button
 from .environments import Terrain
+from .globals import State
 
 import argparse
 
-parser = argparse.ArgumentParser(description='Process some integers.')
-parser.add_argument('--draw_terrain', dest='draw_terrain', action='store_true',
+parser = argparse.ArgumentParser(description='Display the VisAR augmented reality.')
+parser.add_argument('-d', '--draw_terrain', dest='draw_terrain', action='store_true',
                    default=False,
                    help='Draw simulated terrain')
+parser.add_argument('-n', '--no_distort', dest='no_distort', action='store_true',
+                   default=False,
+                   help='Skip applying the distortion (For debugging)')
+parser.add_argument('-v', '--verbose', dest='verbose', action='store_true',
+                    default=False,
+                    help='Verbose output')
+parser.add_argument('-b', '--debug', dest='debug', action='store_true',
+                    default=False,
+                    help='Vispy debug output')
+
 
 args = parser.parse_args()
 
@@ -29,41 +41,51 @@ FPS = 60 # Maximum FPS (how often needs_update is checked)
 
 class Renderer(app.Canvas): # Canvas is a GUI object
     def __init__(self, size=(1980, 1020)):    
+
+        # Initialize gloo context
+        app.Canvas.__init__(self, keys='interactive')
+        self.size = size 
+        
         # Create a rendering context (A render list)
         Logger.set_verbosity('log')
-        ex = Example()
-        target = Target((1, 1, 1))
-
-        _map = Map()
-
-        self.default_view = np.array(
-            [[0.8, 0.2, -0.48, 0],
-             [-0.5, 0.3, -0.78, 0],
-             [-0.01, 0.9, -0.3, 0],
-             [-4.5, -21.5, -7.4, 1]],
-             dtype=np.float32
-        )
+        renders = [
+            Example(),
+        ]
+        UI_elements = [
+            Map(),
+            Button('But1', self, position=1),
+            Button('Second button', self, position=2),
+            Button("SDKASDASDASDA", self, position=3)
+        ]
 
         self.view = np.eye(4)
-        self.Render_List = Context(ex, target)
+        self.Render_List = Context(*renders)
+        for target in State.targets:
+            self.Render_List.append(Target(target))
+
         if args.draw_terrain:
             terrain = Terrain()
             self.Render_List.append(terrain)
+
+        if args.verbose:
+            set_log_level(True)
+            Logger.set_verbosity('log')
+        else:
+            set_log_level('error')
+            Logger.set_verbosity('warn')
+        if args.debug:
+            set_log_level('debug')
 
         self.Render_List.translate(0, 0, -7)
         projection = perspective(30.0, 1920 / float(1080), 2.0, 10.0)
         self.Render_List.set_projection(projection)
         self.Render_List.set_view(self.view)
 
-        self.UI_elements = Context(_map)
+        self.UI_elements = Context(*UI_elements)
         self.UI_elements.set_projection(projection)
 
-        # Initialize gloo context
-        app.Canvas.__init__(self, keys='interactive')
-        self.size = size 
-
         # Create the distorter
-        self.Distorter = Distorter(self.size)
+        self.Distorter = Distorter(self.size, no_distort=args.no_distort)
 
         # Set an update timer to run every FPS
         self.interval = 1 / FPS
@@ -71,6 +93,8 @@ class Renderer(app.Canvas): # Canvas is a GUI object
   
     def on_timer(self, event):
         self.Render_List.set_view(self.view)
+        self.Render_List.update()
+        self.UI_elements.update()
         self.update()
 
     def on_resize(self, event):
@@ -127,13 +151,33 @@ class Renderer(app.Canvas): # Canvas is a GUI object
         elif(event.text == 'Z'):
             self.rotate = [0, 0, -1]
         elif(event.text == ' '):
-            self.view = self.default_view
+            default_view = np.array(
+                [[0.8, 0.2, -0.48, 0],
+                 [-0.5, 0.3, -0.78, 0],
+                 [-0.01, 0.9, -0.3, 0],
+                 [-4.5, -21.5, -7.4, 1]],
+                 dtype=np.float32
+            )
 
+            self.view = default_view
+
+        elif(event.text == '['):
+            State.button_up()
+        elif(event.text == ']'):
+            State.button_down()
+
+        else:
+            Logger.warn('Unrecognized key', event.text)
         translate(self.view, -self.translate[0], -self.translate[1],
                   -self.translate[2])
         xrotate(self.view, self.rotate[0])
         yrotate(self.view, self.rotate[1])
         zrotate(self.view, self.rotate[2])
+
+
+
+        # State.set_view(self.view)
+
 
     
 def main():
