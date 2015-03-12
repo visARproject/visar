@@ -20,12 +20,14 @@ for x in xrange(1920//2, 1920):
                 d[x, y][COLOR][1] = constants.CAMERA_ROWS-1 - d[x, y][COLOR][1]
                 d[x, y][COLOR][1] = constants.CAMERA_ROWS + d[x, y][COLOR][1]
 
+'''
 # swap cameras
 for x in xrange(1920):
     for y in xrange(1080):
         for COLOR in xrange(3):
             if tuple(map(int, d[x, y][COLOR])) != (-1, -1):
                 d[x, y][COLOR][1] = (d[x, y][COLOR][1] + constants.CAMERA_ROWS) % (constants.CAMERA_ROWS*2)
+'''
 
 # clear centermost 4 lines to allow opposite eye time to buffer
 for x in xrange(1920//2-2, 1920//2+2):
