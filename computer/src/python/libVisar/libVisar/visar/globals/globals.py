@@ -1,4 +1,7 @@
-from ...OpenGL.utils.transformations import quaternion_matrix
+from ...OpenGL.utils.transformations import quaternion_matrix, euler_from_matrix, euler_from_quaternion
+from .menu_controller import Menu_Controller
+from ...OpenGL.utils import Logger
+
 import numpy as np
 
 class State(object):
@@ -17,9 +20,27 @@ class State(object):
     ]
 
     orientation_quaternion = (0.50155109, 0.03353513, 0.05767266, 0.86255189)
-    orientation_matrix =  quaternion_matrix(orientation_quaternion)
+    orientation_matrix = quaternion_matrix(orientation_quaternion)
+    roll, pitch, yaw = euler_from_matrix(orientation_matrix)
 
     position_ecef = np.array((738575.65, -5498374.10, 3136355.42))
+
+    menu_controller = Menu_Controller()
+
+    current_button = 3
+
+    @classmethod
+    def button_up(self):
+        pass
+
+    @classmethod
+    def button_down(self):
+        pass
+
+    @classmethod
+    def make_call(self):
+        '''JOSH PUT STUFF HERE'''
+        Logger.warn("Attempting to make a call")
 
     @classmethod
     def set_orientation(self, quaternion):
@@ -28,7 +49,7 @@ class State(object):
 
     @classmethod
     def set_position(self, position_ecef):
-        # assert np.linalg.norm(position_ecef) < 6700000.0, "You must be on the Earth to use Visar."
+        assert np.linalg.norm(position_ecef) < 6700000.0, "You must be on the planet Earth to use Visar."
         assert len(position_ecef) == 3, "position_ecef must be XYZ in ECEF"
         self.position_ecef = np.array(position_ecef)
 
@@ -46,4 +67,5 @@ class State(object):
         You can use this to change some state inside your class, or do something weird with a drawable
 
         '''
-        pass
+        return NotImplemented
+
