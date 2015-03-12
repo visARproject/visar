@@ -1,11 +1,12 @@
 import numpy as np
 from vispy.geometry import create_cube
-from vispy.util.transforms import perspective, translate, rotate
+from vispy.util.transforms import perspective, translate, rotate, scale
 from vispy.gloo import (Program, VertexBuffer, IndexBuffer, Texture2D, clear,
                         FrameBuffer)
 from vispy import gloo
 
 from ..rift_parameters import read_mesh_txt, parameters
+from ..utils import Logger
 
 
 class Mesh(object):
@@ -115,18 +116,17 @@ class Mesh(object):
         assert eye in ['left', 'right'], eye + " is not a valid eye (Should be left or right)"
 
         program = Program(self._vert_shader, self._frag_shader)
-        # v_buffer = VertexBuffer(self._v_buffers['left_buffer'])
 
         i_buffer = self._i_buffers[eye + '_indices']
         _buffer = self._v_buffers[eye + '_buffer']
 
-        print 'Loading {} eye distortion mesh pos'.format(eye)
+        Logger.log('Loading {} eye distortion mesh pos'.format(eye))
         program['pos'] = _buffer['pos']
-        print 'Loading {} eye distortion mesh red_xy'.format(eye)
+        Logger.log('Loading {} eye distortion mesh red_xy'.format(eye))
         program['red_xy'] = _buffer['red_xy']
-        print 'Loading {} eye distortion mesh green_xy'.format(eye)
+        Logger.log('Loading {} eye distortion mesh green_xy'.format(eye))
         program['green_xy'] = _buffer['green_xy']
-        print 'Loading {} eye distortion mesh blue_xy'.format(eye)
+        Logger.log('Loading {} eye distortion mesh blue_xy'.format(eye))
         program['blue_xy'] = _buffer['blue_xy']
         program['vignette'] = _buffer['vignette']
         program['texture'] = texture
@@ -135,7 +135,12 @@ class Mesh(object):
 
 
 class Distorter(object):
-    def __init__(self, size=(1600, 900)):
+    def __init__(self, size=(1600, 900), no_distort=False):
+        '''Distorter object: Applies distortion to Contexts and drawables
+
+        - size (X, Y): Size of monitor
+        - distortion (Bool): Apply distortion or not?
+        '''
         self.size = size
         self.left_eye_tex = gloo.Texture2D(shape=(4096, 4096) + (3,))
         self.right_eye_tex = gloo.Texture2D(shape=(4096, 4096) + (3,))
@@ -153,7 +158,27 @@ class Distorter(object):
         self.L_projection = parameters.projection_left.T
         self.R_projection = parameters.projection_right.T
 
-    def draw(self, *Contexts):
+        self.no_distort = no_distort
+        if self.no_distort:
+            self.projection = perspective(30.0, 1920 / float(1080), 2.0, 10.0)
+            self.draw = self.draw_no_distortion
+        else:
+
+            self.draw = self.draw_distortion
+
+    def draw_no_distortion(self, *Contexts):
+        '''Distorter WITHOUT applying distortion or chromatic aberration corrections
+
+        FOR DEBUG
+        '''
+        gloo.set_clear_color('black')
+        gloo.set_state(depth_test=True)
+        gloo.clear(color=True, depth=True)
+        for context in Contexts:
+            context.set_projection(self.projection)
+            context.draw()
+
+    def draw_distortion(self, *Contexts):
         '''Distorter.draw(list_of_drawables)
         Draw the drawables to the right and left-eye render buffers,
         then apply the distortion and display these buffers to the screen
