@@ -4,7 +4,7 @@ import threading
 import socket
 from ..interface import Interface
 
-AUDIO_PROGRAM = './audio'     # path to audio module
+AUDIO_PROGRAM = 'libVisar/visar/audio/audio'     # path to audio module
 CONTROL_CLIENT = 19101        # TCP comms port for handshaking (client)
 CONTROL_SERVER = 19102        # TCP comms port for handshaking (server)
 AUDIO_SERVER   = 19103        # UDP port for audio data (server mode)
@@ -61,7 +61,7 @@ class AudioController(Interface):
   @thread_lock
   def start(self, host, port=AUDIO_SERVER, mode='both'):
     if(self.connection is not None):
-      print 'Error, conection already active' + self.connection
+      print 'Error, conection already active' + str(self.connection)
       return None;
   
     self.connection = (host, port, mode) # store connection information

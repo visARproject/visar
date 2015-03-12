@@ -19,7 +19,9 @@ setup(name='libVisar',
         'libVisar',
         'libVisar.OpenGL', 'libVisar.OpenGL.shaders', 'libVisar.OpenGL.rift_parameters', 'libVisar.OpenGL.drawing',
         'libVisar.visar', 'libVisar.visar.drawables', 'libVisar.visar.environments', 'libVisar.visar.globals',
-        'libVisar.osmviz',
+        'libVisar.osmviz', 
+        'libVisar.visar.audio', 
+        'libVisar.visar.network', 'libVisar.visar.interface',
     ],
     test_suite="libVisar.test"
 

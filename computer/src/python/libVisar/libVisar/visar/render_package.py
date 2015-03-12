@@ -150,7 +150,7 @@ class Renderer(app.Canvas): # Canvas is a GUI object
             self.rotate = [0, 0, 1]
         elif(event.text == 'Z'):
             self.rotate = [0, 0, -1]
-        elif(event.text == ' '):
+        elif(event.text == ' ' or event.key == 'Space'):
             State.make_call()
             return
             default_view = np.array(
@@ -187,7 +187,7 @@ def main():
     c = Renderer()
     c.show()
     c.app.run()
-
+    State.destroy()
 
 if __name__ == '__main__':
     main()

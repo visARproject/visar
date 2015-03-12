@@ -5,6 +5,7 @@ from ..audio import AudioController
 from ..network import NetworkState
 
 import numpy as np
+import socket
 
 class State(object):
     '''Track the global state of the VisAR unit
@@ -29,16 +30,20 @@ class State(object):
 
     menu_controller = Menu_Controller()
 
-    network_state = NetworkState() # create network state tracker
+    network_state = NetworkState(socket.gethostname(), 'testname', 'status') # create network state tracker
     audio_controller = AudioController() # create audio manager
     
     # define a network status object and callback funciton
     peers = None
+    
+    @classmethod
     def network_callback(event):
-      network_peers = event
+      self.network_peers = event
+      
     network_state.add_callback(network_callback) # add the callback
 
     call_target = '127.0.0.1' # default call target is ourselves
+    calling = False # toggle value for call
   
     current_button = 3
 
@@ -54,11 +59,16 @@ class State(object):
     def make_call(self):
         '''JOSH PUT STUFF HERE'''
         Logger.warn("Attempting to make a call")
-        audio_controller.start(call_target) # start a call
+        if self.calling:
+          self.end_call()
+          self.calling = False
+        else:
+          self.audio_controller.start(self.call_target) # start a call
+          self.calling = True
 
     @classmethod
     def end_call(self):
-        audio_controller.stop() # hang up
+        self.audio_controller.stop() # hang up
 
     @classmethod
     def set_orientation(self, quaternion):
@@ -86,4 +96,8 @@ class State(object):
 
         '''
         return NotImplemented
-
+    
+    @classmethod
+    def destroy(self):  
+      network_state.destroy()
+      audio_controller.destroy()

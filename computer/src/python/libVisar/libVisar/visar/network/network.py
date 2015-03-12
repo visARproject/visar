@@ -44,7 +44,7 @@ class NetworkState(Interface):
     
   def send_update(self):
     '''Broadcast an update'''
-    print 'Sending Broadcast'
+    #print 'Sending Broadcast'
     self.lock.acquire()
     self.peers[self.id_code] = ('self', self.name, self.status) # update our status
     status = self.status
@@ -61,7 +61,7 @@ class NetworkState(Interface):
       update = data.split('~') # split input on newline
       if update[0] == self.id_code: continue # ignore local traffic
       self.s_sock.sendto('ack',addr) # send an ack
-      print 'sent ack', addr
+      #print 'sent ack', addr
       if len(update) < 3: continue # ping, ignore it
       
       # update the peer's info
@@ -73,7 +73,7 @@ class NetworkState(Interface):
       if(not old_peers == peer_copy): # don't send frivilous updates
         self.do_updates(peer_copy) # send an update event
       
-    print 'b_listner thread shutdown'      
+    #print 'b_listner thread shutdown'      
     self.s_sock.close() # shutdown, close the socket
       
   def update_thread(self):
@@ -88,14 +88,14 @@ class NetworkState(Interface):
       removal_list = []
       for peer in self.peers:
         if peer==self.id_code: continue # don't ping ourselves
-        print 'pinging', peer
+        #print 'pinging', peer
         self.c_sock.sendto('ping',(self.peers[peer][0], BROADCAST_PORT))
         try: 
           data, addr = self.c_sock.recvfrom(16) # get the ack
-          print 'got ack', peer
+          #print 'got ack', peer
         except: 
           removal_list.append(peer) # no response, peer is dead
-          print 'ack timeout', peer
+          #print 'ack timeout', peer
       
       self.lock.acquire()
       for key in removal_list: del self.peers[key] # remove dead peers
@@ -108,7 +108,7 @@ class NetworkState(Interface):
       if(self.kill_flag): break
       self.send_update() # send an update
     
-    print 'update thread shutdown'
+    #print 'update thread shutdown'
     self.c_sock.close() # shutdown, close the socket
     
   def update_status(self, status):
