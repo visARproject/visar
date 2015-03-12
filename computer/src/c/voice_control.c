@@ -20,8 +20,8 @@ void start_voice(int* fd) {
   uint8 in_speech; //currently taking in speech
   int32 k; //number of frames read
   char const *hyp; //hypothesis of decoding, i.e. what pocketsphinx thinks was said
-  int16 buffer[2048]; //buffer used to store input
-  char new_hyp[2048]; //memory for the hypothesis
+  int16 buffer[640]; //buffer used to store input
+  char new_hyp[640]; //memory for the hypothesis
   char time_gate_pass = 0;
 
   // initial configuration for pocketsphinx
@@ -34,8 +34,8 @@ void start_voice(int* fd) {
 
   cmd_ln_t *config = cmd_ln_init(NULL, ps_args(), TRUE,
     "-hmm", MODELDIR "/en-us/en-us",
-    "-lm", "./4915.lm",
-    "-dict", "./4915.dic",
+    "-lm", "./6715.lm",
+    "-dict", "./6715.dic",
     "-logfn", "/dev/null",
     NULL);
 
@@ -51,7 +51,7 @@ void start_voice(int* fd) {
   int rv;
   int16 buf[512];
   f_in = fopen("audio_data.raw","rb");
-  
+
   if(f_in == NULL)
     return;
   rv = ps_start_utt(ps);
@@ -89,20 +89,52 @@ void start_voice(int* fd) {
 #endif
 
   //go as long as there's a pipe
-  while((k = read(fd[0], buffer, 2048)) > 0) {
-#ifdef WRITE_RAW_FILE
-      write(f, buffer, k);
-#endif
+  while(TRUE) {
+    int point = 0;
+    int stop_check = FALSE;
+
+    while(TRUE) {
+
+
+      k = read(fd[0], buffer + point, 640 - point);
+
+      if(point == 640) {
+        break;
+      } else if(k == 0) {
+        stop_check = TRUE;
+        break;
+      } else {
+        point += k;
+      }
+
+      // if (point + k > 640) {
+      //   break;
+      // } else {
+      //   point += k;
+      // }
+
+      // printf("%d\n", point);
+    }
+
+    if(stop_check) {
+      break;
+    }
+
+    #ifdef WRITE_RAW_FILE
+      write(f, buffer, point);
+    #endif
     // printf("%d\n", k);
 
     char *sentence; //output
 
-    ps_process_raw(ps, buffer, k, FALSE, FALSE); //begins decoding using the number of frames it could read
+    ps_process_raw(ps, buffer, point/2, FALSE, FALSE); //begins decoding using the number of frames it could read
 
     in_speech = ps_get_in_speech(ps); //checks to see if there's silence
+    // printf("Speech: %d\n", in_speech);
 
     //when speech is introduced in each new utterance
-    if(in_speech && !utt_started) {
+    // if(in_speech && !utt_started) {
+    if(!utt_started) {
       utt_started = TRUE;
       time(&start_time_in_speech);
       printf("Listening...\n");
@@ -116,10 +148,11 @@ void start_voice(int* fd) {
     }
 
     //once speech is done and utterance has started
-    if(!in_speech && utt_started && time_gate_pass) {
+    // if(!in_speech && utt_started && time_gate_pass) {
+    if(utt_started && time_gate_pass) {
       ps_end_utt(ps); //end the utterance
       hyp = ps_get_hyp(ps, NULL); //get the hypothesis
-      memcpy(new_hyp, hyp, 2048); //transfer hyp to prevent corruption
+      memcpy(new_hyp, hyp, 640); //transfer hyp to prevent corruption
 
       //if there was no hypothesis, then error
       if(hyp == NULL) {
@@ -142,7 +175,7 @@ void start_voice(int* fd) {
     }
 
     //usleep(100000);
-    memset(buffer, 0, 2048);
+    memset(buffer, 0, 640);
   }
 
   close(fd[1]); //close output pipe
