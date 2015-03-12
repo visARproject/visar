@@ -2,12 +2,14 @@ import numpy as np
 from ...OpenGL import utils
 
 from vispy.geometry import create_cube
-from vispy.util.transforms import perspective, translate, rotate
+from vispy.util.transforms import perspective, translate, rotate, scale
 from vispy.gloo import (Program, VertexBuffer, IndexBuffer, Texture2D, clear,
                         FrameBuffer)
 
 
 class Drawable(object):
+    name = "Default Drawable"
+    skip = False
     def __init__(self, *args, **kwargs):
         '''Drawable(*args, **kwargs) -> Drawable
         Everything is tracked internally, different drawables will handle things differently
@@ -92,6 +94,9 @@ class Drawable(object):
         texture = utils.checkerboard()
         return texture
 
+    def update(self):
+        pass
+
     def draw(self):
         self.program.draw()
 
@@ -99,7 +104,9 @@ class Context(object):
     '''Note contexts are nestable (you can treat a context as a drawable)
     '''
     def __init__(self, *args):
-        self.drawables = args
+        self.drawables = []
+        for arg in args:
+            self.drawables.append(arg)
         self.view = np.eye(4)
         self.projection = np.eye(4)
 
@@ -136,10 +143,19 @@ class Context(object):
         for drawable in self.drawables:
             drawable['view'] = self.view
 
+    def scale_view(self, factor):
+        scale(self.view, factor)
+        self.set_view(self.view)
+        
     def on_resize(self):
         for drawable in self.drawables:
             drawable['projection'] = self.projection
 
     def draw(self):
         for drawable in self.drawables:
-            drawable.draw()
+            if not drawable.skip:
+                drawable.draw()
+
+    def update(self):
+        for drawable in self.drawables:
+            drawable.update()
