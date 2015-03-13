@@ -175,7 +175,7 @@ class Distorter(object):
         gloo.set_state(depth_test=True)
         gloo.clear(color=True, depth=True)
         for context in Contexts:
-            context.set_projection(self.projection)
+            context.set_projection(self.L_projection)
             context.draw()
 
     def draw_distortion(self, *Contexts):
@@ -192,14 +192,14 @@ class Distorter(object):
         with self.left_eye:
             gloo.clear(color=True, depth=True)
             for context in Contexts:
-                context.translate(0, -self.IPD / 2, 0)
+                context.translate(0, self.IPD / 2, 0)
                 context.set_projection(self.L_projection)
                 context.draw()
 
         with self.right_eye:
             gloo.clear(color=True, depth=True)
             for context in Contexts:
-                context.translate(0, self.IPD / 2, 0)
+                context.translate(0, -self.IPD / 2, 0)
                 context.set_projection(self.R_projection)
                 context.draw()
 
