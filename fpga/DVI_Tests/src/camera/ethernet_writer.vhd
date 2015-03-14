@@ -92,7 +92,7 @@ begin
                 next_state <= 1;
             end if;
         elsif state = 1 then
-            if words_in_flight <= RAM_FIFO_LENGTH/2 and read_index /= DATA_SIZE/BURST_LENGTH_BYTES then
+            if words_in_flight <= RAM_FIFO_LENGTH/2 and read_index /= DATA_SIZE/BURST_LENGTH_BYTES and ram_out.cmd.full = '0' then
                 ram_in.cmd.en <= '1';
                 ram_in.cmd.instr <= READ_PRECHARGE_COMMAND;
                 ram_in.cmd.byte_addr <= std_logic_vector(to_unsigned(BUFFER_ADDRESS + DATA_SIZE * packet_index + BURST_LENGTH_BYTES * read_index, ram_in.cmd.byte_addr'length));
