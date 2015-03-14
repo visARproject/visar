@@ -190,7 +190,7 @@ begin
         variable number_read, next_number_read : integer range 0 to BURST_SIZE_WORDS*3/4-1;
         variable command : CameraCoordinate;
         variable p : CameraCoordinate;
-        variable next_bram_ins : BRAMInArray;
+        variable next_bram_ins, next_next_bram_ins : BRAMInArray;
     begin
         ram1_in.rd.clk <= sync.pixel_clk;
         
@@ -203,10 +203,10 @@ begin
                 bram_ins(x, y).regce <= '-';
                 bram_ins(x, y).rst <= '0';
                 
-                next_bram_ins(x, y).en := '0';
-                next_bram_ins(x, y).di := (others => '-');
-                next_bram_ins(x, y).dip := (others => '-');
-                next_bram_ins(x, y).addr := (others => '-');
+                next_next_bram_ins(x, y).en := '0';
+                next_next_bram_ins(x, y).di := (others => '-');
+                next_next_bram_ins(x, y).dip := (others => '-');
+                next_next_bram_ins(x, y).addr := (others => '-');
             end loop;
         end loop;
         
@@ -220,13 +220,13 @@ begin
             for i in 0 to 3 loop
                 p.x := command.x/8*8 + command.x/8*8*2 + number_read * 4 + i;
                 p.y := command.y;
-                next_bram_ins(p.x mod 8, p.y mod 8).en := '1';
-                next_bram_ins(p.x mod 8, p.y mod 8).di := "------------------------" & encoder_9bit(i)(7 downto 0);
-                next_bram_ins(p.x mod 8, p.y mod 8).addr(13 downto 3) := std_logic_vector(to_unsigned(
+                next_next_bram_ins(p.x mod 8, p.y mod 8).en := '1';
+                next_next_bram_ins(p.x mod 8, p.y mod 8).di := "------------------------" & encoder_9bit(i)(7 downto 0);
+                next_next_bram_ins(p.x mod 8, p.y mod 8).addr(13 downto 3) := std_logic_vector(to_unsigned(
                     256*((p.y/8) mod 8) + p.x/8
-                , next_bram_ins(p.x mod 8, p.y mod 8).addr(13 downto 3)'length));
-                next_bram_ins(p.x mod 8, p.y mod 8).dip := "---" & encoder_9bit(i)(8);
-                next_bram_ins(p.x mod 8, p.y mod 8).addr(2 downto 0) := (others => '-');
+                , next_next_bram_ins(p.x mod 8, p.y mod 8).addr(13 downto 3)'length));
+                next_next_bram_ins(p.x mod 8, p.y mod 8).dip := "---" & encoder_9bit(i)(8);
+                next_next_bram_ins(p.x mod 8, p.y mod 8).addr(2 downto 0) := (others => '-');
             end loop;
             fifo_read_enable <= '1';
             if number_read /= BURST_SIZE_WORDS*3/4-1 then
@@ -247,6 +247,11 @@ begin
             number_read := next_number_read;
             for x in 0 to 7 loop
                 for y in 0 to 7 loop
+                    next_bram_ins(x, y).en   := next_next_bram_ins(x, y).en;
+                    next_bram_ins(x, y).di   := next_next_bram_ins(x, y).di;
+                    next_bram_ins(x, y).dip  := next_next_bram_ins(x, y).dip;
+                    next_bram_ins(x, y).addr := next_next_bram_ins(x, y).addr;
+                    
                     bram_ins(x, y).en   <= next_bram_ins(x, y).en;
                     bram_ins(x, y).di   <= next_bram_ins(x, y).di;
                     bram_ins(x, y).dip  <= next_bram_ins(x, y).dip;
