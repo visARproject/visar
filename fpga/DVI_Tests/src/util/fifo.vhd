@@ -15,6 +15,7 @@ entity util_fifo is
         write_full   : out std_logic;
         
         read_clock  : in  std_logic;
+        read_reset  : in  std_logic := '0'; -- synchronous to read_clock; equivalent to reading all data out
         read_enable : in  std_logic;
         read_data   : out std_logic_vector(WIDTH-1 downto 0);
         read_empty  : out std_logic);
@@ -77,6 +78,9 @@ begin
             if read_enable = '1' and read_empty_s = '0' then
                 read_data <= backing(to_integer(read_position(LOG_2_DEPTH-1 downto 0)));
                 new_read_position := read_position + 1;
+            end if;
+            if read_reset = '1' then
+                new_read_position := gray_to_binary(write_position_gray_read_synchronized);
             end if;
             read_position <= new_read_position;
             read_position_gray <= binary_to_gray(new_read_position);

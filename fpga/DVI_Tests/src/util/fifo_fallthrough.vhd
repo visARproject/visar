@@ -10,11 +10,13 @@ entity util_fifo_fallthrough is
         READ_WIDTH : natural);
     port (
         write_clock  : in  std_logic;
+        write_reset  : in  std_logic := '0';
         write_enable : in  std_logic;
         write_data   : in  std_logic_vector(WRITE_WIDTH-1 downto 0);
         write_full   : out std_logic;
         
         read_clock  : in  std_logic;
+        read_reset  : in  std_logic := '0';
         read_enable : in  std_logic;
         read_data   : out std_logic_vector(READ_WIDTH-1 downto 0);
         read_empty  : out std_logic);
@@ -28,20 +30,22 @@ architecture arc of util_fifo_fallthrough is
 begin
     INNER : entity work.util_fifo_narrowed
         generic map (
-            WIDTH => WIDTH,
+            WIDTH       => WIDTH,
             LOG_2_DEPTH => LOG_2_DEPTH,
             WRITE_WIDTH => WRITE_WIDTH,
-            READ_WIDTH => READ_WIDTH)
+            READ_WIDTH  => READ_WIDTH)
         port map (
             write_clock  => write_clock,
+            write_reset  => write_reset,
             write_enable => write_enable,
             write_data   => write_data,
             write_full   => write_full,
             
-            read_clock => read_clock,
+            read_clock  => read_clock,
+            read_reset  => read_reset,
             read_enable => fifo_read_enable,
-            read_data => read_data,
-            read_empty => fifo_read_empty);
+            read_data   => read_data,
+            read_empty  => fifo_read_empty);
     
     process (fifo_read_empty, have_data, read_enable, read_clock) is
     begin
@@ -62,6 +66,9 @@ begin
                 else
                     have_data <= '0';
                 end if;
+            end if;
+            if read_reset = '1' then
+                have_data <= '0';
             end if;
         end if;
     end process;

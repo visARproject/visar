@@ -17,11 +17,13 @@ entity util_fifo_narrowed is
         READ_WIDTH : natural);
     port (
         write_clock  : in  std_logic;
+        write_reset  : in  std_logic := '0'; -- synchronous to read_clock; clears partial word written
         write_enable : in  std_logic;
         write_data   : in  std_logic_vector(WRITE_WIDTH-1 downto 0);
         write_full   : out std_logic;
         
         read_clock  : in  std_logic;
+        read_reset  : in  std_logic := '0';
         read_enable : in  std_logic;
         read_data   : out std_logic_vector(READ_WIDTH-1 downto 0);
         read_empty  : out std_logic);
@@ -47,7 +49,7 @@ begin
     
     INNER : entity work.util_fifo
         generic map (
-            WIDTH => WIDTH,
+            WIDTH       => WIDTH,
             LOG_2_DEPTH => LOG_2_DEPTH)
         port map (
             write_clock  => write_clock,
@@ -55,10 +57,11 @@ begin
             write_data   => fifo_write_data,
             write_full   => fifo_write_full,
             
-            read_clock => read_clock,
+            read_clock  => read_clock,
+            read_reset  => read_reset,
             read_enable => fifo_read_enable,
-            read_data => fifo_read_data,
-            read_empty => fifo_read_empty);
+            read_data   => fifo_read_data,
+            read_empty  => fifo_read_empty);
     
     process (fifo_write_full, write_state, write_enable, write_data, write_clock) is
         variable tmp : std_logic_vector(WIDTH-1-WRITE_WIDTH downto 0);
@@ -95,6 +98,9 @@ begin
                     end if;
                 end if;
             end if;
+            if write_reset = '1' then
+                write_state <= WRITE_CHUNKS-1;
+            end if;
         end if;
     end process;
     
@@ -127,6 +133,9 @@ begin
                         read_state <= READ_CHUNKS - 1;
                     end if;
                 end if;
+            end if;
+            if read_reset = '1' then
+                read_state <= 0;
             end if;
         end if;
     end process;

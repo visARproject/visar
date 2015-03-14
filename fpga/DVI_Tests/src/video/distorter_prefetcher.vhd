@@ -160,20 +160,22 @@ begin
     
     U_PIXEL_FIFO : entity work.util_fifo_fallthrough
         generic map (
-            WIDTH => 120,
+            WIDTH       => 120,
             LOG_2_DEPTH => 4,
             WRITE_WIDTH => 30,
-            READ_WIDTH => 40)
+            READ_WIDTH  => 40)
         port map (
-            write_clock => sync.pixel_clk,
+            write_clock  => sync.pixel_clk,
+            write_reset  => reset,
             write_enable => not ram1_out.rd.empty,
-            write_full => fifo_write_full,
-            write_data => ram1_out.rd.data(29 downto 0),
+            write_full   => fifo_write_full,
+            write_data   => ram1_out.rd.data(29 downto 0),
             
-            read_clock => sync.pixel_clk,
+            read_clock  => sync.pixel_clk,
+            read_reset  => reset,
             read_enable => fifo_read_enable,
-            read_data => fifo_read_data,
-            read_empty => fifo_read_empty);
+            read_data   => fifo_read_data,
+            read_empty  => fifo_read_empty);
     ram1_in.rd.en <= not fifo_write_full;
     
     -- 10 bit to 9 bit encoder
@@ -213,7 +215,6 @@ begin
         
         if reset = '1' then
             next_pos_buf_read_pos := 0;
-            fifo_read_enable <= '1'; -- (try to) read extra to make sure FIFO is emptied
             next_number_read := 0;
         elsif fifo_read_empty = '0' then
             for i in 0 to 3 loop
