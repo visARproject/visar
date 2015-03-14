@@ -30,9 +30,18 @@ end camera_wrapper;
 architecture arc of camera_wrapper is
     signal clock_out : std_logic;
     
-    signal bitslip : std_logic_vector(4 downto 0) := (others => '0');
     signal deserializer_clock : std_logic;
-    signal deserializer_out   : std_logic_vector(24 downto 0);
+    
+    subtype BitslipType is integer range 0 to 9;
+    signal bitslip_sync : BitslipType;
+    type BitslipDataType is array (0 to 3) of BitslipType;
+    signal bitslip_data : BitslipDataType;
+    
+    type DataArray is array (0 to 3) of unsigned(9 downto 0);
+    signal sync_maybe_inv : unsigned(9 downto 0);
+    signal data_maybe_inv : DataArray;
+    
+    signal deserializer_out : std_logic_vector(24 downto 0);
     signal sync_maybe_inv_s, sync_s : unsigned(9 downto 0);
     signal odd_s, sync_is_window_id_s : boolean;
 begin
@@ -72,18 +81,40 @@ begin
         
         LOCKED_OUT => open,
         DATA_IN_TO_DEVICE => deserializer_out,
-        BITSLIP => bitslip,
+        BITSLIP => (others => '0'),
         
         DEBUG_IN => "00",
         DEBUG_OUT => open);
+    
+    process (deserializer_clock) is
+        variable sync_buf : unsigned(18 downto 0);
+        type DataBufArray is array (0 to 3) of unsigned(18 downto 0);
+        variable data_buf : DataBufArray;
+    begin
+        if rising_edge(deserializer_clock) then
+            sync_maybe_inv <= sync_buf(bitslip_sync+9 downto bitslip_sync);
+            for j in 0 to 3 loop
+                data_maybe_inv(j) <= data_buf(j)(bitslip_data(j)+9 downto bitslip_data(j));
+            end loop;
+            
+            sync_buf(18 downto 5) := sync_buf(13 downto 0);
+            for j in 0 to 3 loop
+                data_buf(j)(18 downto 5) := data_buf(j)(13 downto 0);
+            end loop;
+            -- fill sync_buf and data_buf with deserializer_out
+            for i in 0 to 4 loop
+                sync_buf(4-i) := deserializer_out(4+5*i);
+                for j in 0 to 3 loop
+                    data_buf(j)(4-i) := deserializer_out(j+5*i);
+                end loop;
+            end loop;
+        end if;
+    end process;
     
     output.clock <= deserializer_clock;
     process (deserializer_clock) is
         variable bitslip_countdown : integer range 0 to 1000;
         variable odd : boolean;
-        type DataArray is array (0 to 3) of unsigned(9 downto 0);
-        variable sync_maybe_inv : unsigned(9 downto 0);
-        variable data_maybe_inv : DataArray;
         variable sync : unsigned(9 downto 0);
         variable data : DataArray;
         variable data_valid, sync_is_window_id : boolean;
@@ -101,9 +132,6 @@ begin
             if bitslip_countdown /= 0 then
                 bitslip_countdown := bitslip_countdown - 1;
             end if;
-            
-            bitslip <= (others => '0');
-            
             
             output.data_valid <= '0';
             output.last_column <= '0';
@@ -229,14 +257,22 @@ begin
                     for i in 0 to 3 loop
                         if data(i) /= to_unsigned(16#3A6#, 10) then
                             if bitslip_countdown = 0 then
-                                bitslip(i) <= '1'; -- slip data
+                                if bitslip_data(i) /= 9 then
+                                    bitslip_data(i) <= bitslip_data(i) + 1;
+                                else
+                                    bitslip_data(i) <= 0;
+                                end if;
                                 bitslip_countdown := 1000;
                             end if;
                         end if;
                     end loop;
                 else
                     if bitslip_countdown = 0 then
-                        bitslip(4) <= '1'; -- slip sync
+                        if bitslip_sync /= 9 then
+                            bitslip_sync <= bitslip_sync + 1;
+                        else
+                            bitslip_sync <= 0;
+                        end if;
                         bitslip_countdown := 1000;
                     end if;
                 end if;
@@ -276,17 +312,6 @@ begin
             end if;
             
             
-            for j in 0 to 3 loop
-                data_maybe_inv(j)(9 downto 5) := data_maybe_inv(j)(4 downto 0);
-            end loop;
-            sync_maybe_inv(9 downto 5) := sync_maybe_inv(4 downto 0);
-            -- fill sync_maybe_inv and data_maybe_inv with deserializer_out
-            for i in 0 to 4 loop
-                for j in 0 to 3 loop
-                    data_maybe_inv(j)(4-i) := deserializer_out(j+5*i);
-                end loop;
-                sync_maybe_inv(4-i) := deserializer_out(4+5*i);
-            end loop;
             odd := not odd;
             
             sync_s <= sync;
