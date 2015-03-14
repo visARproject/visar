@@ -70,16 +70,18 @@ class SPIer(object):
         if read:
             return res
 
+cpld_state = [1, 0, 0, 0, 0, 0, 0, 0, 0, 0]
+
 s = SPIer()
-print s.do_spi(10, 9, [1, 0, 0, 0, 0, 0, 0, 0, 0, 0])
-assert s.do_spi(10, 9, [1, 0, 0, 0, 0, 0, 0, 0, 0, 0]) == [1, 0, 1, 0, 0, 1, 1, 0, 0, 1]
+#print s.do_spi(10, 9, [1, 0, 0, 0, 0, 0, 0, 0, 0, 0])
+assert s.do_spi(10, 9, cpld_state) == [1, 0, 1, 0, 0, 1, 1, 0, 0, 1]
 '''while True:
     print '{0:025b}'.format(s._r.read(32*1024*1024))
     time.sleep(.1)'''
-assert s.do_spi(10, 9, [1, 1, 0, 0, 0, 1, 0, 0, 0, 0]) == [1, 0, 1, 0, 0, 1, 1, 0, 0, 1]
-assert s.do_spi(10, 9, [1, 1, 1, 0, 0, 1, 1, 0, 0, 0]) == [1, 0, 1, 0, 0, 1, 1, 0, 0, 1]
-assert s.do_spi(10, 9, [1, 1, 1, 1, 0, 1, 1, 1, 0, 0]) == [1, 0, 1, 0, 0, 1, 1, 0, 0, 1]
-assert s.do_spi(10, 9, [1, 1, 1, 1, 1, 1, 1, 1, 1, 0]) == [1, 0, 1, 0, 0, 1, 1, 0, 0, 1]
+#assert s.do_spi(10, 9, [1, 1, 0, 0, 0, 1, 0, 0, 0, 0]) == [1, 0, 1, 0, 0, 1, 1, 0, 0, 1]
+#assert s.do_spi(10, 9, [1, 1, 1, 0, 0, 1, 1, 0, 0, 0]) == [1, 0, 1, 0, 0, 1, 1, 0, 0, 1]
+#assert s.do_spi(10, 9, [1, 1, 1, 1, 0, 1, 1, 1, 0, 0]) == [1, 0, 1, 0, 0, 1, 1, 0, 0, 1]
+#assert s.do_spi(10, 9, [1, 1, 1, 1, 1, 1, 1, 1, 1, 0]) == [1, 0, 1, 0, 0, 1, 1, 0, 0, 1]
 
 def int_to_list(x, n):
     res = []
@@ -99,8 +101,21 @@ def list_to_int(x):
 assert list_to_int([0, 0, 0, 0, 0, 1, 0, 1]) == 5
 
 class Camera(object):
-    def __init__(self, nCS_pin, MISO_pin, base_addr):
+    def __init__(self, name, nCS_pin, MISO_pin, base_addr, power_start):
         self.nCS_pin, self.MISO_pin = nCS_pin, MISO_pin
+        
+        print 'starting', name
+        
+        cpld_state[power_start:power_start+4] = [0]*4
+        print cpld_state
+        assert s.do_spi(10, 9, cpld_state) == [1, 0, 1, 0, 0, 1, 1, 0, 0, 1]
+        time.sleep(.1)
+        
+        for i in xrange(4):
+            cpld_state[power_start+i] = 1
+            print cpld_state
+            assert s.do_spi(10, 9, cpld_state) == [1, 0, 1, 0, 0, 1, 1, 0, 0, 1]
+            time.sleep(.1)
         
         assert self.camera_read(0) == int_to_list(0x560D, 16)
         
@@ -199,8 +214,13 @@ class Camera(object):
         # enable temperature sensor
         self.camera_write(96, 1)
 
-        for i in xrange(150):
-            print i, list_to_int(self.camera_read(97)), '{0:025b}'.format(s._r.read(base_addr))
+        outputs = set()
+        for i in xrange(20):
+            output = '{0:025b}'.format(s._r.read(base_addr))
+            print i, list_to_int(self.camera_read(97)), output
+            outputs.add(output)
+        if len(outputs) == 1:
+            Camera(name, nCS_pin, MISO_pin, base_addr, power_start)
 
     def camera_read(self, addr):
         x = s.do_camera_spi(self.nCS_pin, self.MISO_pin, int_to_list(addr, 9) + [0] + [0]*16)
@@ -210,9 +230,8 @@ class Camera(object):
     def camera_write(self, addr, value):
         s.do_camera_spi(self.nCS_pin, self.MISO_pin, int_to_list(addr, 9) + [1] + int_to_list(value, 16), read=False)
 
-
-c1 = Camera(1, 3, 32*1024*1024)
-c2 = Camera(0, 2, 0*1024*1024)
+c1 = Camera('C1', 1, 3, 32*1024*1024, 1)
+c2 = Camera('C2', 0, 2, 0*1024*1024, 5)
 
 """
     if i == 1000:
