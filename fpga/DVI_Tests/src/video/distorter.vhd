@@ -171,9 +171,9 @@ begin
                 data_out.green <= x"10";
                 data_out.blue <= x"10";
             else
-                data_out.red   <= std_logic_vector(to_unsigned(samples_1((center_1.x mod 8)/2*2+1, (center_1.y mod 8)/2*2+0)/4, data_out.red'length));
-                data_out.green <= std_logic_vector(to_unsigned(samples_1((center_1.x mod 8)/2*2+0, (center_1.y mod 8)/2*2+0)/4, data_out.green'length)); -- 0 0 or 1 1
-                data_out.blue  <= std_logic_vector(to_unsigned(samples_1((center_1.x mod 8)/2*2+0, (center_1.y mod 8)/2*2+1)/4, data_out.blue'length));
+                data_out.red   <= std_logic_vector(to_unsigned(samples_1((center_1.x mod 8)/2*2+0, (center_1.y mod 8)/2*2+0)/4, data_out.red'length));
+                data_out.green <= std_logic_vector(to_unsigned(samples_1((center_1.x mod 8)/2*2+1, (center_1.y mod 8)/2*2+0)/4, data_out.green'length));
+                data_out.blue  <= std_logic_vector(to_unsigned(samples_1((center_1.x mod 8)/2*2+1, (center_1.y mod 8)/2*2+1)/4, data_out.blue'length));
             end if;
             center_1 := center_2;
             center_2 := center_3;

@@ -175,7 +175,7 @@ begin
             write_reset  => reset,
             write_enable => not ram1_out.rd.empty,
             write_full   => fifo_write_full,
-            write_data   => ram1_out.rd.data(29 downto 0),
+            write_data   => ram1_out.rd.data(9 downto 0) & ram1_out.rd.data(19 downto 10) & ram1_out.rd.data(29 downto 20),
             
             read_clock  => sync.pixel_clk,
             read_reset  => reset,
@@ -188,7 +188,7 @@ begin
     U_ENCODER : for i in 0 to 3 generate
         ENCODER : encode_10to9
             port map(input  => fifo_read_data(10*i+9 downto 10*i),
-                     output => encoder_9bit(i));
+                     output => encoder_9bit(3-i));
     end generate;
     
     process (sync, fifo_read_empty, h_cnt, v_cnt, pos_buf, reset, encoder_9bit) is
