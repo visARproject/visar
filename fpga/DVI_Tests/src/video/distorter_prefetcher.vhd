@@ -36,7 +36,7 @@ architecture arc of video_distorter_prefetcher is
     signal table_decoder_en : std_logic;
     signal table_decoder_command : PrefetcherCommand;
     
-    constant BURST_SIZE_WORDS : positive := 8;
+    constant BURST_SIZE_WORDS : positive := 16; -- has to be a multiple of 4
     
     constant BUF_SIZE : positive := 32;
     type CoordinateBuf is array (0 to BUF_SIZE-1) of CameraCoordinate;

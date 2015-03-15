@@ -92,7 +92,7 @@ for y in xrange(constants.V_MAX):
 
 # generate initial schedule with every event happening at latest possible time
 
-READ_LENGTH = 24
+READ_LENGTH = 3*16
 BEFORENESS = 1000
 
 res = [] # pairs of (time, pos)
@@ -120,7 +120,7 @@ for y in xrange(constants.V_MAX):
 
 # push events back to ensure minimum spacing
 
-SPACING = 10
+SPACING = 20
 res2 = list(res)
 last_time = 1e99
 for i in reversed(xrange(len(res2))):
