@@ -142,11 +142,13 @@ begin
             READ_WIDTH => 9)
         port map (
             write_clock  => clock,
+            write_reset  => reset_synchronized,
             write_enable => fifo_write_enable,
             write_data   => fifo_write_data,
             write_full   => fifo_write_full,
             
             read_clock => clock_ethernet,
+            read_reset => reset_synchronized,
             read_enable => data_out.tx_rd,
             read_data => fifo_read_data,
             read_empty => open);
