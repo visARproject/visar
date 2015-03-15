@@ -38,8 +38,8 @@ NET "led<3>" LOC = "L14" | IOSTANDARD = LVCMOS33; # Bank = 1, Pin name = IO_L61P
 NET "led<4>" LOC = "M13" | IOSTANDARD = LVCMOS33; # Bank = 1, Pin name = IO_L61N,                        Sch name = LD4
 NET "led<5>" LOC = "D4"  | IOSTANDARD = LVCMOS33;  # Bank = 0, Pin name = IO_L1P_HSWAPEN_0,       Sch name = HSWAP/LD5
 NET "led<6>" LOC = "P16" | IOSTANDARD = LVCMOS33; # Bank = 1, Pin name = IO_L74N_DOUT_BUSY_1, Sch name = LD6
-# warning! next pin is shorted to VCC when JP11 is installed, so avoid using it
-#NET "led<7>" LOC = "N12" | IOSTANDARD = LVCMOS33; # Bank = 2, Pin name = IO_L13P_M1_2,                   Sch name = M1/LD7
+# warning! next pin is shorted to VCC when JP11 is installed, so avoid driving it low
+NET "led<7>" LOC = "N12" | IOSTANDARD = LVCMOS33; # Bank = 2, Pin name = IO_L13P_M1_2,                   Sch name = M1/LD7
 
 
 NET "uart_tx" LOC = "B16" | IOSTANDARD = LVCMOS33;
