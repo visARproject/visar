@@ -202,10 +202,13 @@ class Camera(object):
 
 
         self.camera_write(192, list_to_int(self.camera_read(192)) | 0b10) # enable rolling shutter
-        self.camera_write(198, 4095) # dummy lines
+        dummy = 1041 # 60 Hz
+        self.camera_write(198, dummy) # dummy lines
         self.camera_write(160, 0x0011) # enable AEC
-        self.camera_write(170, 0xffff) # enable AEC max exposure (note relation to dummy lines)
+        self.camera_write(170, dummy) # enable AEC max exposure (note relation to dummy lines)
         self.camera_write(171, 0b1111111111111101) # enable AEC max gain
+        #self.camera_write(193, 0xffff) # dummy pixels
+        #self.camera_write(192, list_to_int(self.camera_read(192)) | 0b100000) # enable dummy pixels 2
 
         # ENABLE SEQUENCER REGISTER UPLOAD
         self.camera_write(192, list_to_int(self.camera_read(192)) | 0b1)
