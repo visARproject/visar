@@ -24,7 +24,23 @@ NET "rx_tmdsb(1)" LOC = "L18" | IOSTANDARD = TMDS_33;
 NET "rx_tmds(0)"  LOC = "K17" | IOSTANDARD = TMDS_33; # Blue 
 NET "rx_tmdsb(0)" LOC = "K18" | IOSTANDARD = TMDS_33;
 
+
+NET "BTNU" LOC = "N4" | IOSTANDARD = LVCMOS33;  # Bank = 3, Pin name = IO_L1P,       Sch name = BTNU
+NET "BTNL" LOC = "P4" | IOSTANDARD = LVCMOS33;  # Bank = 3, Pin name = IO_L2P,       Sch name = BTNL
+NET "BTND" LOC = "P3" | IOSTANDARD = LVCMOS33;  # Bank = 3, Pin name = IO_L2N,       Sch name = BTND
+NET "BTNR" LOC = "F6" | IOSTANDARD = LVCMOS33;  # Bank = 3, Pin name = IO_L55P_M3A13,    Sch name = BTNR
+NET "BTNC" LOC = "F5" | IOSTANDARD = LVCMOS33;  # Bank = 3, Pin name = IO_L55N_M3A14,    Sch name = BTNC
+
 NET "led<0>" LOC = "U18" | IOSTANDARD = LVCMOS33; # Bank = 1, Pin name = IO_L52N_M1DQ15,     Sch name = LD0
+NET "led<1>" LOC = "M14" | IOSTANDARD = LVCMOS33; # Bank = 1, Pin name = IO_L53P,                        Sch name = LD1
+NET "led<2>" LOC = "N14" | IOSTANDARD = LVCMOS33; # Bank = 1, Pin name = IO_L53N_VREF,           Sch name = LD2
+NET "led<3>" LOC = "L14" | IOSTANDARD = LVCMOS33; # Bank = 1, Pin name = IO_L61P,                        Sch name = LD3
+NET "led<4>" LOC = "M13" | IOSTANDARD = LVCMOS33; # Bank = 1, Pin name = IO_L61N,                        Sch name = LD4
+NET "led<5>" LOC = "D4"  | IOSTANDARD = LVCMOS33;  # Bank = 0, Pin name = IO_L1P_HSWAPEN_0,       Sch name = HSWAP/LD5
+NET "led<6>" LOC = "P16" | IOSTANDARD = LVCMOS33; # Bank = 1, Pin name = IO_L74N_DOUT_BUSY_1, Sch name = LD6
+# warning! next pin is shorted to VCC when JP11 is installed, so avoid using it
+#NET "led<7>" LOC = "N12" | IOSTANDARD = LVCMOS33; # Bank = 2, Pin name = IO_L13P_M1_2,                   Sch name = M1/LD7
+
 
 NET "uart_tx" LOC = "B16" | IOSTANDARD = LVCMOS33;
 NET "uart_rx" LOC = "A16" | IOSTANDARD = LVCMOS33;

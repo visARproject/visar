@@ -23,7 +23,9 @@ entity toplevel is
         rx_tmdsb : in std_logic_vector(3 downto 0);
         rx_sda : inout std_logic;
         rx_scl : inout std_logic;
-        led : out std_logic_vector(0 downto 0);
+        
+        led : out std_logic_vector(6 downto 0);
+        BTNU, BTNL, BTND, BTNR, BTNC : in std_logic;
 
         -- Camera interfaces
         left_camera_out  : out camera_out;
@@ -380,6 +382,31 @@ begin
         ram_wr_out => c3_p1_wronly_out);
 
     led(0) <= c3_calib_done;
+    process (BTNU, BTND, c3_p0_out, c3_p0_in, c3_p1_out, c3_p1_in, c3_p2_out, c3_p3_in, c3_p3_out, c3_p3_in, c3_p4_out, c3_p4_in, c3_p5_out, c3_p5_in) is
+    begin
+        if BTNU = '1' then
+            led(1) <= c3_p0_out.wr.error or c3_p0_out.rd.error;
+            led(2) <= c3_p1_out.wr.error or c3_p1_out.rd.error;
+            led(3) <= c3_p2_out.rd.error;
+            led(4) <= c3_p3_out.rd.error;
+            led(5) <= c3_p4_out.rd.error;
+            led(6) <= c3_p5_out.wr.error;
+        elsif BTND = '1' then
+            led(1) <= c3_p0_out.wr.underrun or c3_p0_out.rd.overflow;
+            led(2) <= c3_p1_out.wr.underrun or c3_p1_out.rd.overflow;
+            led(3) <= c3_p2_out.rd.overflow;
+            led(4) <= c3_p3_out.rd.overflow;
+            led(5) <= c3_p4_out.rd.overflow;
+            led(6) <= c3_p5_out.wr.underrun;
+        else
+            led(1) <= (c3_p0_in.wr.en and c3_p0_out.wr.full) or (c3_p0_in.rd.en and c3_p0_out.rd.empty);
+            led(2) <= (c3_p1_in.wr.en and c3_p1_out.wr.full) or (c3_p1_in.rd.en and c3_p1_out.rd.empty);
+            led(3) <= c3_p2_in.rd.en and c3_p2_out.rd.empty;
+            led(4) <= c3_p3_in.rd.en and c3_p3_out.rd.empty;
+            led(5) <= c3_p4_in.rd.en and c3_p4_out.rd.empty;
+            led(6) <= c3_p5_in.wr.en and c3_p5_out.wr.full;
+        end if;
+    end process;
 
 
     U_DUMMY_SYNC_GEN : entity work.video_sync_recovery port map (
