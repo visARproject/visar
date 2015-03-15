@@ -672,7 +672,6 @@ class IntelHex(object):
                     bin[3] = 0          # rectype
                     try:    # if there is small holes we'll catch them
                         for i in range_g(chain_len):
-                            print i, cur_addr, bin
                             bin[4+i] = self._buf[cur_addr+i]
                     except KeyError:
                         # we catch a hole so we should shrink the chain
