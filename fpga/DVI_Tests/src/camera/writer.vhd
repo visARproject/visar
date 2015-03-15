@@ -24,6 +24,7 @@ begin
         variable last_pixel1, last_pixel2 : unsigned(9 downto 0);
         variable dest : integer range 0 to 32*1024*1024-1 := 0;
         variable dest2 : integer range 0 to 32*1024*1024-1 := 0;
+        variable bad_write : boolean;
     begin
         ram_in.cmd.clk <= camera_output.clock;
         ram_in.wr.clk <= camera_output.clock;
@@ -42,29 +43,35 @@ begin
                 if state = 0 then
                     state := 1;
                     if camera_output.last_column = '1' then
-                        if ram_out.wr.full = '0' then
+                        if ram_out.wr.full = '0' and not bad_write then
                             ram_in.wr.en <= '1';
                             ram_in.wr.mask <= (others => '0');
                             ram_in.wr.data <= "00" & "1111111111" & std_logic_vector(camera_output.pixel2) & std_logic_vector(camera_output.pixel1);
                             words_committed := words_committed + 1;
+                        else
+                            bad_write := true;
                         end if;
                         words_committed_ideal := words_committed_ideal + 1;
                     end if;
                 elsif state = 1 then
-                    if ram_out.wr.full = '0' then
+                    if ram_out.wr.full = '0' and not bad_write then
                         ram_in.wr.en <= '1';
                         ram_in.wr.mask <= (others => '0');
                         ram_in.wr.data <= "00" & std_logic_vector(camera_output.pixel1) & std_logic_vector(last_pixel2) & std_logic_vector(last_pixel1);
                         words_committed := words_committed + 1;
+                    else
+                        bad_write := true;
                     end if;
                     words_committed_ideal := words_committed_ideal + 1;
                     state := 2;
                 else
-                    if ram_out.wr.full = '0' then
+                    if ram_out.wr.full = '0' and not bad_write then
                         ram_in.wr.en <= '1';
                         ram_in.wr.mask <= (others => '0');
                         ram_in.wr.data <= "00" & std_logic_vector(camera_output.pixel2) & std_logic_vector(camera_output.pixel1) & std_logic_vector(last_pixel2);
                         words_committed := words_committed + 1;
+                    else
+                        bad_write := true;
                     end if;
                     words_committed_ideal := words_committed_ideal + 1;
                     state := 0;
@@ -76,14 +83,17 @@ begin
                 last_pixel2 := camera_output.pixel2;
                 
                 if words_committed_ideal = BURST_LENGTH or camera_output.last_column = '1' then
-                    ram_in.cmd.en <= '1';
-                    ram_in.cmd.instr <= WRITE_PRECHARGE_COMMAND;
-                    ram_in.cmd.bl <= std_logic_vector(to_unsigned(words_committed-1, ram_in.cmd.bl'length));
-                    ram_in.cmd.byte_addr <= std_logic_vector(to_unsigned(BUFFER_ADDRESS + dest2, ram_in.cmd.byte_addr'length));
+                    if words_committed /= 0 then
+                        ram_in.cmd.en <= '1';
+                        ram_in.cmd.instr <= WRITE_PRECHARGE_COMMAND;
+                        ram_in.cmd.bl <= std_logic_vector(to_unsigned(words_committed-1, ram_in.cmd.bl'length));
+                        ram_in.cmd.byte_addr <= std_logic_vector(to_unsigned(BUFFER_ADDRESS + dest2, ram_in.cmd.byte_addr'length));
+                    end if;
                     
                     dest2 := dest2 + 4 * words_committed_ideal;
                     words_committed := 0;
                     words_committed_ideal := 0;
+                    bad_write := false;
                 end if;
                 
                 if camera_output.last_column = '1' then
