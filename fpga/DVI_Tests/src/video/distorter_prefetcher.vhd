@@ -176,7 +176,7 @@ begin
             read_enable => fifo_read_enable,
             read_data   => fifo_read_data,
             read_empty  => fifo_read_empty);
-    ram1_in.rd.en <= not fifo_write_full;
+    ram1_in.rd.en <= not fifo_write_full and not ram1_out.rd.empty;
     
     -- 10 bit to 9 bit encoder
     U_ENCODER : for i in 0 to 3 generate

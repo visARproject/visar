@@ -52,7 +52,7 @@ begin
             next_fifo_count := 0;
             next_mem_pos := memory_location;
             
-            ram_in.rd.en <= '1'; -- empty read FIFO
+            ram_in.rd.en <= not ram_out.rd.empty; -- empty read FIFO
         else
             if en = '1' then
                 next_current_loaded := '0';
