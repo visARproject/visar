@@ -89,10 +89,11 @@ begin
             en     => table_decoder_en,
             output => table_decoder_command);
     
-    process (sync, h_cnt, v_cnt, reset, table_decoder_command) is
+    process (sync, h_cnt, v_cnt, reset, table_decoder_command, ram1_out) is
         variable pos_buf_write_pos, next_pos_buf_write_pos : integer range 0 to BUF_SIZE-1;
         variable delay_counter, next_delay_counter : DistorterDelay;
         variable command, next_command: PrefetcherCommand;
+        variable write_pos : boolean;
     begin
         ram1_in.cmd.clk <= sync.pixel_clk;
         
@@ -106,6 +107,7 @@ begin
         next_pos_buf_write_pos := pos_buf_write_pos;
         next_delay_counter := delay_counter;
         next_command := command;
+        write_pos := false;
         
         if reset = '1' then
             next_pos_buf_write_pos := 0;
@@ -121,31 +123,32 @@ begin
             else
                 -- execute command in command
                 next_delay_counter := 0;
-                if pos_buf_write_pos /= BUF_SIZE-1 then
-                    next_pos_buf_write_pos := pos_buf_write_pos + 1;
-                else
-                    next_pos_buf_write_pos := 0;
-                end if;
                 
-                ram1_in.cmd.en <= '1';
-                ram1_in.cmd.instr <= READ_PRECHARGE_COMMAND;
-                if command.pos.y < CAMERA_ROWS then
-                    ram1_in.cmd.byte_addr <= std_logic_vector(to_unsigned(
-                        LEFT_CAMERA_MEMORY_LOCATION + command.pos.y * CAMERA_STEP + command.pos.x*4
-                    , ram1_in.cmd.byte_addr'length));
-                else
-                    ram1_in.cmd.byte_addr <= std_logic_vector(to_unsigned(
-                        RIGHT_CAMERA_MEMORY_LOCATION + (command.pos.y - CAMERA_ROWS) * CAMERA_STEP + command.pos.x*4
-                    , ram1_in.cmd.byte_addr'length));
+                if ram1_out.cmd.full = '0' then
+                    if pos_buf_write_pos /= BUF_SIZE-1 then
+                        next_pos_buf_write_pos := pos_buf_write_pos + 1;
+                    else
+                        next_pos_buf_write_pos := 0;
+                    end if;
+                    
+                    ram1_in.cmd.en <= '1';
+                    ram1_in.cmd.instr <= READ_PRECHARGE_COMMAND;
+                    if command.pos.y < CAMERA_ROWS then
+                        ram1_in.cmd.byte_addr <= std_logic_vector(to_unsigned(
+                            LEFT_CAMERA_MEMORY_LOCATION + command.pos.y * CAMERA_STEP + command.pos.x*4
+                        , ram1_in.cmd.byte_addr'length));
+                    else
+                        ram1_in.cmd.byte_addr <= std_logic_vector(to_unsigned(
+                            RIGHT_CAMERA_MEMORY_LOCATION + (command.pos.y - CAMERA_ROWS) * CAMERA_STEP + command.pos.x*4
+                        , ram1_in.cmd.byte_addr'length));
+                    end if;
+                    ram1_in.cmd.bl <= std_logic_vector(to_unsigned(BURST_SIZE_WORDS - 1, ram1_in.cmd.bl'length));
+                    
+                    write_pos := true;
                 end if;
-                ram1_in.cmd.bl <= std_logic_vector(to_unsigned(BURST_SIZE_WORDS - 1, ram1_in.cmd.bl'length));
                 
                 table_decoder_en <= '1';
                 next_command := table_decoder_command;
-                
-                if rising_edge(sync.pixel_clk) then
-                    pos_buf(pos_buf_write_pos) <= command.pos;
-                end if;
             end if;
         end if;
         
@@ -153,6 +156,9 @@ begin
             pos_buf_write_pos := next_pos_buf_write_pos;
             delay_counter := next_delay_counter;
             command := next_command;
+            if write_pos then
+                pos_buf(pos_buf_write_pos) <= command.pos;
+            end if;
         end if;
     end process;
 
