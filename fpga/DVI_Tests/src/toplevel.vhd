@@ -374,6 +374,7 @@ begin
     
     U_C3_P1_SPLITTER : entity work.util_bidir_ram_port_splitter port map (
         clock => clk_camera_over_2,
+        reset => reset,
         ram_in => c3_p1_in,
         ram_out => c3_p1_out,
         ram_rd_in => c3_p1_rdonly_in,

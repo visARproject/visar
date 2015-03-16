@@ -7,6 +7,7 @@ use work.ram_port.all;
 entity util_bidir_ram_port_splitter is
     port (
         clock : std_logic; -- should be faster or as fast as cmd clocks
+        reset : std_logic; -- can be asynchronous
         
         ram_in  : out ram_bidir_port_in;
         ram_out : in  ram_bidir_port_out;
@@ -19,12 +20,19 @@ entity util_bidir_ram_port_splitter is
 end entity;
 
 architecture arc of util_bidir_ram_port_splitter is
+    signal reset_synchronized : std_logic;
+    
     constant COMMAND_WIDTH : natural := ram_port_cmd_in.instr'length + ram_port_cmd_in.bl'length + ram_port_cmd_in.byte_addr'length;
     
     signal rd_cmd_fifo_read_enable, wr_cmd_fifo_read_enable : std_logic;
     signal rd_cmd_fifo_read_data,   wr_cmd_fifo_read_data   : std_logic_vector(COMMAND_WIDTH-1 downto 0);
     signal rd_cmd_fifo_read_empty,  wr_cmd_fifo_read_empty  : std_logic;
 begin
+    U_RESET_GEN : entity work.reset_gen port map (
+        clock     => clock,
+        reset_in  => reset,
+        reset_out => reset_synchronized);
+    
     ram_in.rd <= ram_rd_in.rd;
     ram_rd_out.rd <= ram_out.rd;
     
@@ -39,11 +47,13 @@ begin
             READ_WIDTH => COMMAND_WIDTH)
         port map (
             write_clock => ram_rd_in.cmd.clk,
+            -- write_reset unnecessary since it would have no effect since WIDTH = WRITE_WIDTH
             write_enable => ram_rd_in.cmd.en,
             write_data => ram_rd_in.cmd.instr & ram_rd_in.cmd.bl & ram_rd_in.cmd.byte_addr,
             write_full => ram_rd_out.cmd.full,
             
             read_clock => clock,
+            read_reset => reset_synchronized,
             read_enable => rd_cmd_fifo_read_enable,
             read_data => rd_cmd_fifo_read_data,
             read_empty => rd_cmd_fifo_read_empty);
@@ -56,11 +66,13 @@ begin
             READ_WIDTH => COMMAND_WIDTH)
         port map (
             write_clock => ram_wr_in.cmd.clk,
+            -- write_reset unnecessary since it would have no effect since WIDTH = WRITE_WIDTH
             write_enable => ram_wr_in.cmd.en,
             write_data => ram_wr_in.cmd.instr & ram_wr_in.cmd.bl & ram_wr_in.cmd.byte_addr,
             write_full => ram_wr_out.cmd.full,
             
             read_clock => clock,
+            read_reset => reset_synchronized,
             read_enable => wr_cmd_fifo_read_enable,
             read_data => wr_cmd_fifo_read_data,
             read_empty => wr_cmd_fifo_read_empty);
