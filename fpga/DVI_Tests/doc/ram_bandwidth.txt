@@ -9,3 +9,11 @@ Read:
 Precacher commands (average): (136.5e6/1138/1933)*(1280*1024*2)/32*32/12.8e9 = 1%
 Image data (average): (136.5e6/1138/1933)*(1280*1024*2)*(32/3)/12.8e9 = 13%
 Distortion map: 136.5e6*(5*32)/33/12.8e9 = 5%
+Ethernet (max): 1e9/12.8e9 = 8%
+
+p0 uart-ram interface
+p1 left camera writer/ethernet reader
+p2 prefetcher image data
+p3 prefetcher commands
+p4 distortion map
+p5 right camera writer
