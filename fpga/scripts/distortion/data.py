@@ -9,16 +9,21 @@ import constants
 
 
 with open(sys.argv[1], 'rb') as f:
-    d = numpy.load(f)
+    d_orig = numpy.load(f)
+
+NONE, LEFT, RIGHT = xrange(3)
+
+d = numpy.zeros((constants.V_DISPLAY_END, constants.H_DISPLAY_END, 3, 3), dtype=numpy.int32)
+d[:,:,:,:2] = d_orig
+d[:,:,:,2] = numpy.where(numpy.logical_and(d_orig[:,:,:,0] == -1, d_orig[:,:,:,1] == -1), NONE, LEFT)
 
 # generate right side of map from flipped left side
 for x in xrange(1920//2, 1920):
     for y in xrange(1080):
         d[x, y] = d[1919-x, y]
         for COLOR in xrange(3):
-            if tuple(map(int, d[x, y][COLOR])) != (-1, -1):
-                d[x, y][COLOR][1] = constants.CAMERA_ROWS-1 - d[x, y][COLOR][1]
-                d[x, y][COLOR][1] = constants.CAMERA_ROWS + d[x, y][COLOR][1]
+            d[x, y][COLOR][1] = constants.CAMERA_ROWS-1 - d[x, y][COLOR][1]
+            d[x, y][COLOR][2] = {NONE: NONE, LEFT: RIGHT}[d[x, y][COLOR][2]]
 
 '''
 # swap cameras
@@ -29,11 +34,13 @@ for x in xrange(1920):
                 d[x, y][COLOR][1] = (d[x, y][COLOR][1] + constants.CAMERA_ROWS) % (constants.CAMERA_ROWS*2)
 '''
 
-# clear centermost 4 lines to allow opposite eye time to buffer
-for x in xrange(1920//2-2, 1920//2+2):
+CENTER_BLANK = 8
+assert CENTER_BLANK % 2 == 0
+# clear centermost CENTER_BLANK lines to allow opposite eye time to buffer
+for x in xrange(1920//2-CENTER_BLANK//2, 1920//2+CENTER_BLANK//2):
     for y in xrange(1080):
         for COLOR in xrange(3):
-            d[x, y][COLOR] = -1, -1
+            d[x, y][COLOR][2] = NONE
 
 SIZE = 33 # should be a power of 2 plus 1 so that interpolation is simple
 assert SIZE % 2 == 1
@@ -68,7 +75,7 @@ if 0:
 COLOR = 1
 
 # change coordinates to what interpolation would yield
-d2 = d.copy()
+d2 = numpy.zeros((constants.V_DISPLAY_END, constants.H_DISPLAY_END, 3, 3), dtype=numpy.int32)
 for y in xrange(constants.V_MAX):
     for x in xrange(0, constants.H_MAX, SIZE):
         ox = 1919-y
@@ -76,24 +83,29 @@ for y in xrange(constants.V_MAX):
         if not (0 <= ox < 1920 and 0 <= oy < 1080): continue
         
         src = tuple(map(int, d[ox, oy][COLOR]))
-        if src == (-1, -1): src = (0, 0)
+        
         try:
             src2 = tuple(map(int, d[ox, oy+SIZE-1][COLOR]))
-            if src2 == (-1, -1): src2 = (0, 0)
         except IndexError:
-            src2 = (0, 0)
+            src2 = (0, 0, 0)
         
+        if src[2] == NONE or src2[2] == NONE:
+            for i in xrange(SIZE):
+                if oy+i == constants.H_DISPLAY_END: break
+                d2[ox, oy+i] = 0, 0, 0
+            continue
+        
+        assert src[2] == src2[2]
         for i in xrange(SIZE):
-            
-            if src == (0, 0) or src2 == (0, 0): continue
-            interp = (src[0] * (SIZE-1) + (src2[0]-src[0])*i + 16)//(SIZE-1), (src[1] * (SIZE-1) + (src2[1]-src[1])*i+16)//(SIZE-1)
-            
-            d2[ox, oy+i] = interp
+            interp = (src[0] * (SIZE-1) + (src2[0]-src[0])*i + S)//(SIZE-1), (src[1] * (SIZE-1) + (src2[1]-src[1])*i+S)//(SIZE-1)
+            d2[ox, oy+i] = interp[0], interp[1], src[2]
 
 # generate initial schedule with every event happening at latest possible time
 
 READ_LENGTH = 3*16
 BEFORENESS = 1000
+X_REQUIRED_RANGE = -1, 2 # half open
+Y_REQUIRED_RANGE = -1, 2 # half open
 
 res = [] # pairs of (time, pos)
 present = set()
@@ -105,21 +117,25 @@ for y in xrange(constants.V_MAX):
         oy = x
         if not (0 <= ox < 1920 and 0 <= oy < 1080): continue
         
-        for dx in xrange(2):
-            for dy in xrange(2):
-                src = tuple(map(int, d2[ox, oy][COLOR]))
-                if src == (-1, -1): continue
-                src = src[0]//2*2 + dx, src[1]//2*2 + dy
+        src = tuple(map(int, d2[ox, oy][COLOR]))
+        if src[2] == NONE: continue
+        
+        for dx in xrange(*X_REQUIRED_RANGE):
+            for dy in xrange(*Y_REQUIRED_RANGE):
+                src2 = src[0] + dx, src[1] + dy, src[2]
+                if src2[0] < 0 or src2[0] >= constants.CAMERA_COLUMNS: continue
+                if src2[1] < 0 or src2[1] >= constants.CAMERA_ROWS: continue
                 
-                if src not in present:
-                    choice = src[0]-src[0]%READ_LENGTH, src[1]
+                if src2 not in present:
+                    choice = src2[0]-src2[0]%READ_LENGTH, src2[1], src2[2]
                     for i in xrange(READ_LENGTH):
-                        present.add((choice[0]+i, choice[1]))
+                        present.add((choice[0]+i, choice[1], choice[2]))
                     #print 'ack', t, choice, src
                     res.append((t-BEFORENESS, choice))
 
 # push events back to ensure minimum spacing
 
+assert READ_LENGTH % 3 == 0
 SPACING = 20
 res2 = list(res)
 last_time = 1e99
@@ -130,6 +146,7 @@ for i in reversed(xrange(len(res2))):
     last_time = t
 
 # print events
+print 'events:'
 
 for i, x in enumerate(res2):
     print i, x, x[0] - res2[max(0, i-1)][0]
@@ -150,26 +167,32 @@ for y in xrange(constants.V_MAX):
         ox = 1919-y
         oy = x
         if not (0 <= ox < 1920 and 0 <= oy < 1080): continue
+        
         src = tuple(map(int, d2[ox, oy][COLOR]))
-        if src == (-1, -1): continue
+        if src[2] == NONE: continue
         
         while res3 and t >= res3[-1][0]:
             load_pos = res3.pop()[1]
             for i in xrange(READ_LENGTH):
-                this = load_pos[0]+i, load_pos[1]
+                this = load_pos[0]+i, load_pos[1], load_pos[2]
                 present[this[0]][this[1]%BUFFER_THICKNESS] = this
         
-        if present[src[0]][src[1]%BUFFER_THICKNESS] != src:
-            print 'error at', (ox, oy), src, present[src[0]][src[1]%BUFFER_THICKNESS]
-            bad += 1
-        else:
-            good += 1
+        for dx in xrange(*X_REQUIRED_RANGE):
+            for dy in xrange(*Y_REQUIRED_RANGE):
+                src2 = src[0] + dx, src[1] + dy, src[2]
+                if src2[0] < 0 or src2[0] >= constants.CAMERA_COLUMNS: continue
+                if src2[1] < 0 or src2[1] >= constants.CAMERA_ROWS: continue
+                if present[src2[0]][src2[1]%BUFFER_THICKNESS] != src2:
+                    print 'error at', (ox, oy), src2, present[src2[0]][src2[1]%BUFFER_THICKNESS]
+                    bad += 1
+                else:
+                    good += 1
 print good, bad
 if bad: assert False
 
 # convert events to commands with repetitions to effect longer delays
 
-res4 = [(100, (0, 0))]
+res4 = [(100, (0, 0, RIGHT))]
 t = -5000 + 1+2**9-1 + sum(1+c[0] for c in res4) # time at end of last command
 for cmd_t, cmd_pos in res2:
     delay_required = cmd_t - t
@@ -209,7 +232,8 @@ def safediv(a, b):
 
 write_pos = constants.DISTORTER_PREFETCHER_TABLE_MEMORY_LOCATION
 for cmd_delay, cmd_pos in res4:
-    data = '{0:10b}{1:011b}{2:011b}'.format(cmd_delay, cmd_pos[1], safediv(cmd_pos[0], 3))
+    print cmd_pos
+    data = '{0:10b}{1:011b}{2:011b}'.format(cmd_delay, cmd_pos[1] + {LEFT: 0, RIGHT: constants.CAMERA_ROWS}[cmd_pos[2]], safediv(cmd_pos[0], 3))
     rp.write(write_pos, int(data, 2))
     write_pos += 4
 
@@ -227,37 +251,41 @@ for v_cnt in xrange(1920):
     for h_cnt in xrange(0, 1089, SIZE):
         x = 1919 - v_cnt
         y = h_cnt
+        
         src = tuple(map(int, d[x, y][COLOR]))
-        if src == (-1, -1): src = (0, 0)
+        
         try:
             src2 = tuple(map(int, d[x, y+(SIZE-1)][COLOR]))
-            if src2 == (-1, -1): src2 = (0, 0)
         except IndexError:
-            src2 = (0, 0)
+            src2 = 0, 0, 0
         
+        if src[2] == NONE or src2[2] == NONE:
+            csrc = csrc2 = 0, 0, 0
+        else:
+            assert src[2] == src2[2]
+            
+            print 'aa', src[2], src2[2]
+            
+            csrc  = src [0], src [1] + {LEFT: 0, RIGHT: constants.CAMERA_ROWS}[src [2]]
+            csrc2 = src2[0], src2[1] + {LEFT: 0, RIGHT: constants.CAMERA_ROWS}[src2[2]]
         
         data = '{lastbluey:011b}{lastbluex:012b}{lastgreeny:011b}{lastgreenx:012b}{lastredy:011b}{lastredx:012b}{firstbluey:011b}{firstbluex:012b}{firstgreeny:011b}{firstgreenx:012b}{firstredy:011b}{firstredx:012b}'.format(
-            lastbluey=0, lastbluex=0, lastgreeny=src2[1], lastgreenx=src2[0], lastredy=0, lastredx=0,
-            firstbluey=0, firstbluex=0, firstgreeny=src[1], firstgreenx=src[0], firstredy=0, firstredx=0)
+            lastbluey=0, lastbluex=0, lastgreeny=csrc2[1], lastgreenx=csrc2[0], lastredy=0, lastredx=0,
+            firstbluey=0, firstbluex=0, firstgreeny=csrc[1], firstgreenx=csrc[0], firstredy=0, firstredx=0)
         assert len(data) == 138
         data = '0'*(5*32-138) + data
         
-        if src != (0, 0) and src2 != (0, 0):
-            print src, src2, data
-            
-            for i in xrange(20):
-                print 'memory(%i) <= "%s";' % (1236+i, data[len(data)-i*8-8:len(data)-i*8])
+        if src[2] != NONE and src2[2] != NONE:
+            assert src[2] == src2[2]
+            #print src, src2, data
             
             for i in xrange(SIZE):
                 if h_cnt+i < 1080:
                     interp = (src[0] * (SIZE-1) + (src2[0]-src[0])*i + 16)//(SIZE-1), (src[1] * (SIZE-1) + (src2[1]-src[1])*i+16)//(SIZE-1)
-                    img = left
-                    if interp[1] >= constants.CAMERA_ROWS:
-                        interp = interp[0], interp[1] - constants.CAMERA_ROWS
-                        img = right
-                    test[y+i, x, 0] = left[interp[1]//2*2+0, interp[0]//2*2+0]
-                    test[y+i, x, 1] = left[interp[1]//2*2+0, interp[0]//2*2+1]
-                    test[y+i, x, 2] = left[interp[1]//2*2+1, interp[0]//2*2+1]
+                    img = {LEFT: left, RIGHT: right}[src[2]]
+                    test[y+i, x, 0] = img[interp[1]//2*2+0, interp[0]//2*2+0]
+                    test[y+i, x, 1] = img[interp[1]//2*2+0, interp[0]//2*2+1]
+                    test[y+i, x, 2] = img[interp[1]//2*2+1, interp[0]//2*2+1]
         
         for i in xrange(5):
             rp.write(write_pos, int(data[len(data)-i*32-32:len(data)-i*32], 2))

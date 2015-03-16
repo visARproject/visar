@@ -1,5 +1,6 @@
 library ieee;
 use ieee.std_logic_1164.all;
+use ieee.numeric_std.all;
 
 use work.camera.all;
 
@@ -48,6 +49,11 @@ package distorter_pkg is
         end case;
     end decode_9to10;
     
+    function linear10_to_sRGB(input : unsigned(9 downto 0)) return std_logic_vector is
+    begin
+        -- XXX make this actually do what it says it does
+        return std_logic_vector(resize(input/4, 8));
+    end;
 end distorter_pkg;
 
 package body distorter_pkg is
