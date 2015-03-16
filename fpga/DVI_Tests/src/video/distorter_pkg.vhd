@@ -1,6 +1,7 @@
 library ieee;
 use ieee.std_logic_1164.all;
 use ieee.numeric_std.all;
+use ieee.math_real.all;
 
 use work.camera.all;
 
@@ -49,10 +50,31 @@ package distorter_pkg is
         end case;
     end decode_9to10;
     
+    
+    type sRGBLookupType is array (0 to 2**10-1) of std_logic_vector(7 downto 0);
+    
+    function compute_sRGB_lookup return sRGBLookupType is
+        variable linear, sRGB : real;
+        variable result : sRGBLookupType;
+        constant a : real := 0.055;
+    begin
+        for i in sRGBLookupType'range loop
+            linear := real(i)/1023.0;
+            if linear <= 0.0031308 then
+                sRGB := 12.92 * linear;
+            else
+                sRGB := (1.0+a) * linear**(1.0/2.4) - a;
+            end if;
+            result(i) := std_logic_vector(to_unsigned(integer(round(255.0*sRGB)), 8));
+        end loop;
+        return result;
+    end compute_sRGB_lookup;
+    
+    constant sRGB_lookup : sRGBLookupType := compute_sRGB_lookup;
+    
     function linear10_to_sRGB(input : unsigned(9 downto 0)) return std_logic_vector is
     begin
-        -- XXX make this actually do what it says it does
-        return std_logic_vector(resize(input/4, 8));
+        return sRGB_lookup(to_integer(input));
     end;
 end distorter_pkg;
 
