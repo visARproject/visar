@@ -200,7 +200,25 @@ class Camera(object):
         self.camera_write( 48, 0x0001)
         self.camera_write(112, 0x0007)
 
-
+        if False: # create black frame
+            self.camera_write(219, 0x3E3E)
+            self.camera_write(220, 0x6767)
+        
+        if False: # create grey frame
+            self.camera_write(219, 0x3E2D)
+            self.camera_write(220, 0x674F)
+            self.camera_write(429, 0x0100)
+            self.camera_write(430, 0x0B55)
+            self.camera_write(431, 0x0351)
+            self.camera_write(433, 0x2142)
+            self.camera_write(434, 0x2142)
+            self.camera_write(444, 0x0100)
+            self.camera_write(463, 0x0100)
+            self.camera_write(464, 0x0FE4)
+            self.camera_write(465, 0x0BE2)
+            self.camera_write(475, 0x2142)
+            self.camera_write(476, 0x2142)
+        
         self.camera_write(192, list_to_int(self.camera_read(192)) | 0b10) # enable rolling shutter
         dummy = 1041 # 60 Hz
         self.camera_write(198, dummy) # dummy lines
