@@ -373,7 +373,7 @@ begin
         c3_p5_wr_error      => c3_p5_out.wr.error);
     
     U_C3_P1_SPLITTER : entity work.util_bidir_ram_port_splitter port map (
-        clock => clk_camera_over_2,
+        clock => clk_ethernet,
         reset => reset,
         ram_in => c3_p1_in,
         ram_out => c3_p1_out,

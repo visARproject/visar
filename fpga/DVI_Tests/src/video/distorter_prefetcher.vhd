@@ -253,15 +253,15 @@ begin
             number_read := next_number_read;
             for x in 0 to 7 loop
                 for y in 0 to 7 loop
-                    next_bram_ins(x, y).en   := next_next_bram_ins(x, y).en;
-                    next_bram_ins(x, y).di   := next_next_bram_ins(x, y).di;
-                    next_bram_ins(x, y).dip  := next_next_bram_ins(x, y).dip;
-                    next_bram_ins(x, y).addr := next_next_bram_ins(x, y).addr;
-                    
                     bram_ins(x, y).en   <= next_bram_ins(x, y).en;
                     bram_ins(x, y).di   <= next_bram_ins(x, y).di;
                     bram_ins(x, y).dip  <= next_bram_ins(x, y).dip;
                     bram_ins(x, y).addr <= next_bram_ins(x, y).addr;
+                    
+                    next_bram_ins(x, y).en   := next_next_bram_ins(x, y).en;
+                    next_bram_ins(x, y).di   := next_next_bram_ins(x, y).di;
+                    next_bram_ins(x, y).dip  := next_next_bram_ins(x, y).dip;
+                    next_bram_ins(x, y).addr := next_next_bram_ins(x, y).addr;
                 end loop;
             end loop;
         end if;
