@@ -87,19 +87,28 @@ begin
         DEBUG_OUT => open);
     
     process (deserializer_clock) is
-        variable sync_buf : unsigned(18 downto 0);
-        type DataBufArray is array (0 to 3) of unsigned(18 downto 0);
+        variable sync_buf : unsigned(27 downto 0);
+        type DataBufArray is array (0 to 3) of unsigned(27 downto 0);
         variable data_buf : DataBufArray;
+        
+        variable sync_buf2 : unsigned(18 downto 0);
+        type DataBuf2Array is array (0 to 3) of unsigned(18 downto 0);
+        variable data_buf2 : DataBuf2Array;
     begin
         if rising_edge(deserializer_clock) then
-            sync_maybe_inv <= sync_buf(bitslip_sync+9 downto bitslip_sync);
+            sync_maybe_inv <= sync_buf2(14 downto 5);
             for j in 0 to 3 loop
-                data_maybe_inv(j) <= data_buf(j)(bitslip_data(j)+9 downto bitslip_data(j));
+                data_maybe_inv(j) <= data_buf2(j)(bitslip_data(j)+9 downto bitslip_data(j));
             end loop;
             
-            sync_buf(18 downto 5) := sync_buf(13 downto 0);
+            sync_buf2 := sync_buf(bitslip_sync+18 downto bitslip_sync);
             for j in 0 to 3 loop
-                data_buf(j)(18 downto 5) := data_buf(j)(13 downto 0);
+                data_buf2(j) := data_buf(j)(bitslip_sync+18 downto bitslip_sync);
+            end loop;
+            
+            sync_buf(sync_buf'high downto 5) := sync_buf(sync_buf'high-5 downto 0);
+            for j in 0 to 3 loop
+                data_buf(j)(data_buf(j)'high downto 5) := data_buf(j)(data_buf(j)'high-5 downto 0);
             end loop;
             -- fill sync_buf and data_buf with deserializer_out
             for i in 0 to 4 loop
@@ -113,7 +122,7 @@ begin
     
     output.clock <= deserializer_clock;
     process (deserializer_clock) is
-        variable bitslip_countdown : integer range 0 to 1000;
+        variable bitslip_countdown : integer range 0 to 5;
         variable odd : boolean;
         variable sync : unsigned(9 downto 0);
         variable data : DataArray;
@@ -262,7 +271,7 @@ begin
                                 else
                                     bitslip_data(i) <= 0;
                                 end if;
-                                bitslip_countdown := 1000;
+                                bitslip_countdown := 5;
                             end if;
                         end if;
                     end loop;
@@ -273,7 +282,7 @@ begin
                         else
                             bitslip_sync <= 0;
                         end if;
-                        bitslip_countdown := 1000;
+                        bitslip_countdown := 5;
                     end if;
                 end if;
                 
