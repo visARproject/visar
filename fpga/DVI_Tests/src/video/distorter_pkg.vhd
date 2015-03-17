@@ -36,19 +36,32 @@ package distorter_pkg is
         pos   : CameraCoordinate; -- .x is real x / 3
     end record;
     
-    function decode_9to10(input : std_logic_vector(8 downto 0)) return std_logic_vector is
+    function decode_9to10(input : std_logic_vector(8 downto 0)) return unsigned is
     begin
         case input(8 downto 7) is
             when "00" =>
-                return "000" & input(6 downto 0);
+                return unsigned("000" & input(6 downto 0));
             when "01" =>
-                return "001" & input(6 downto 0) ;
+                return unsigned("001" & input(6 downto 0));
             when "10" =>
-                return "01" & input(6 downto 0) & "1";
+                return unsigned("01" & input(6 downto 0) & "1");
             when others =>
-                return "1" & input(6 downto 0) & "11";
+                return unsigned("1" & input(6 downto 0) & "11");
         end case;
     end decode_9to10;
+    
+    function encode_10to9(input : unsigned(9 downto 0)) return std_logic_vector is
+    begin
+        if input(9) = '1' then
+            return "11" & std_logic_vector(input(8 downto 2));
+        elsif input(8) = '1' then
+            return "10" & std_logic_vector(input(7 downto 1));
+        elsif input(7) = '1' then
+            return "01" & std_logic_vector(input(6 downto 0));
+        else
+            return "00" & std_logic_vector(input(6 downto 0));
+        end if;
+    end encode_10to9;
     
     
     type sRGBLookupType is array (0 to 2**10-1) of std_logic_vector(7 downto 0);

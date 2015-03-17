@@ -46,17 +46,6 @@ architecture arc of video_distorter_prefetcher is
     signal fifo_read_enable : std_logic;
     signal fifo_read_data   : std_logic_vector(39 downto 0);
     signal fifo_read_empty  : std_logic;
-    
-    component encode_10to9
-        port(input  : in  std_logic_vector(9 downto 0);
-             output : out std_logic_vector(8 downto 0));
-    end component encode_10to9;
-
-    type Encoder10Array is array (0 to 3) of std_logic_vector(9 downto 0);
-    type Encoder9Array is array (0 to 3) of std_logic_vector(8 downto 0);
-    signal encoder_10bit : Encoder10Array;
-    signal encoder_9bit : Encoder9Array;
-
 begin
     u_counter : entity work.video_counter
         generic map (
@@ -184,19 +173,14 @@ begin
             read_empty  => fifo_read_empty);
     ram1_in.rd.en <= not fifo_write_full and not ram1_out.rd.empty;
     
-    -- 10 bit to 9 bit encoder
-    U_ENCODER : for i in 0 to 3 generate
-        ENCODER : encode_10to9
-            port map(input  => fifo_read_data(10*i+9 downto 10*i),
-                     output => encoder_9bit(3-i));
-    end generate;
     
-    process (sync, fifo_read_empty, h_cnt, v_cnt, pos_buf, reset, encoder_9bit) is
+    process (sync, fifo_read_data, fifo_read_empty, h_cnt, v_cnt, pos_buf, reset) is
         variable pos_buf_read_pos, next_pos_buf_read_pos : integer range 0 to BUF_SIZE-1;
         variable number_read, next_number_read : integer range 0 to BURST_SIZE_WORDS*3/4-1;
         variable command : CameraCoordinate;
         variable p : CameraCoordinate;
         variable next_bram_ins, next_next_bram_ins : BRAMInArray;
+        variable encoded : std_logic_vector(8 downto 0);
     begin
         ram1_in.rd.clk <= sync.pixel_clk;
         
@@ -226,12 +210,13 @@ begin
             for i in 0 to 3 loop
                 p.x := command.x/8*8 + command.x/8*8*2 + number_read * 4 + i;
                 p.y := command.y;
+                encoded := encode_10to9(unsigned(fifo_read_data(10*(3-i)+9 downto 10*(3-i))));
                 next_next_bram_ins(p.x mod 8, p.y mod 8).en := '1';
-                next_next_bram_ins(p.x mod 8, p.y mod 8).di := "------------------------" & encoder_9bit(i)(7 downto 0);
+                next_next_bram_ins(p.x mod 8, p.y mod 8).di := "------------------------" & encoded(7 downto 0);
                 next_next_bram_ins(p.x mod 8, p.y mod 8).addr(13 downto 3) := std_logic_vector(to_unsigned(
                     256*((p.y/8) mod 8) + p.x/8
                 , next_next_bram_ins(p.x mod 8, p.y mod 8).addr(13 downto 3)'length));
-                next_next_bram_ins(p.x mod 8, p.y mod 8).dip := "---" & encoder_9bit(i)(8);
+                next_next_bram_ins(p.x mod 8, p.y mod 8).dip := "---" & encoded(8);
                 next_next_bram_ins(p.x mod 8, p.y mod 8).addr(2 downto 0) := (others => '-');
             end loop;
             fifo_read_enable <= '1';
