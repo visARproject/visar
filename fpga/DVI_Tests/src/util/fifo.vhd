@@ -53,17 +53,12 @@ begin
             end if;
             write_position <= new_write_position;
             write_position_gray <= binary_to_gray(new_write_position);
+            write_full_s <= '0';
+            if read_position_gray_write_synchronized = binary_to_gray(new_write_position + DEPTH) then
+                write_full_s <= '1';
+            end if;
         end if;
     end process;
-    
-    process (read_position_gray_write_synchronized, write_position) is
-    begin
-        write_full_s <= '0';
-        if read_position_gray_write_synchronized = binary_to_gray(write_position + DEPTH) then
-            write_full_s <= '1';
-        end if;
-    end process;
-    
     write_full <= write_full_s;
     
     
@@ -84,16 +79,11 @@ begin
             end if;
             read_position <= new_read_position;
             read_position_gray <= binary_to_gray(new_read_position);
+            read_empty_s <= '0';
+            if write_position_gray_read_synchronized = binary_to_gray(new_read_position) then
+                read_empty_s <= '1';
+            end if;
         end if;
     end process;
-    
-    process (write_position_gray_read_synchronized, read_position) is
-    begin
-        read_empty_s <= '0';
-        if write_position_gray_read_synchronized = binary_to_gray(read_position) then
-            read_empty_s <= '1';
-        end if;
-    end process;
-    
     read_empty <= read_empty_s;
 end architecture;
