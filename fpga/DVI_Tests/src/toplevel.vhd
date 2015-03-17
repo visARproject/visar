@@ -386,31 +386,6 @@ begin
         variable violation, errors, overflowunderrun, usage : std_logic_vector(7 downto 0);
         variable led_tmp : std_logic_vector(7 downto 0);
     begin
-        if BTNU = '1' then
-            led_tmp := violation;
-        elsif BTND = '1' then
-            led_tmp := overflowunderrun;
-        elsif BTNC = '1' then
-            led_tmp := errors;
-        else
-            led_tmp := usage;
-        end if;
-        led(6 downto 0) <= led_tmp(6 downto 0);
-        if led_tmp(7) = '1' then -- make sure not to drive led(7) low because JP11 can short it to VCC
-            led(7) <= '1';
-        else
-            led(7) <= 'Z';
-        end if;
-        
-        if reset = '1' then violation(0) := '0'; elsif rising_edge(c3_p0_in.wr.clk) then if (c3_p0_in.wr.en and c3_p0_out.wr.full ) = '1' then violation(0) := '1'; end if; end if;
-        if reset = '1' then violation(1) := '0'; elsif rising_edge(c3_p0_in.rd.clk) then if (c3_p0_in.rd.en and c3_p0_out.rd.empty) = '1' then violation(1) := '1'; end if; end if;
-        if reset = '1' then violation(2) := '0'; elsif rising_edge(c3_p1_in.wr.clk) then if (c3_p1_in.wr.en and c3_p1_out.wr.full ) = '1' then violation(2) := '1'; end if; end if;
-        if reset = '1' then violation(3) := '0'; elsif rising_edge(c3_p1_in.rd.clk) then if (c3_p1_in.rd.en and c3_p1_out.rd.empty) = '1' then violation(3) := '1'; end if; end if;
-        if reset = '1' then violation(4) := '0'; elsif rising_edge(c3_p2_in.rd.clk) then if (c3_p2_in.rd.en and c3_p2_out.rd.empty) = '1' then violation(4) := '1'; end if; end if;
-        if reset = '1' then violation(5) := '0'; elsif rising_edge(c3_p3_in.rd.clk) then if (c3_p3_in.rd.en and c3_p3_out.rd.empty) = '1' then violation(5) := '1'; end if; end if;
-        if reset = '1' then violation(6) := '0'; elsif rising_edge(c3_p4_in.rd.clk) then if (c3_p4_in.rd.en and c3_p4_out.rd.empty) = '1' then violation(6) := '1'; end if; end if;
-        if reset = '1' then violation(7) := '0'; elsif rising_edge(c3_p5_in.wr.clk) then if (c3_p5_in.wr.en and c3_p5_out.wr.full ) = '1' then violation(7) := '1'; end if; end if;
-        
         errors(0) := c3_p0_out.wr.error;
         errors(1) := c3_p0_out.rd.error;
         errors(2) := c3_p1_out.wr.error;
@@ -429,6 +404,22 @@ begin
         overflowunderrun(6) := c3_p4_out.rd.overflow;
         overflowunderrun(7) := c3_p5_out.wr.underrun;
         
+        if BTNU = '1' then
+            led_tmp := violation;
+        elsif BTND = '1' then
+            led_tmp := overflowunderrun;
+        elsif BTNC = '1' then
+            led_tmp := errors;
+        else
+            led_tmp := usage;
+        end if;
+        led(6 downto 0) <= led_tmp(6 downto 0);
+        if led_tmp(7) = '1' then -- make sure not to drive led(7) low because JP11 can short it to VCC
+            led(7) <= '1';
+        else
+            led(7) <= 'Z';
+        end if;
+        
         if rising_edge(c3_p0_in.wr.clk) then usage(0) := c3_p0_in.wr.en; end if;
         if rising_edge(c3_p0_in.rd.clk) then usage(1) := c3_p0_in.rd.en; end if;
         if rising_edge(c3_p1_in.wr.clk) then usage(2) := c3_p1_in.wr.en; end if;
@@ -437,6 +428,15 @@ begin
         if rising_edge(c3_p3_in.rd.clk) then usage(5) := c3_p3_in.rd.en; end if;
         if rising_edge(c3_p4_in.rd.clk) then usage(6) := c3_p4_in.rd.en; end if;
         if rising_edge(c3_p5_in.wr.clk) then usage(7) := c3_p5_in.wr.en; end if;
+        
+        if reset = '1' then violation(0) := '0'; elsif rising_edge(c3_p0_in.wr.clk) then if (c3_p0_in.wr.en and c3_p0_out.wr.full ) = '1' then violation(0) := '1'; end if; end if;
+        if reset = '1' then violation(1) := '0'; elsif rising_edge(c3_p0_in.rd.clk) then if (c3_p0_in.rd.en and c3_p0_out.rd.empty) = '1' then violation(1) := '1'; end if; end if;
+        if reset = '1' then violation(2) := '0'; elsif rising_edge(c3_p1_in.wr.clk) then if (c3_p1_in.wr.en and c3_p1_out.wr.full ) = '1' then violation(2) := '1'; end if; end if;
+        if reset = '1' then violation(3) := '0'; elsif rising_edge(c3_p1_in.rd.clk) then if (c3_p1_in.rd.en and c3_p1_out.rd.empty) = '1' then violation(3) := '1'; end if; end if;
+        if reset = '1' then violation(4) := '0'; elsif rising_edge(c3_p2_in.rd.clk) then if (c3_p2_in.rd.en and c3_p2_out.rd.empty) = '1' then violation(4) := '1'; end if; end if;
+        if reset = '1' then violation(5) := '0'; elsif rising_edge(c3_p3_in.rd.clk) then if (c3_p3_in.rd.en and c3_p3_out.rd.empty) = '1' then violation(5) := '1'; end if; end if;
+        if reset = '1' then violation(6) := '0'; elsif rising_edge(c3_p4_in.rd.clk) then if (c3_p4_in.rd.en and c3_p4_out.rd.empty) = '1' then violation(6) := '1'; end if; end if;
+        if reset = '1' then violation(7) := '0'; elsif rising_edge(c3_p5_in.wr.clk) then if (c3_p5_in.wr.en and c3_p5_out.wr.full ) = '1' then violation(7) := '1'; end if; end if;
     end process;
 
 
