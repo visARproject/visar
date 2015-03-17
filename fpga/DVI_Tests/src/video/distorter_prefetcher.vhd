@@ -43,9 +43,11 @@ architecture arc of video_distorter_prefetcher is
     signal pos_buf : CoordinateBuf;
     
     signal fifo_write_full  : std_logic;
-    signal fifo_read_enable : std_logic;
     signal fifo_read_data   : std_logic_vector(39 downto 0);
     signal fifo_read_empty  : std_logic;
+    type EncodedArray is array (0 to 3) of std_logic_vector(8 downto 0);
+    signal fifo_read_data2  : EncodedArray;
+    signal fifo_read_empty2 : std_logic;
 begin
     u_counter : entity work.video_counter
         generic map (
@@ -168,13 +170,22 @@ begin
             
             read_clock  => sync.pixel_clk,
             read_reset  => reset,
-            read_enable => fifo_read_enable,
+            read_enable => '1',
             read_data   => fifo_read_data,
             read_empty  => fifo_read_empty);
     ram1_in.rd.en <= not fifo_write_full and not ram1_out.rd.empty;
     
+    process (sync.pixel_clk) is
+    begin
+        if rising_edge(sync.pixel_clk) then
+            for i in 0 to 3 loop
+                fifo_read_data2(i) <= encode_10to9(unsigned(fifo_read_data(10*(3-i)+9 downto 10*(3-i))));
+            end loop;
+            fifo_read_empty2 <= fifo_read_empty;
+        end if;
+    end process;
     
-    process (sync, fifo_read_data, fifo_read_empty, h_cnt, v_cnt, pos_buf, reset) is
+    process (sync, fifo_read_data2, fifo_read_empty2, h_cnt, v_cnt, pos_buf, reset) is
         variable pos_buf_read_pos, next_pos_buf_read_pos : integer range 0 to BUF_SIZE-1;
         variable number_read, next_number_read : integer range 0 to BURST_SIZE_WORDS*3/4-1;
         variable command : CameraCoordinate;
@@ -183,8 +194,6 @@ begin
         variable encoded : std_logic_vector(8 downto 0);
     begin
         ram1_in.rd.clk <= sync.pixel_clk;
-        
-        fifo_read_enable <= '0';
         
         for x in 0 to 7 loop
             for y in 0 to 7 loop
@@ -206,11 +215,11 @@ begin
         if reset = '1' then
             next_pos_buf_read_pos := 0;
             next_number_read := 0;
-        elsif fifo_read_empty = '0' then
+        elsif fifo_read_empty2 = '0' then
             for i in 0 to 3 loop
                 p.x := command.x/8*8 + command.x/8*8*2 + number_read * 4 + i;
                 p.y := command.y;
-                encoded := encode_10to9(unsigned(fifo_read_data(10*(3-i)+9 downto 10*(3-i))));
+                encoded := fifo_read_data2(i);
                 next_next_bram_ins(p.x mod 8, p.y mod 8).en := '1';
                 next_next_bram_ins(p.x mod 8, p.y mod 8).di := "------------------------" & encoded(7 downto 0);
                 next_next_bram_ins(p.x mod 8, p.y mod 8).addr(13 downto 3) := std_logic_vector(to_unsigned(
@@ -219,7 +228,6 @@ begin
                 next_next_bram_ins(p.x mod 8, p.y mod 8).dip := "---" & encoded(8);
                 next_next_bram_ins(p.x mod 8, p.y mod 8).addr(2 downto 0) := (others => '-');
             end loop;
-            fifo_read_enable <= '1';
             if number_read /= BURST_SIZE_WORDS*3/4-1 then
                 next_number_read := number_read + 1;
             else
