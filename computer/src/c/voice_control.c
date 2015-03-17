@@ -16,12 +16,13 @@
 #include <fcntl.h>
 
 void start_voice(int* fd) {
+  int buffer_size = 640; // buffer size
   uint8 utt_started = FALSE; //a new utterance check
   uint8 in_speech; //currently taking in speech
   int32 k; //number of frames read
   char const *hyp; //hypothesis of decoding, i.e. what pocketsphinx thinks was said
-  int16 buffer[640]; //buffer used to store input
-  char new_hyp[640]; //memory for the hypothesis
+  int16 buffer[buffer_size]; //buffer used to store input
+  char new_hyp[buffer_size]; //memory for the hypothesis
   char time_gate_pass = 0;
 
   // initial configuration for pocketsphinx
@@ -81,6 +82,8 @@ void start_voice(int* fd) {
 
   //begin utterance
   ps_start_utt(ps);
+  int ps_point = 0;
+  int16 *full_buf;
 
 #ifdef WRITE_RAW_FILE
   int f;
@@ -94,11 +97,9 @@ void start_voice(int* fd) {
     int stop_check = FALSE;
 
     while(TRUE) {
+      k = read(fd[0], buffer + point, buffer_size - point);
 
-
-      k = read(fd[0], buffer + point, 640 - point);
-
-      if(point == 640) {
+      if(point == buffer_size) {
         break;
       } else if(k == 0) {
         stop_check = TRUE;
@@ -106,14 +107,6 @@ void start_voice(int* fd) {
       } else {
         point += k;
       }
-
-      // if (point + k > 640) {
-      //   break;
-      // } else {
-      //   point += k;
-      // }
-
-      // printf("%d\n", point);
     }
 
     if(stop_check) {
@@ -126,11 +119,7 @@ void start_voice(int* fd) {
     // printf("%d\n", k);
 
     char *sentence; //output
-
     ps_process_raw(ps, buffer, point/2, FALSE, FALSE); //begins decoding using the number of frames it could read
-
-    in_speech = ps_get_in_speech(ps); //checks to see if there's silence
-    // printf("Speech: %d\n", in_speech);
 
     //when speech is introduced in each new utterance
     // if(in_speech && !utt_started) {
@@ -152,7 +141,7 @@ void start_voice(int* fd) {
     if(utt_started && time_gate_pass) {
       ps_end_utt(ps); //end the utterance
       hyp = ps_get_hyp(ps, NULL); //get the hypothesis
-      memcpy(new_hyp, hyp, 640); //transfer hyp to prevent corruption
+      memcpy(new_hyp, hyp, buffer_size/2); //transfer hyp to prevent corruption
 
       //if there was no hypothesis, then error
       if(hyp == NULL) {
@@ -175,7 +164,7 @@ void start_voice(int* fd) {
     }
 
     //usleep(100000);
-    memset(buffer, 0, 640);
+    memset(buffer, 0, buffer_size);
   }
 
   close(fd[1]); //close output pipe
