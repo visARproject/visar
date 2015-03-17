@@ -10,7 +10,7 @@ import ram_test
 class SPIer(object):
     def __init__(self):
         self._r = ram_test.RAMPoker()
-        self._drive = 0b110100000011
+        self._drive = 0b110101000011
         self._drive |= 1<<31
         self._pins = 0b110100000011
         self._r.write(0xFFFFFFF4, self._pins)
@@ -29,31 +29,39 @@ class SPIer(object):
     def read_pin(self, n):
         assert not ((self._drive >> n) & 1)
         return (self._read_pins() >> n) & 1
+    def set_SCLK(self, x):
+        SCLK0_pin = 8
+        SCLK1_pin = 6
+        assert x in [0, 1]
+        if x == 0:
+            self.set_pin(SCLK0_pin)
+            self.clear_pin(SCLK0_pin)
+        else:
+            self.set_pin(SCLK1_pin)
+            self.clear_pin(SCLK1_pin)
     def do_spi(self, nCS_pin, MISO_pin, bits, read=True):
         MOSI_pin = 11
-        SCLK_pin = 8
         
-        self.set_pin(SCLK_pin)
+        self.set_SCLK(1)
         self.clear_pin(nCS_pin)
         res = []
         for b in bits:
-            self.clear_pin(SCLK_pin)
+            self.set_SCLK(0)
             if b:
                 self.set_pin(MOSI_pin)
             else:
                 self.clear_pin(MOSI_pin)
             if read:
                 res.append(self.read_pin(MISO_pin))
-            self.set_pin(SCLK_pin)
+            self.set_SCLK(1)
         self.set_pin(nCS_pin)
         
         if read:
             return res
     def do_camera_spi(self, nCS_pin, MISO_pin, bits, read=True):
         MOSI_pin = 11
-        SCLK_pin = 8
         
-        self.clear_pin(SCLK_pin)
+        self.set_SCLK(0)
         self.clear_pin(nCS_pin)
         res = []
         for b in bits:
@@ -61,10 +69,10 @@ class SPIer(object):
                 self.set_pin(MOSI_pin)
             else:
                 self.clear_pin(MOSI_pin)
-            self.set_pin(SCLK_pin)
+            self.set_SCLK(1)
             if read:
                 res.append(self.read_pin(MISO_pin))
-            self.clear_pin(SCLK_pin)
+            self.set_SCLK(0)
         self.set_pin(nCS_pin)
         
         if read:
@@ -73,7 +81,7 @@ class SPIer(object):
 cpld_state = [1, 0, 0, 0, 0, 0, 0, 0, 0, 0]
 
 s = SPIer()
-#print s.do_spi(10, 9, [1, 0, 0, 0, 0, 0, 0, 0, 0, 0])
+print s.do_spi(10, 9, [1, 0, 0, 0, 0, 0, 0, 0, 0, 0]) # needed to initialize ... something?
 assert s.do_spi(10, 9, cpld_state) == [1, 0, 1, 0, 0, 1, 1, 0, 0, 1]
 '''while True:
     print '{0:025b}'.format(s._r.read(32*1024*1024))

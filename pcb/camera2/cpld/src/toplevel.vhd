@@ -88,7 +88,14 @@ architecture arc of toplevel is
     signal data_out : std_logic_vector(9 downto 0);
 begin
     pair13N <= MISO;
-    SCLK <= pair13P;
+    process (pair12P, pair13P) is
+    begin
+        if pair12P = '1' then
+            SCLK <= '1';
+        elsif pair13P = '1' then
+            SCLK <= '0';
+        end if;
+    end process;
     MOSI <= pair14N;
     nCS  <= pair14P;
     
