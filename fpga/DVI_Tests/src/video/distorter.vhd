@@ -33,11 +33,8 @@ architecture arc of video_distorter is
     signal bram_porta_outs, bram_portb_outs_4 : BRAMOutArray;
     
     
-    signal h_cnt_1future : HCountType;
-    signal v_cnt_1future : VCountType;
-    
-    signal h_cnt : HCountType;
-    signal v_cnt : VCountType;
+    signal h_cnt_7 : HCountType;
+    signal v_cnt_7 : VCountType;
     
     signal map_decoder_reset, map_decoder_en: std_logic;
     signal current_lookup_7 : CameraTripleCoordinate;
@@ -94,26 +91,21 @@ begin
     -- Actual distorter
     
     u_counter2 : entity work.video_counter
-        generic map(
-            DELAY => -1)
+        generic map (
+            DELAY => -7)
         port map (
             sync => sync,
-            h_cnt => h_cnt_1future,
-            v_cnt => v_cnt_1future);
+            h_cnt => h_cnt_7,
+            v_cnt => v_cnt_7);
     
-    u_counter : entity work.video_counter port map (
-        sync => sync,
-        h_cnt => h_cnt,
-        v_cnt => v_cnt);
-    
-    process (h_cnt_1future, v_cnt_1future, v_cnt) is
+    process (h_cnt_7, v_cnt_7) is
     begin
         map_decoder_reset <= '0';
         map_decoder_en <= '0';
-        if v_cnt = V_DISPLAY_END then
+        if v_cnt_7 = V_DISPLAY_END then
             map_decoder_reset <= '1';
         end if;
-        if v_cnt_1future < V_DISPLAY_END and h_cnt_1future < 1089 then
+        if v_cnt_7 < V_DISPLAY_END and h_cnt_7 < 1089 then
             map_decoder_en <= '1';
         end if;
     end process;
