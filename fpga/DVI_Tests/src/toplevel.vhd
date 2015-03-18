@@ -9,6 +9,8 @@ use work.video_bus.all;
 use work.ram_port.all;
 use work.camera.all;
 use work.simple_mac_pkg.all;
+use work.util_arbiter_pkg.all;
+
 
 entity toplevel is
     port (
@@ -97,6 +99,11 @@ architecture RTL of toplevel is
     signal clk_pixel         : std_logic;
     signal clk_ethernet      : std_logic;
     signal clk_locked        : std_logic;
+    
+    constant SPI_ARBITER_USERS : natural := 2;
+    
+    signal spi_arbiter_users_in  : ArbiterUserInArray (0 to SPI_ARBITER_USERS-1);
+    signal spi_arbiter_users_out : ArbiterUserOutArray(0 to SPI_ARBITER_USERS-1);
 
     signal left_camera_output, right_camera_output : camera_output;
 
@@ -170,6 +177,13 @@ begin
         RESET                 => '0',
         LOCKED                => clk_locked);
     
+    U_SPI_ARBITER : entity work.util_arbiter
+        generic map (
+            USERS => SPI_ARBITER_USERS)
+        port map (
+            clock => clk_100MHz_buf,
+            users_in => spi_arbiter_users_in,
+            users_out => spi_arbiter_users_out);
 
     U_LEFT_CAMERA_WRAPPER : entity work.camera_wrapper
         generic map (
@@ -530,6 +544,10 @@ begin
             uart_tx_write => uart_tx_write,
             uart_rx_valid => uart_rx_valid,
             uart_rx_data => uart_rx_data,
+            arbiter_in => spi_arbiter_users_in(0),
+            arbiter_out => spi_arbiter_users_out(0),
+            arbiter1_in => spi_arbiter_users_in(1),
+            arbiter1_out => spi_arbiter_users_out(1),
             pair7P => pair7P,
             pair7N => pair7N,
             pair8P => pair8P,
