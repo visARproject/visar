@@ -1,3 +1,5 @@
+from vispy.util.transforms import perspective, translate, rotate, scale, xrotate, yrotate, zrotate
+
 from ...OpenGL.utils.transformations import quaternion_matrix, euler_from_matrix, euler_from_quaternion
 from .menu_controller import Menu_Controller
 from ...OpenGL.utils import Logger
@@ -45,15 +47,37 @@ class State(object):
     call_target = '127.0.0.1' # default call target is ourselves
     calling = False # toggle value for call
   
+
+    button_dict = {}
+    buttons = set()
     current_button = 3
+
+    hide_map = False
+
+    @classmethod
+    def register_button(self, position, action):
+        self.buttons = self.buttons.union({position})
+        self.button_dict[position] = action
 
     @classmethod
     def button_up(self):
-        pass
+        if self.current_button < max(self.buttons):
+            self.current_button += 1
 
     @classmethod
     def button_down(self):
-        pass
+        if self.current_button > min(self.buttons):
+            self.current_button -= 1
+
+    @classmethod
+    def press_enter(self):
+        current_button_action = self.button_dict[self.current_button]
+        current_action = self.action_dict[current_button_action.lower()]
+        current_action()
+
+    @classmethod
+    def hide_map(self):
+        self.hide_map = not self.hide_map
 
     @classmethod
     def make_call(self):
@@ -71,9 +95,14 @@ class State(object):
         self.audio_controller.stop() # hang up
 
     @classmethod
+    def set_orientation_matrix(self, orientation_matrix):
+        gl_orientation_matrix = orientation_matrix
+        self.roll, self.yaw, self.pitch = euler_from_matrix(gl_orientation_matrix)
+
+    @classmethod
     def set_orientation(self, quaternion):
         self.orientation_quaternion = quaternion
-        self.orientation_matrix = quaternion_matrix(quaternion)
+        self.set_orientation_matrix(quaternion_matrix(quaternion))
 
     @classmethod
     def set_position(self, position_ecef):
@@ -101,3 +130,10 @@ class State(object):
     def destroy(self):  
         self.network_state.destroy()
         self.audio_controller.destroy()
+
+State.action_dict = {
+        'example': lambda: Logger.log("Example button pressed!"),
+        'make call': State.make_call,
+        'toggle map': State.hide_map,
+        'end call': State.end_call,
+    }

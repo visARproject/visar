@@ -27,6 +27,7 @@ MAP:
 MENU:
     - Text has weird white outline
     - Add partial transparency
+    - Reduce aliasing
 
 TARGETS:
     - Make overlay appear above everything
