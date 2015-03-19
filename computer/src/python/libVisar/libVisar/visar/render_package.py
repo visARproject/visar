@@ -13,7 +13,7 @@ from vispy import app
 from ..OpenGL.utils import Logger
 from ..OpenGL.shaders import Distorter
 from ..OpenGL.drawing import Drawable, Context
-from .drawables import Example, Target, Map, Button
+from .drawables import Example, Target, Map, Button, Brain
 from .environments import Terrain
 from .globals import State
 
@@ -32,7 +32,9 @@ parser.add_argument('-v', '--verbose', dest='verbose', action='store_true',
 parser.add_argument('-b', '--debug', dest='debug', action='store_true',
                     default=False,
                     help='Vispy debug output')
-
+parser.add_argument('--npbrain', dest='brain', action='store_true',
+                    default=False,
+                    help='Use a demo brain')
 
 args = parser.parse_args()
 
@@ -49,20 +51,22 @@ class Renderer(app.Canvas): # Canvas is a GUI object
         # Create a rendering context (A render list)
         Logger.set_verbosity('log')
         renders = [
-            Example(),
+            Target((10, 10, -10))
         ]
         UI_elements = [
             Map(),
-            Button('Hide Map', self, position=1),
-            Button('Make Call', self, position=2),
-            Button('Print Example', self, position=3)
+            Button('Toggle Map', self, position=1),
+            Button('Make Call', self, position=3),
+            Button('End Call', self, position=2),
+            Button('Example', self, position=4),
         ]
 
         self.view = np.eye(4)
         self.Render_List = Context(*renders)
         for target in State.targets:
             self.Render_List.append(Target(target))
-
+        if args.brain:
+            self.Render_List.append(Brain())
         if args.draw_terrain:
             terrain = Terrain()
             self.Render_List.append(terrain)
@@ -182,12 +186,16 @@ class Renderer(app.Canvas): # Canvas is a GUI object
         yrotate(self.view, self.rotate[1])
         zrotate(self.view, self.rotate[2])
 
+        State.set_orientation_matrix(self.view)
+
     
 def main():
     c = Renderer()
     c.show()
     c.app.run()
     State.destroy()
+
+    Logger.warn('Exiting VisAR')
 
 if __name__ == '__main__':
     main()
