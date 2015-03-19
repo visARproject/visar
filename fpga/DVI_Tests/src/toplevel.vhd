@@ -7,7 +7,7 @@ use unisim.vcomponents.all;
 
 use work.video_bus.all;
 use work.ram_port.all;
-use work.camera.all;
+use work.camera_pkg.all;
 use work.simple_mac_pkg.all;
 use work.util_arbiter_pkg.all;
 
@@ -105,8 +105,6 @@ architecture RTL of toplevel is
     signal spi_arbiter_users_in  : ArbiterUserInArray (0 to SPI_ARBITER_USERS-1);
     signal spi_arbiter_users_out : ArbiterUserOutArray(0 to SPI_ARBITER_USERS-1);
 
-    signal left_camera_output, right_camera_output : camera_output;
-
     -- DDR2 Signals
     signal c3_calib_done : std_logic;
     signal c3_clk0       : std_logic;
@@ -185,58 +183,44 @@ begin
             users_in => spi_arbiter_users_in,
             users_out => spi_arbiter_users_out);
 
-    U_LEFT_CAMERA_WRAPPER : entity work.camera_wrapper
+    U_LEFT_CAMERA : entity work.camera
         generic map (
-            SYNC_INVERTED  => false,
-            DATA3_INVERTED => false,
-            DATA2_INVERTED => true,
-            DATA1_INVERTED => false,
-            DATA0_INVERTED => false)
+            SYNC_INVERTED   => false,
+            DATA3_INVERTED  => false,
+            DATA2_INVERTED  => true,
+            DATA1_INVERTED  => false,
+            DATA0_INVERTED  => false,
+            MEMORY_LOCATION => LEFT_CAMERA_MEMORY_LOCATION)
         port map (
-            clock_camera_unbuf => clk_camera_unbuf,
+            clock_camera_unbuf  => clk_camera_unbuf,
             clock_camera_over_2 => clk_camera_over_2,
             clock_camera_over_5 => clk_camera_over_5,
-            clock_locked => clk_locked,
-            reset        => reset,
+            clock_locked        => clk_locked,
+            reset               => reset,
             
             camera_out => left_camera_out,
             camera_in  => left_camera_in,
             
-            output => left_camera_output);
-    
-    U_RIGHT_CAMERA_WRAPPER : entity work.camera_wrapper
-        generic map (
-            SYNC_INVERTED  => true,
-            DATA3_INVERTED => true,
-            DATA2_INVERTED => true,
-            DATA1_INVERTED => false,
-            DATA0_INVERTED => false)
-        port map (
-            clock_camera_unbuf => clk_camera_unbuf,
-            clock_camera_over_2 => clk_camera_over_2,
-            clock_camera_over_5 => clk_camera_over_5,
-            clock_locked => clk_locked,
-            reset        => reset,
-            
-            camera_out => right_camera_out,
-            camera_in  => right_camera_in,
-            
-            output => right_camera_output);
-    
-    U_LEFT_CAMERA_WRITER : entity work.camera_writer
-        generic map (
-            BUFFER_ADDRESS => LEFT_CAMERA_MEMORY_LOCATION)
-        port map (
-            camera_output => left_camera_output,
-            
             ram_in  => c3_p1_wronly_in,
             ram_out => c3_p1_wronly_out);
     
-    U_RIGHT_CAMERA_WRITER : entity work.camera_writer
+    U_RIGHT_CAMERA : entity work.camera
         generic map (
-            BUFFER_ADDRESS => RIGHT_CAMERA_MEMORY_LOCATION)
+            SYNC_INVERTED   => true,
+            DATA3_INVERTED  => true,
+            DATA2_INVERTED  => true,
+            DATA1_INVERTED  => false,
+            DATA0_INVERTED  => false,
+            MEMORY_LOCATION => RIGHT_CAMERA_MEMORY_LOCATION)
         port map (
-            camera_output => right_camera_output,
+            clock_camera_unbuf  => clk_camera_unbuf,
+            clock_camera_over_2 => clk_camera_over_2,
+            clock_camera_over_5 => clk_camera_over_5,
+            clock_locked        => clk_locked,
+            reset               => reset,
+            
+            camera_out => right_camera_out,
+            camera_in  => right_camera_in,
             
             ram_in  => c3_p5_in,
             ram_out => c3_p5_out);
@@ -546,8 +530,6 @@ begin
             uart_rx_data => uart_rx_data,
             arbiter_in => spi_arbiter_users_in(0),
             arbiter_out => spi_arbiter_users_out(0),
-            arbiter1_in => spi_arbiter_users_in(1),
-            arbiter1_out => spi_arbiter_users_out(1),
             pair7P => pair7P,
             pair7N => pair7N,
             pair8P => pair8P,

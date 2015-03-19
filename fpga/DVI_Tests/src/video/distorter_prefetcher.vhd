@@ -8,7 +8,7 @@ use unisim.vcomponents.all;
 use work.ram_port.all;
 use work.video_bus.all;
 use work.distorter_pkg.all;
-use work.camera.all;
+use work.camera_pkg.all;
 
 entity video_distorter_prefetcher is
     generic (

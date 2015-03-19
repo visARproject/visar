@@ -2,7 +2,7 @@ library ieee;
 use ieee.std_logic_1164.all;
 use ieee.numeric_std.all;
 
-use work.camera.all;
+use work.camera_pkg.all;
 use work.ram_port.all;
 
 entity video_distorter_map_decoder is

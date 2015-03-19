@@ -5,7 +5,7 @@ library unisim;
 use unisim.vcomponents.all;
 
 
-use work.camera.all;
+use work.camera_pkg.all;
 
 
 entity toplevel_tb is
