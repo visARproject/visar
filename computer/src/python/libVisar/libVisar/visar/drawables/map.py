@@ -114,6 +114,7 @@ class Map(Drawable):
     
     frame_frag_shader = """
         #version 120
+        uniform int hide;
         uniform vec2 map_center; // Latitude, Longitude
         uniform vec4 corners; // min_lat, min_long, max_lat, max_long
 
@@ -125,7 +126,12 @@ class Map(Drawable):
         void main()
         {
             vec4 color = texture2D(map_texture, texcoord);
-            gl_FragColor = vec4(color.rgb, 1);
+            if (hide == 1){
+                gl_FragColor = vec4(color.rgb, 0.1);
+            } else {
+                gl_FragColor = vec4(color.rgb, 1);
+            }
+            
         }
     """
 
@@ -144,11 +150,11 @@ class Map(Drawable):
         self.projection = np.eye(4)
         self.view = np.eye(4)
 
-        self.model = scale(np.eye(4), 0.4)
-        orientation_vector = (1, 1, 0)
+        self.model = scale(np.eye(4), 0.6)
+        orientation_vector = (0, 1, 0)
         unit_orientation_angle = np.array(orientation_vector) / np.linalg.norm(orientation_vector)
         rotate(self.model, -30, *unit_orientation_angle)
-        translate(self.model, -0.2, -2.4, -5)
+        translate(self.model, -2.2, -2.4, -9)
         
         height, width = 5.0, 5.0  # Meters
 
@@ -194,13 +200,15 @@ class Map(Drawable):
         self.program['map_texture'] = self.map
         self.program['corners'] = self.ranges
         self.program['user_position'] = lla[:2]
+        self.program['hide'] = 0
 
     def update(self):
         yaw = State.yaw
-        counter_yaw = 360 - np.degrees(yaw)
+
+        counter_yaw = 360 - (np.degrees(yaw) % 360)
         # Could use optimization by subtracting current yaw from previous yaw
         map_transform = np.eye(4)
-        map_transform = zrotate(map_transform, 0)
+        map_transform = zrotate(map_transform, counter_yaw)
         scale(map_transform, 0.8)
         
         self.program['map_transform'] = map_transform
@@ -208,6 +216,11 @@ class Map(Drawable):
         # Convert Forrest's ecef position to lla
         position_lla = self.ecef2llh(State.position_ecef)[:2]
         self.program['user_position'] = position_lla
+
+        if State.hide_map:
+            self.program['hide'] = 1
+        else:
+            self.program['hide'] = 0
 
     def draw(self):        
         # Disable depth test - UI element

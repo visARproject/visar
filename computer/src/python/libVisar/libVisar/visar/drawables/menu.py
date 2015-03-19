@@ -35,16 +35,24 @@ class Button(Drawable):
     button_fragment_shader = """
         #version 120
 
+        uniform int highlighted;
         uniform sampler2D texture;
         varying vec2 texcoord;
         uniform vec3 background_color;
         void main() {
             vec4 color = texture2D(texture, texcoord);
-            if (color.rgb == vec3(1, 1, 1)) {
-                gl_FragColor = vec4(background_color, 1);
+//            if (color.rgb == vec3(1, 1, 1)) {
+//                gl_FragColor = vec4(background_color, 1);
+//            } else {
+//                gl_FragColor = vec4(color.rgb, 1);
+//            }
+            
+            if (highlighted == 1){
+                gl_FragColor = vec4(color.rg, 0, 1);    
             } else {
                 gl_FragColor = vec4(color.rgb, 1);
             }
+
         }
     """
 
@@ -57,24 +65,28 @@ class Button(Drawable):
         - position (1-9, or which button position this should occupy)
         '''
 
+        # State Controller
+        State.register_button(position, text)
+
         self.position = position
         self.canvas = canvas
         self.projection = np.eye(4)
         self.view = np.eye(4)
         self.model = np.eye(4)
-        height, width = 5.0, 10.0  # Meters
+        height, width = 5.0, 15.0  # Meters
 
         orientation_vector = (1, 1, 0)
         unit_orientation_angle = np.array(orientation_vector) / np.linalg.norm(orientation_vector)
 
-        scale_factor = 0.25
+        scale_factor = 0.2
         lowest_button = -5.2 
         midset = 0.2
 
-        scale(self.model, 0.25)
+        scale(self.model, scale_factor)
+        yrotate(self.model, -60)
         # rotate(self.model, 30, *unit_orientation_angle)
         offset = (position * ((height + midset) * scale_factor))
-        translate(self.model, -3.2, lowest_button + offset, -5)
+        translate(self.model, -7.4, lowest_button + offset, -10)
 
         pixel_to_length = 10
         self.size = map(lambda o: pixel_to_length * o, [width, height])
@@ -110,8 +122,13 @@ class Button(Drawable):
         self.program['projection'] = self.projection
         self.program['background_color'] = color
 
-        self.texture = Texture2D(shape=(1000, 1000) + (3,))        
-        self.text_buffer = FrameBuffer(self.texture, RenderBuffer((1000, 1000)))
+        self.program['highlighted'] = 0
+
+        # self.texture = Texture2D(shape=(1000, 1000) + (3,))        
+        # self.text_buffer = FrameBuffer(self.texture, RenderBuffer((1000, 1000)))
+        self.texture = Texture2D(shape=(500, 1500) + (3,))        
+        self.text_buffer = FrameBuffer(self.texture, RenderBuffer((500, 1500)))
+
         self.program['texture'] = self.texture
         self.text = text
         self.make_text(self.text)
@@ -125,17 +142,20 @@ class Button(Drawable):
         - Hide if I need to be hidden
 
         '''
-        pass
+        if State.current_button == self.position:
+            self.program['highlighted'] = 1
+        else:
+            self.program['highlighted'] = 0
 
     def make_text(self, _string):
-        self.font_size = 100
+        self.font_size = 150
         self.canvas.text_renderer = visuals.TextVisual('', bold=True)
         self.tr_sys = visuals.transforms.TransformSystem(self.canvas)
         self.canvas.text_renderer.text = _string
 
         self.canvas.text_renderer.font_size = self.font_size
         # self.canvas.text_renderer.pos = 200, 200
-        self.size = 1000, 1000
+        self.size = 1000, 1500
         self.canvas.text_renderer.pos = self.size[0] // 2, self.size[1] // 2
 
     def make_texture(self):        
