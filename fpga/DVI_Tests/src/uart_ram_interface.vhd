@@ -23,9 +23,6 @@ entity uart_ram_interface is
         arbiter_in  : out ArbiterUserIn;
         arbiter_out : in  ArbiterUserOut;
         
-        arbiter1_in  : out ArbiterUserIn;
-        arbiter1_out : in  ArbiterUserOut;
-        
         pair7P:  inout std_logic;
         pair7N:  inout std_logic;
         pair8P:  inout std_logic;
@@ -58,7 +55,6 @@ begin
     end process;
     
     arbiter_in.clock <= clock;
-    arbiter1_in.clock <= clock;
     
     pair7P  <= debug_real_out( 0);
     pair7N  <= debug_real_out( 1);
@@ -72,10 +68,9 @@ begin
     pair13N <= debug_real_out( 9);
     pair14P <= debug_real_out(10);
     pair14N <= debug_real_out(11);
-    arbiter_in.request <= debug_real_out(12);
-    arbiter1_in.request <= debug_real_out(13);
+    arbiter_in.request <= debug_out(12);
     
-    debug_in <= "000000000000000000" & arbiter1_out.enable & arbiter_out.enable & pair14N & pair14P & pair13N & pair13P & pair12N & pair12P & pair9N & pair9P & pair8N & pair8P & pair7N & pair7P;
+    debug_in <= "000000000000000000" & arbiter_out.enable & debug_out(12) & pair14N & pair14P & pair13N & pair13P & pair12N & pair12P & pair9N & pair9P & pair8N & pair8P & pair7N & pair7P;
     
     process(clock, reset, uart_rx_valid, uart_rx_data, debug_in)
         type StateType is (IDLE, READ, EXEC);

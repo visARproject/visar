@@ -10,10 +10,12 @@ import ram_test
 class SPIer(object):
     def __init__(self):
         self._r = ram_test.RAMPoker()
-        self._drive = 0b110101000011
+        self._drive = 0b1110101000011
         self._drive |= 1<<31
-        self._pins = 0b110100000011
+        self._pins = 0b0110100000011
         self._r.write(0xFFFFFFF4, self._pins)
+        self.set_pin(12) # arbiter request
+        #assert self.read_pin(13) == 1
         self._r.write(0xFFFFFFF8, self._drive)
     def _read_pins(self):
         self._r.write(0xFFFFFFFC, 0)
@@ -77,10 +79,14 @@ class SPIer(object):
         
         if read:
             return res
+    def close(self):
+        self.clear_pin(12) # arbiter request
+        self._r.write(0xFFFFFFF8, 0) # drive
 
 cpld_state = [1, 0, 0, 0, 0, 0, 0, 0, 0, 0]
 
 s = SPIer()
+
 print s.do_spi(10, 9, [1, 0, 0, 0, 0, 0, 0, 0, 0, 0]) # needed to initialize ... something?
 assert s.do_spi(10, 9, cpld_state) == [1, 0, 1, 0, 0, 1, 1, 0, 0, 1]
 '''while True:
@@ -261,6 +267,8 @@ class Camera(object):
 
 c1 = Camera('C1', 1, 3, 32*1024*1024, 1)
 c2 = Camera('C2', 0, 2, 0*1024*1024, 5)
+
+s.close()
 
 """
     if i == 1000:
