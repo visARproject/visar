@@ -136,7 +136,7 @@ for y in xrange(constants.V_MAX):
 # push events back to ensure minimum spacing
 
 assert READ_LENGTH % 3 == 0
-SPACING = 20
+SPACING = 25
 res2 = list(res)
 last_time = 1e99
 for i in reversed(xrange(len(res2))):
