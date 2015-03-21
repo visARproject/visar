@@ -79,19 +79,21 @@ class SPIer(object):
         self.clear_pin(12) # arbiter request
         self._r.write(0xFFFFFFF8, 0) # drive
 
-cpld_state = [1, 0, 0, 0, 0, 0, 0, 0, 0, 0]
+def read_cpld():
+    x = s.do_spi(10, 9, [0]*20)
+    assert x[:10] == [1, 0, 1, 0, 0, 1, 1, 0, 0, 1]
+    return x[10:]
+def write_cpld(x):
+    assert len(x) == 10
+    y = s.do_spi(10, 9, [1, 0, 1, 0, 0, 1, 1, 0, 0, 1] + x)
+    assert y[:10] == [1, 0, 1, 0, 0, 1, 1, 0, 0, 1]
+    assert read_cpld() == x, (read_cpld(), x)
 
 s = SPIer()
 
-print s.do_spi(10, 9, [1, 0, 0, 0, 0, 0, 0, 0, 0, 0]) # needed to initialize ... something?
-assert s.do_spi(10, 9, cpld_state) == [1, 0, 1, 0, 0, 1, 1, 0, 0, 1]
-'''while True:
-    print '{0:025b}'.format(s._r.read(32*1024*1024))
-    time.sleep(.1)'''
-#assert s.do_spi(10, 9, [1, 1, 0, 0, 0, 1, 0, 0, 0, 0]) == [1, 0, 1, 0, 0, 1, 1, 0, 0, 1]
-#assert s.do_spi(10, 9, [1, 1, 1, 0, 0, 1, 1, 0, 0, 0]) == [1, 0, 1, 0, 0, 1, 1, 0, 0, 1]
-#assert s.do_spi(10, 9, [1, 1, 1, 1, 0, 1, 1, 1, 0, 0]) == [1, 0, 1, 0, 0, 1, 1, 0, 0, 1]
-#assert s.do_spi(10, 9, [1, 1, 1, 1, 1, 1, 1, 1, 1, 0]) == [1, 0, 1, 0, 0, 1, 1, 0, 0, 1]
+cpld_state = read_cpld()
+write_cpld(cpld_state)
+
 
 def int_to_list(x, n):
     res = []
@@ -117,14 +119,12 @@ class Camera(object):
         print 'starting', name
         
         cpld_state[power_start:power_start+4] = [0]*4
-        print cpld_state
-        assert s.do_spi(10, 9, cpld_state) == [1, 0, 1, 0, 0, 1, 1, 0, 0, 1]
+        write_cpld(cpld_state)
         time.sleep(.1)
         
         for i in xrange(4):
             cpld_state[power_start+i] = 1
-            print cpld_state
-            assert s.do_spi(10, 9, cpld_state) == [1, 0, 1, 0, 0, 1, 1, 0, 0, 1]
+            write_cpld(cpld_state)
             time.sleep(.1)
         
         assert self.camera_read(0) == int_to_list(0x560D, 16)
@@ -261,8 +261,8 @@ class Camera(object):
     def camera_write(self, addr, value):
         s.do_camera_spi(self.nCS_pin, self.MISO_pin, int_to_list(addr, 9) + [1] + int_to_list(value, 16), read=False)
 
-c1 = Camera('C1', 1, 3, 32*1024*1024, 1)
-c2 = Camera('C2', 0, 2, 0*1024*1024, 5)
+c1 = Camera('C1', 1, 3, 32*1024*1024, 2)
+c2 = Camera('C2', 0, 2, 0*1024*1024, 6)
 
 s.close()
 
