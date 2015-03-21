@@ -4,6 +4,7 @@ use ieee.numeric_std.all;
 
 use work.camera_pkg.all;
 use work.ram_port.all;
+use work.util_arbiter_pkg.all;
 
 entity camera is
     generic (
@@ -22,6 +23,14 @@ entity camera is
         
         camera_out : out camera_out;
         camera_in  : in  camera_in;
+        
+        MOSI : out std_logic;
+        MISO : in  std_logic;
+        SCLK : out std_logic;
+        nSS  : out std_logic;
+        
+        spi_arbiter_in  : out ArbiterUserIn;
+        spi_arbiter_out : in  ArbiterUserOut;
         
         ram_in  : out ram_wr_port_in;
         ram_out : in  ram_wr_port_out);
@@ -57,4 +66,11 @@ begin
             
             ram_in  => ram_in,
             ram_out => ram_out);
+    
+    spi_arbiter_in.clock <= clock_camera_over_5;
+    spi_arbiter_in.request <= '0';
+    
+    MOSI <= 'Z';
+    SCLK <= 'Z';
+    nSS <= 'Z';
 end architecture;

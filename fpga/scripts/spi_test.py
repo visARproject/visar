@@ -32,15 +32,11 @@ class SPIer(object):
         assert not ((self._drive >> n) & 1)
         return (self._read_pins() >> n) & 1
     def set_SCLK(self, x):
-        SCLK0_pin = 8
-        SCLK1_pin = 6
         assert x in [0, 1]
         if x == 0:
-            self.set_pin(SCLK0_pin)
-            self.clear_pin(SCLK0_pin)
+            self.clear_pin(31)
         else:
-            self.set_pin(SCLK1_pin)
-            self.clear_pin(SCLK1_pin)
+            self.set_pin(31)
     def do_spi(self, nCS_pin, MISO_pin, bits, read=True):
         MOSI_pin = 11
         

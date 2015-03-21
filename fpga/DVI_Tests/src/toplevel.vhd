@@ -100,10 +100,12 @@ architecture RTL of toplevel is
     signal clk_ethernet      : std_logic;
     signal clk_locked        : std_logic;
     
-    constant SPI_ARBITER_USERS : natural := 2;
+    constant SPI_ARBITER_USERS : natural := 3;
     
     signal spi_arbiter_users_in  : ArbiterUserInArray (0 to SPI_ARBITER_USERS-1);
     signal spi_arbiter_users_out : ArbiterUserOutArray(0 to SPI_ARBITER_USERS-1);
+    
+    signal SCLK : std_logic;
 
     -- DDR2 Signals
     signal c3_calib_done : std_logic;
@@ -183,7 +185,7 @@ begin
             users_in => spi_arbiter_users_in,
             users_out => spi_arbiter_users_out);
 
-    U_LEFT_CAMERA : entity work.camera
+    U_LEFT_CAMERA : entity work.camera -- C2
         generic map (
             SYNC_INVERTED   => false,
             DATA3_INVERTED  => false,
@@ -201,10 +203,18 @@ begin
             camera_out => left_camera_out,
             camera_in  => left_camera_in,
             
+            MISO => pair8P,
+            MOSI => pair14N,
+            SCLK => SCLK,
+            nSS  => pair7P,
+            
+            spi_arbiter_in => spi_arbiter_users_in(2),
+            spi_arbiter_out => spi_arbiter_users_out(2),
+            
             ram_in  => c3_p1_wronly_in,
             ram_out => c3_p1_wronly_out);
     
-    U_RIGHT_CAMERA : entity work.camera
+    U_RIGHT_CAMERA : entity work.camera -- C1
         generic map (
             SYNC_INVERTED   => true,
             DATA3_INVERTED  => true,
@@ -222,9 +232,45 @@ begin
             camera_out => right_camera_out,
             camera_in  => right_camera_in,
             
+            MISO => pair8N,
+            MOSI => pair14N,
+            SCLK => SCLK,
+            nSS  => pair7N,
+            
+            spi_arbiter_in => spi_arbiter_users_in(1),
+            spi_arbiter_out => spi_arbiter_users_out(1),
+            
             ram_in  => c3_p5_in,
             ram_out => c3_p5_out);
-
+    
+    process (clk_100MHz_buf) is
+        constant DELAY : positive := 25;
+        variable countdown : integer range 0 to 2*DELAY := 0;
+        variable last_SCLK : std_logic := '0';
+    begin
+        if rising_edge(clk_100MHz_buf) then
+            if countdown /= 0 then
+                if countdown = DELAY then
+                    pair12P <= '0';
+                    pair13P <= '0';
+                end if;
+                countdown := countdown - 1;
+            elsif SCLK /= last_SCLK then
+                if SCLK = '1' then
+                    pair12P <= '1';
+                else
+                    pair13P <= '1';
+                end if;
+                countdown := 2*DELAY;
+                last_SCLK := SCLK;
+            end if;
+        end if;
+    end process;
+    
+    --SCLK <= 'H';
+    --pair7N <= 'H';
+    --pair7P <= 'H';
+    
     --------------------------
     -- DDR2 Interface
     --------------------------
@@ -536,12 +582,11 @@ begin
             pair8N => pair8N,
             pair9P => pair9P,
             pair9N => pair9N,
-            pair12P => pair12P,
             pair12N => pair12N,
-            pair13P => pair13P,
             pair13N => pair13N,
             pair14P => pair14P,
-            pair14N => pair14N);
+            pair14N => pair14N,
+            SCLK => SCLK);
     
     reset_for_ram_user <= reset or not c3_calib_done or c3_rst0;
     
