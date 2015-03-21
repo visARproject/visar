@@ -14,8 +14,10 @@ class SPIer(object):
         self._drive |= 1<<31
         self._pins = 0b0110100000011
         self._r.write(0xFFFFFFF4, self._pins)
+        assert self.read_pin(12) == 0, "arbiter request was already set!"
+        assert self.read_pin(13) == 0, "arbiter enable was already set!"
         self.set_pin(12) # arbiter request
-        #assert self.read_pin(13) == 1
+        assert self.read_pin(13) == 1
         self._r.write(0xFFFFFFF8, self._drive)
     def _read_pins(self):
         self._r.write(0xFFFFFFFC, 0)
@@ -29,7 +31,7 @@ class SPIer(object):
         self._pins = ~(~self._pins | (1<<n))
         self._r.write(0xFFFFFFF4, self._pins)
     def read_pin(self, n):
-        assert not ((self._drive >> n) & 1)
+        #assert not ((self._drive >> n) & 1)
         return (self._read_pins() >> n) & 1
     def set_SCLK(self, x):
         assert x in [0, 1]
@@ -92,7 +94,12 @@ def write_cpld(x):
 s = SPIer()
 
 cpld_state = read_cpld()
+print cpld_state
+cpld_state = [0]*10
 write_cpld(cpld_state)
+
+s.close()
+fdasfsa
 
 
 def int_to_list(x, n):

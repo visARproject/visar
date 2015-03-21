@@ -187,6 +187,10 @@ begin
 
     U_LEFT_CAMERA : entity work.camera -- C2
         generic map (
+            CLOCK_FREQUENCY => 124.0E6,
+            
+            CPLD_CONFIG_BASE => 0,
+            
             SYNC_INVERTED   => false,
             DATA3_INVERTED  => false,
             DATA2_INVERTED  => true,
@@ -194,6 +198,7 @@ begin
             DATA0_INVERTED  => false,
             MEMORY_LOCATION => LEFT_CAMERA_MEMORY_LOCATION)
         port map (
+            clock               => clk_camera_over_5,
             clock_camera_unbuf  => clk_camera_unbuf,
             clock_camera_over_2 => clk_camera_over_2,
             clock_camera_over_5 => clk_camera_over_5,
@@ -208,6 +213,11 @@ begin
             SCLK => SCLK,
             nSS  => pair7P,
             
+            cpld_MOSI => pair14N,
+            cpld_MISO => pair13N,
+            cpld_SCLK => SCLK,
+            cpld_nSS  => pair14P,
+            
             spi_arbiter_in => spi_arbiter_users_in(2),
             spi_arbiter_out => spi_arbiter_users_out(2),
             
@@ -216,6 +226,10 @@ begin
     
     U_RIGHT_CAMERA : entity work.camera -- C1
         generic map (
+            CLOCK_FREQUENCY => 124.0E6,
+            
+            CPLD_CONFIG_BASE => 4,
+            
             SYNC_INVERTED   => true,
             DATA3_INVERTED  => true,
             DATA2_INVERTED  => true,
@@ -223,6 +237,7 @@ begin
             DATA0_INVERTED  => false,
             MEMORY_LOCATION => RIGHT_CAMERA_MEMORY_LOCATION)
         port map (
+            clock               => clk_camera_over_5,
             clock_camera_unbuf  => clk_camera_unbuf,
             clock_camera_over_2 => clk_camera_over_2,
             clock_camera_over_5 => clk_camera_over_5,
@@ -236,6 +251,11 @@ begin
             MOSI => pair14N,
             SCLK => SCLK,
             nSS  => pair7N,
+            
+            cpld_MOSI => pair14N,
+            cpld_MISO => pair13N,
+            cpld_SCLK => SCLK,
+            cpld_nSS  => pair14P,
             
             spi_arbiter_in => spi_arbiter_users_in(1),
             spi_arbiter_out => spi_arbiter_users_out(1),
