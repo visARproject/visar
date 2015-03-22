@@ -35,8 +35,8 @@ void start_voice(int* fd) {
 
   cmd_ln_t *config = cmd_ln_init(NULL, ps_args(), TRUE,
     "-hmm", MODELDIR "/en-us/en-us",
-    "-lm", "./6715.lm",
-    "-dict", "./6715.dic",
+    "-lm", "./dictionary.lm",
+    "-dict", "./dictionary.dic",
     "-logfn", "/dev/null",
     NULL);
 
@@ -47,49 +47,47 @@ void start_voice(int* fd) {
   time_t current_time;
   struct tm * timeinfo;
 
-#ifdef PROCESS_INPUT_FILE
-  FILE *f_in;
-  int rv;
-  int16 buf[512];
-  f_in = fopen("audio_data.raw","rb");
+  #ifdef PROCESS_INPUT_FILE
+    FILE *f_in;
+    int rv;
+    int16 buf[512];
+    f_in = fopen("audio_data.raw","rb");
 
-  if(f_in == NULL)
-    return;
-  rv = ps_start_utt(ps);
-  #ifdef WRITE_RAW_FILE
-    int f_out;
-    f_out = open("input_data.raw", O_TRUNC | O_CREAT | O_WRONLY, 0666);
-    printf("%d\n", f_out);
-#endif
-  if (rv < 0)
+    if(f_in == NULL)
       return;
-        while (!feof(f_in)) {
-            size_t nsamp;
-            nsamp = fread(buf, 2, 512, f_in);
-            #ifdef WRITE_RAW_FILE
-              write(f_out, buf, nsamp*2);
-            #endif
-            rv = ps_process_raw(ps, buf, nsamp, FALSE, FALSE);
-        }
-        rv = ps_end_utt(ps);
-  if (rv < 0)
-    return;
-  hyp = ps_get_hyp(ps, NULL);
-  if (hyp == NULL)
-    return;
-  printf("Recognized from input file: %s\n", hyp);
-#endif
+    rv = ps_start_utt(ps);
+    #ifdef WRITE_RAW_FILE
+      int f_out;
+      f_out = open("input_data.raw", O_TRUNC | O_CREAT | O_WRONLY, 0666);
+      printf("%d\n", f_out);
+    #endif
+    if (rv < 0)
+        return;
+          while (!feof(f_in)) {
+              size_t nsamp;
+              nsamp = fread(buf, 2, 512, f_in);
+              #ifdef WRITE_RAW_FILE
+                write(f_out, buf, nsamp*2);
+              #endif
+              rv = ps_process_raw(ps, buf, nsamp, FALSE, FALSE);
+          }
+          rv = ps_end_utt(ps);
+    if (rv < 0)
+      return;
+    hyp = ps_get_hyp(ps, NULL);
+    if (hyp == NULL)
+      return;
+    printf("Recognized from input file: %s\n", hyp);
+  #endif
 
   //begin utterance
   ps_start_utt(ps);
-  int ps_point = 0;
-  int16 *full_buf;
 
-#ifdef WRITE_RAW_FILE
-  int f;
-  f = open("audio_data.raw", O_TRUNC | O_CREAT | O_WRONLY, 0666);
-  printf("%d\n", f);
-#endif
+  #ifdef WRITE_RAW_FILE
+    int f;
+    f = open("audio_data.raw", O_TRUNC | O_CREAT | O_WRONLY, 0666);
+    printf("%d\n", f);
+  #endif
 
   //go as long as there's a pipe
   while(TRUE) {
