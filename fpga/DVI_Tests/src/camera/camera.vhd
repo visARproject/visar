@@ -262,7 +262,7 @@ begin
                 end if;
             elsif state = STATE_5 then
                 if cpld_spi_busy = '0' then
-                    --spi_arbiter_in.request <= '0';
+                    spi_arbiter_in.request <= '0';
                 end if;
             end if;
         end if;

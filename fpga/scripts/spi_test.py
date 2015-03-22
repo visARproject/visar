@@ -40,6 +40,7 @@ class SPIer(object):
         else:
             self.set_pin(31)
     def do_spi(self, nCS_pin, MISO_pin, bits, read=True):
+        return self.do_camera_spi(nCS_pin, MISO_pin, bits, read)
         MOSI_pin = 11
         
         self.set_SCLK(1)

@@ -60,6 +60,7 @@ begin
                     countdown := SCLK_HALF_PERIOD_CYCLES;
                     state := STATE_1;
                     busy <= '1';
+                    bit_count := 0;
                 end if;
             elsif state = STATE_1 then
                 MOSI <= shift(DATA_BITS-1);
@@ -73,12 +74,13 @@ begin
                 SCLK <= '1';
                 countdown := SCLK_HALF_PERIOD_CYCLES;
                 if bit_count /= DATA_BITS-1 then
-                    STATE := STATE_3;
-                else
                     bit_count := bit_count + 1;
                     state := STATE_1;
+                else
+                    STATE := STATE_3;
                 end if;
             elsif state = STATE_3 then
+                shift_out := shift_out(DATA_BITS-2 downto 0) & MISO;
                 SCLK <= '0';
                 countdown := SCLK_HALF_PERIOD_CYCLES;
                 state := STATE_4;

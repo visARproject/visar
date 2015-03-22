@@ -130,7 +130,7 @@ begin
         
         if nCS = '1' then
             data_out <= CHECK_DATA & good_data_in;
-        elsif falling_edge(SCLK) then
+        elsif rising_edge(SCLK) then
             MISO <= data_out(data_out'length-1);
             data_out <= data_out(data_out'length-2 downto 0) & '-';
         end if;
