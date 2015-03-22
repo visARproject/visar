@@ -109,8 +109,8 @@ class State(object):
             self.end_call()
             
         # call the target specified in the args register
-        call_target = args
-        if args is None: call_target = '127.0.0.1' # default value
+        call_target = self.args
+        if self.args is None: call_target = '127.0.0.1' # default value
         self.audio_controller.start(call_target) # start a call
         self.calling = True
 
