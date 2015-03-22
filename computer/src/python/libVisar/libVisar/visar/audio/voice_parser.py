@@ -1,7 +1,10 @@
 import xml.etree.ElementTree as ET
+import os
 
 class Parser(object):
-  setting_tree = ET.parse('voice_control.xml')
+  fpath = os.path.dirname(os.path.realpath(__file__))
+  xml_dir = os.path.join(fpath, 'voice_control.xml')
+  setting_tree = ET.parse(xml_dir)
   root_setting_xml = setting_tree.getroot()
 
   key_words = {}
@@ -22,10 +25,10 @@ class Parser(object):
       args = ""
       
       for y in range(0, x):
-        command + words[y]
+        command + " " + words[y]
       
       for y in range(x, len(words)):
-        args + words[y]
+        args + " " + words[y]
       
       if command in self.key_words:
         tup = (command, args)
