@@ -12,9 +12,9 @@ class Parser(object):
     for child in root_setting_xml:
         key_words[child.get('name').lower()] = child.get('name').lower()
 
-    if child.get('alias') == "True":
-        for grandchildren in child:
-            key_words[grandchildren.get('name').lower()] = child.get('name').lower()
+        if child.get('alias') == "True":
+            for grandchildren in child:
+                key_words[grandchildren.get('name').lower()] = child.get('name').lower()
 
     @classmethod
     def parse(self, text):
@@ -44,4 +44,5 @@ class Parser(object):
         return tup
 
 if __name__ == '__main__':
-    print Parser.parse("Call Alpha Bravo")
+    print Parser.key_words
+    print Parser.parse("Call Now Alpha Bravo")
