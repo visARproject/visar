@@ -4,7 +4,9 @@ from ...OpenGL.utils.transformations import quaternion_matrix, euler_from_matrix
 from .menu_controller import Menu_Controller
 from ...OpenGL.utils import Logger
 from ..audio import AudioController
+from ..audio import Parser
 from ..network import NetworkState
+from ..interface import Interface
 
 import os
 import numpy as np
@@ -22,7 +24,6 @@ class State(object):
     '''
 
     absolute_file_path = os.path.dirname(os.path.realpath(__file__))
-
 
     targets = [
         (10, 10, 10),
@@ -47,10 +48,24 @@ class State(object):
       self.network_peers = event
       
     network_state.add_callback(network_callback) # add the callback
+    
+    # setup and initialize the voice control event handler
+    @classmethod
+    def voice_callback(event):
+      '''Callback funciton will call appropriate function based on Voice command'''
+      Logger.warn("Voice Callback: " + event[0] + "--" + event[1])
+      if(event[0] == 'VCERR'): print 'Voice Error: ' + event[1]
+      elif(event[0] == 'VCCOM'):
+        command = Parser.parse(event[1])
+        self.args = command[1] # store the args, or None as appropriate
+        self.action_dict[command[0]]() # call the command no arguments
 
-    call_target = '127.0.0.1' # default call target is ourselves
+    voice_event = Interface()
+    voice_event.add_callback(self.voice_event)
+
     calling = False # toggle value for call
   
+    args = None # arguments for function calls
 
     button_dict = {}
     buttons = set()
@@ -85,18 +100,35 @@ class State(object):
 
     @classmethod
     def make_call(self):
-        '''JOSH PUT STUFF HERE'''
+        '''Funciton will make a voice call to target specified in argumets
+           It will interrupt the current call if one already exists before starting another
+        '''
         Logger.warn("Attempting to make a call")
+        # end call first
         if self.calling:
             self.end_call()
-            self.calling = False
-        else:
-            self.audio_controller.start(self.call_target) # start a call
-            self.calling = True
+            
+        # call the target specified in the args register
+        call_target = args
+        if args is None: call_target = '127.0.0.1' # default value
+        self.audio_controller.start(call_target) # start a call
+        self.calling = True
 
     @classmethod
     def end_call(self):
+        '''End the call'''
         self.audio_controller.stop() # hang up
+        self.calling = False # set flag appropriatley
+
+    @classmethod
+    def start_listening(self):
+      '''Begin listening for voice commands'''
+      self.audio_controller.start_voice(self.voice_listener)
+
+    @classmethod
+    def stop_listening(self):
+      '''Stop listening to voice commands'''
+      self.audio_controller.stop_voice()
 
     @classmethod
     def set_orientation_matrix(self, orientation_matrix):

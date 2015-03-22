@@ -24,7 +24,6 @@ voice_control: audio_controller.o buffer.o comms.o sound.o encode.o voice_contro
 opus: audio_controller.o buffer.o comms.o sound.o encode_opus.o voice_control.o
 	$(CC) voice_control.o audio_controller.o buffer.o comms.o sound.o encode_opus.o -o audio $(OLIBS) $(LINK_PSPHINX)
 
-
 voice_control.o: voice_control.c
 	$(CC) $(CFLAGS) voice_control.c $(COMP_PSPHINX) $(LINK_PSPHINX)
 
