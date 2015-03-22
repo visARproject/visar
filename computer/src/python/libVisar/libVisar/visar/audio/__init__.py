@@ -1,2 +1,2 @@
 from .audio import AudioController
-from .parser import Parser
+from .voice_parser import Parser

@@ -44,10 +44,17 @@ class State(object):
     
     @classmethod
     def pose_callback(self, event):
-      self.pose = event
+        self.pose = event # store the full value
+        # call the appropriate update methods
+        position = (event['position_ecef']['x'], event['position_ecef']['y'], 
+                    event['position_ecef']['z'])
+        self.set_position(position)
+        orientation = (event['orientation_ecef']['x'], event['orientation_ecef']['y'], 
+                    event['orientation_ecef']['z'], event['orientation_ecef']['w'])
+        self.set_orientation(orientation)
       
     pose_handler = PoseHandler(frequency=1/30)
-    pose_handler.add_callback(self.pose_callback)
+    pose_handler.add_callback(pose_callback)
     
     # define a network status object and callback funciton
     peers = None
@@ -70,7 +77,7 @@ class State(object):
         self.action_dict[command[0]]() # call the command no arguments
 
     voice_event = Interface()
-    voice_event.add_callback(self.voice_event)
+    voice_event.add_callback(voice_callback)
 
     calling = False # toggle value for call
   
@@ -173,6 +180,7 @@ class State(object):
     
     @classmethod
     def destroy(self):  
+        self.pose_handler.destroy()
         self.network_state.destroy()
         self.audio_controller.destroy()
 
