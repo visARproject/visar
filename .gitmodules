@@ -4,3 +4,6 @@
 [submodule "computer/ext/freetype-gl"]
 	path = computer/ext/freetype-gl
 	url = git@github.com:rougier/freetype-gl.git
+[submodule "beacon/libopencm3"]
+	path = beacon/libopencm3
+	url = git@github.com:libopencm3/libopencm3.git
