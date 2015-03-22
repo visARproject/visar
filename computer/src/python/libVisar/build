@@ -1,0 +1,3 @@
+#!/bin/bash
+make -C libVisar/visar/audio/ $1
+    

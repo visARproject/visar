@@ -2,23 +2,28 @@
 
 CC=gcc
 CFLAGS=-c 
-LIBS=-lasound -lpthread -lspeex -lopus
+SLIBS=-lasound -lpthread -lspeex
+OLIBS=-lasound -lpthread -lopus
 LINK_PSPHINX=`pkg-config --cflags --libs pocketsphinx sphinxbase`
 COMP_PSPHINX=-DMODELDIR=\"`pkg-config --variable=modeldir pocketsphinx`\"
 
 all: voice_control
 
 test: audio_controller.o buffer.o comms.o sound.o encode.o test.o
-	$(CC) test.o audio_controller.o buffer.o comms.o sound.o encode.o -o audio $(LIBS)
+	$(CC) test.o audio_controller.o buffer.o comms.o sound.o encode.o -o audio $(SLIBS)
 
-opus: audio_controller.o buffer.o comms.o sound.o encode_opus.o test.o
-	$(CC) test.o audio_controller.o buffer.o comms.o sound.o encode_opus.o -o audio $(LIBS)
+test_opus: audio_controller.o buffer.o comms.o sound.o encode_opus.o test.o
+	$(CC) test.o audio_controller.o buffer.o comms.o sound.o encode_opus.o -o audio $(OLIBS)
 
 test.o: test.c
 	$(CC) $(CFLAGS) test.c
 
 voice_control: audio_controller.o buffer.o comms.o sound.o encode.o voice_control.o
-	$(CC) voice_control.o audio_controller.o buffer.o comms.o sound.o encode.o -o audio $(LIBS) $(LINK_PSPHINX)
+	$(CC) voice_control.o audio_controller.o buffer.o comms.o sound.o encode.o -o audio $(SLIBS) $(LINK_PSPHINX)
+	
+opus: audio_controller.o buffer.o comms.o sound.o encode_opus.o voice_control.o
+	$(CC) voice_control.o audio_controller.o buffer.o comms.o sound.o encode_opus.o -o audio $(OLIBS) $(LINK_PSPHINX)
+
 
 voice_control.o: voice_control.c
 	$(CC) $(CFLAGS) voice_control.c $(COMP_PSPHINX) $(LINK_PSPHINX)
