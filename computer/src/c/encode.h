@@ -1,4 +1,4 @@
-/* Header file for the speex codec management */
+/* Common header file for the codec management */
 
 //funciton prototypes
 int setup_codecs();

@@ -55,6 +55,7 @@ void *reciever_thread(void *ptr){
         //write(stdout, GET_QUEUE_TAIL(*buf), buf->per_size); //DEBUG
         INC_QUEUE_TAIL(*buf); //increment if successful
         //bytes = sendto(sock, &ack, 1, 0, (struct sockaddr *)&client,sizeof(client)); //send an ack
+        //printf("got packet: %d\n",bytes);
       } else printf("Error, bad socket read: %s\n", strerror(errno)); //report the error
       //printf("buffer: (%d, %d, %d)\n", buf->start, buf->end, BUFFER_SIZE(*buf));
     } else {
@@ -95,6 +96,7 @@ int send_packet(sender_handle* snd){
   bytes = sendto(snd->sock, encode_buf, bytes, 0, (struct sockaddr *)&(snd->dest), sizeof(snd->dest)); //send the packet
   //int bytes = sendto(snd->sock, snd->buf, snd->len, 0, (struct sockaddr *)&(snd->dest), sizeof(snd->dest)); //send the packet
   if(bytes <= 0) printf("Error, bad socket write: %s\n", strerror(errno)); //report the error
+  //printf("sent packet: %d\n",bytes);
   return bytes;
 }
 
