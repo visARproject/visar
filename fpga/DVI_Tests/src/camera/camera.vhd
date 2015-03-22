@@ -52,10 +52,17 @@ architecture arc of camera is
     
     signal reset_synchronized : std_logic;
     
+    signal camera_spi_data_in  : std_logic_vector(25 downto 0);
+    signal camera_spi_start    : std_logic;
+    signal camera_spi_busy     : std_logic;
+    signal camera_spi_data_out : std_logic_vector(25 downto 0);
+    
     signal cpld_spi_data_in  : std_logic_vector(19 downto 0);
     signal cpld_spi_start    : std_logic;
     signal cpld_spi_busy     : std_logic;
     signal cpld_spi_data_out : std_logic_vector(19 downto 0);
+    
+    signal xyz : std_logic;
 begin
     U_CAMERA_WRAPPER : entity work.camera_wrapper
         generic map (
@@ -92,6 +99,25 @@ begin
     
     spi_arbiter_in.clock <= clock;
     
+    U_CAMERA_SPI : entity work.util_spi_master
+        generic map (
+            CLOCK_FREQUENCY => CLOCK_FREQUENCY,
+            SCLK_FREQUENCY => 1.0E6,
+            DATA_BITS => 26)
+        port map (
+            clock => clock,
+            reset => reset_synchronized,
+            
+            data_in  => camera_spi_data_in,
+            start    => camera_spi_start,
+            busy     => camera_spi_busy,
+            data_out => camera_spi_data_out,
+            
+            nSS  => nSS,
+            SCLK => SCLK,
+            MOSI => MOSI,
+            MISO => MISO);
+    
     U_CPLD_SPI : entity work.util_spi_master
         generic map (
             CLOCK_FREQUENCY => CLOCK_FREQUENCY,
@@ -111,13 +137,11 @@ begin
             MOSI => cpld_MOSI,
             MISO => cpld_MISO);
     
-    SCLK <= 'Z';
-    
     process (clock) is
         constant MILLISECOND_CYCLES : natural := integer(ceil(1.0E-3 / CLOCK_FREQUENCY));
-        variable countdown : integer range 0 to MILLISECOND_CYCLES;
+        variable countdown : integer range 0 to 10*MILLISECOND_CYCLES;
         
-        type StateType is (STATE_START, STATE_1, STATE_2, STATE_3, STATE_4, STATE_5);
+        type StateType is (STATE_START, STATE_0, STATE_00, STATE_1, STATE_2, STATE_3, STATE_4, STATE_5, STATE_6, STATE_7);
         variable state : StateType;
         
         variable cpld_data : std_logic_vector(9 downto 0);
@@ -208,63 +232,83 @@ begin
             (address =>  40, data => 16#0003#),
             (address =>  48, data => 16#0001#),
             (address => 112, data => 16#0007#));
+        
+        variable camera_initialization_index : integer range 0 to initialization_data'length-1;
     begin
         if rising_edge(clock) then
             cpld_spi_start <= '0';
-            --camera_spi_start <= '0';
+            camera_spi_start <= '0';
             if reset_synchronized = '1' then
-                spi_arbiter_in.request <= '0';
+                xyz <= '0';
                 
                 state := STATE_START;
                 countdown := 0;
             elsif countdown /= 0 then
                 countdown := countdown - 1;
-            elsif state = STATE_START then
-                spi_arbiter_in.request <= '1';
-                if spi_arbiter_out.enable = '1' then
+            else
+                if cpld_spi_busy = '1' then
+                elsif camera_spi_busy = '1' then
+                elsif xyz = '1' and spi_arbiter_out.enable = '0' then
+                elsif state = STATE_START then
+                    xyz <= '1';
+                    state := STATE_0;
+                elsif state = STATE_0 then
                     cpld_spi_data_in <= (others => '0');
                     cpld_spi_start <= '1';
+                    state := STATE_00;
+                elsif state = STATE_00 then
+                    cpld_data := cpld_spi_data_out(9 downto 0);
+                    cpld_data(CPLD_CONFIG_BASE+3 downto CPLD_CONFIG_BASE+0) := (others => '0');
+                    cpld_spi_data_in <= "1010011001" & cpld_data;
+                    cpld_spi_start <= '1';
+                    countdown := 10*MILLISECOND_CYCLES;
                     state := STATE_1;
-                    countdown := 1;
-                end if;
-            elsif state = STATE_1 then
-                if cpld_spi_busy = '0' then
+                elsif state = STATE_1 then
                     cpld_data := cpld_spi_data_out(9 downto 0);
                     cpld_data(CPLD_CONFIG_BASE+3) := '1';
                     cpld_spi_data_in <= "1010011001" & cpld_data;
                     cpld_spi_start <= '1';
+                    countdown := MILLISECOND_CYCLES;
                     state := STATE_2;
-                    countdown := 1;
-                end if;
-            elsif state = STATE_2 then
-                if cpld_spi_busy = '0' then
+                elsif state = STATE_2 then
                     cpld_data(CPLD_CONFIG_BASE+2) := '1';
                     cpld_spi_data_in <= "1010011001" & cpld_data;
                     cpld_spi_start <= '1';
+                    countdown := MILLISECOND_CYCLES;
                     state := STATE_3;
-                    countdown := 1;
-                end if;
-            elsif state = STATE_3 then
-                if cpld_spi_busy = '0' then
+                elsif state = STATE_3 then
                     cpld_data(CPLD_CONFIG_BASE+1) := '1';
                     cpld_spi_data_in <= "1010011001" & cpld_data;
                     cpld_spi_start <= '1';
+                    countdown := MILLISECOND_CYCLES;
                     state := STATE_4;
-                    countdown := 1;
-                end if;
-            elsif state = STATE_4 then
-                if cpld_spi_busy = '0' then
+                elsif state = STATE_4 then
                     cpld_data(CPLD_CONFIG_BASE+0) := '1';
                     cpld_spi_data_in <= "1010011001" & cpld_data;
                     cpld_spi_start <= '1';
+                    countdown := MILLISECOND_CYCLES;
                     state := STATE_5;
-                    countdown := 1;
+                elsif state = STATE_5 then
+                    camera_initialization_index := 0;
+                    state := STATE_6;
+                elsif state = STATE_6 then
+                    camera_spi_data_in <= std_logic_vector(to_unsigned(initialization_data(camera_initialization_index).address, 9)) & "1" & std_logic_vector(to_unsigned(initialization_data(camera_initialization_index).data, 16));
+                    camera_spi_start <= '1';
+                    if camera_initialization_index /= initialization_data'length-1 then
+                        camera_initialization_index := camera_initialization_index + 1;
+                        state := STATE_6;
+                    else
+                        state := STATE_7;
+                    end if;
+                elsif state = STATE_7 then
+                    xyz <= '0';
                 end if;
-            elsif state = STATE_5 then
-                if cpld_spi_busy = '0' then
-                    spi_arbiter_in.request <= '0';
+                if countdown = 0 then
+                    -- make sure that we wait at least one cycle in between all normal work in order for busy flag of SPI masters to become set, since our start flag is registered
+                    countdown := 1;
                 end if;
             end if;
         end if;
     end process;
+    spi_arbiter_in.request <= xyz;
 end architecture;

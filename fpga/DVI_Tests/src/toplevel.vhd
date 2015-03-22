@@ -187,7 +187,7 @@ begin
 
     U_LEFT_CAMERA : entity work.camera -- C2
         generic map (
-            CLOCK_FREQUENCY => 124.0E6,
+            CLOCK_FREQUENCY => 100.0E6,
             
             CPLD_CONFIG_BASE => 0,
             
@@ -198,7 +198,7 @@ begin
             DATA0_INVERTED  => false,
             MEMORY_LOCATION => LEFT_CAMERA_MEMORY_LOCATION)
         port map (
-            clock               => clk_camera_over_5,
+            clock               => clk_100MHz_buf,
             clock_camera_unbuf  => clk_camera_unbuf,
             clock_camera_over_2 => clk_camera_over_2,
             clock_camera_over_5 => clk_camera_over_5,
@@ -226,7 +226,7 @@ begin
     
     U_RIGHT_CAMERA : entity work.camera -- C1
         generic map (
-            CLOCK_FREQUENCY => 124.0E6,
+            CLOCK_FREQUENCY => 100.0E6,
             
             CPLD_CONFIG_BASE => 4,
             
@@ -237,7 +237,7 @@ begin
             DATA0_INVERTED  => false,
             MEMORY_LOCATION => RIGHT_CAMERA_MEMORY_LOCATION)
         port map (
-            clock               => clk_camera_over_5,
+            clock               => clk_100MHz_buf,
             clock_camera_unbuf  => clk_camera_unbuf,
             clock_camera_over_2 => clk_camera_over_2,
             clock_camera_over_5 => clk_camera_over_5,
