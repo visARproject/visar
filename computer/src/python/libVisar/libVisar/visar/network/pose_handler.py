@@ -6,7 +6,6 @@ import time
 
 POSE_PORT    = 19107 # port to communicate with pose server
 TIMEOUT      = 1     # timeout for socket read (in seconds)
-UPDATE_TIMER = 1/60  # time between issued updates
 
 class PoseHandler(interface.Interface):
   ''' Class connects to the standalone pose server and reads/stores
@@ -16,7 +15,7 @@ class PoseHandler(interface.Interface):
          "velocity_ecef": {"x", "y", "z"}, "angular_velocity_ecef": {"x", "y", "z"}}
   '''
 
-  def __init__(self, UPDATE_TIMER = 1/60):
+  def __init__(self, frequency = 1/60):
     ''' Create the object, and connect to the server '''
     interface.Interface.__init__(self) # call superclass init
     
@@ -25,7 +24,7 @@ class PoseHandler(interface.Interface):
     self.kill_flag = False    # kill flag for threads
     self.line_buffer = ''     # input line buffer
     self.timer = time.clock() # get system time for update timer
-    self.freq = UPDATE_TIMER  # update frequency
+    self.freq = frequency  # update frequency
     
     # setup socket and start the update thread
     self.sock = socket(AF_INET, SOCK_STREAM) # create the client socket
