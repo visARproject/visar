@@ -232,8 +232,15 @@ begin
             (address =>  40, data => 16#0003#),
             (address =>  48, data => 16#0001#),
             (address => 112, data => 16#0007#),
-            -- start
-            (address => 192, data => 16#0001#));
+            
+            (address => 192, data => 16#0002#), -- enable rolling shutter
+            (address => 198, data =>     1041), -- dummy lines
+            (address => 160, data => 16#0011#), -- enable AEC
+            (address => 170, data =>     1041), -- enable AEC max exposure (note relation to dummy lines)
+            (address => 171, data => 2#1111111111111101#), -- enable AEC max gain
+            
+            -- ENABLE SEQUENCER REGISTER UPLOAD
+            (address => 192, data => 16#0003#));
         
         variable camera_initialization_index : integer range 0 to initialization_data'length-1;
     begin
