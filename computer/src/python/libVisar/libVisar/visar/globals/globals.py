@@ -3,9 +3,8 @@ from vispy.util.transforms import perspective, translate, rotate, scale, xrotate
 from ...OpenGL.utils.transformations import quaternion_matrix, euler_from_matrix, euler_from_quaternion
 from .menu_controller import Menu_Controller
 from ...OpenGL.utils import Logger
-from ..audio import AudioController
-from ..audio import Parser
-from ..network import NetworkState
+from ..audio import AudioController, Parser
+from ..network import NetworkState, PoseHandler
 from ..interface import Interface
 
 import os
@@ -40,18 +39,35 @@ class State(object):
     network_state = NetworkState(socket.gethostname(), 'testname', 'status') # create network state tracker
     audio_controller = AudioController() # create audio manager
     
+    # create and start the pose update listener (default to mil)
+    pose = {"position_ecef": {"x":738575.65, "y":-5498374.10, "z":3136355.42}, "orientation_ecef": {"x": 0.50155109,  "y": 0.03353513,  "z": 0.05767266, "w": 0.86255189}, "velocity_ecef": {"x": -0.06585217, "y": 0.49024074, "z": 0.8690958}, "angular_velocity_ecef": {"x": 0.11570315, "y": -0.86135956, "z": 0.4946438}} 
+    
+    @classmethod
+    def pose_callback(self, event):
+        self.pose = event # store the full value
+        # call the appropriate update methods
+        position = (event['position_ecef']['x'], event['position_ecef']['y'], 
+                    event['position_ecef']['z'])
+        self.set_position(position)
+        orientation = (event['orientation_ecef']['x'], event['orientation_ecef']['y'], 
+                    event['orientation_ecef']['z'], event['orientation_ecef']['w'])
+        self.set_orientation(orientation)
+      
+    pose_handler = PoseHandler(frequency=1/30)
+    pose_handler.add_callback(pose_callback)
+    
     # define a network status object and callback funciton
     peers = None
     
     @classmethod
-    def network_callback(event):
+    def network_callback(self, event):
       self.network_peers = event
       
     network_state.add_callback(network_callback) # add the callback
     
     # setup and initialize the voice control event handler
     @classmethod
-    def voice_callback(event):
+    def voice_callback(self, event):
       '''Callback funciton will call appropriate function based on Voice command'''
       Logger.warn("Voice Callback: " + event[0] + "--" + event[1])
       if(event[0] == 'VCERR'): print 'Voice Error: ' + event[1]
@@ -61,7 +77,7 @@ class State(object):
         self.action_dict[command[0]]() # call the command no arguments
 
     voice_event = Interface()
-    voice_event.add_callback(self.voice_event)
+    voice_event.add_callback(voice_callback)
 
     calling = False # toggle value for call
   
@@ -164,6 +180,7 @@ class State(object):
     
     @classmethod
     def destroy(self):  
+        self.pose_handler.destroy()
         self.network_state.destroy()
         self.audio_controller.destroy()
 
