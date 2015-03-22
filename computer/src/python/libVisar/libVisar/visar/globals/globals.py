@@ -6,6 +6,7 @@ from ...OpenGL.utils import Logger
 from ..audio import AudioController
 from ..network import NetworkState
 
+import os
 import numpy as np
 import socket
 
@@ -19,6 +20,9 @@ class State(object):
         Angular Velocity - Quaternion
 
     '''
+
+    absolute_file_path = os.path.dirname(os.path.realpath(__file__))
+
 
     targets = [
         (10, 10, 10),

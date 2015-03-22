@@ -4,7 +4,8 @@ import threading
 import socket
 from ..interface import Interface
 
-AUDIO_PROGRAM = 'libVisar/visar/audio/audio'     # path to audio module
+fpath = os.path.dirname(os.path.realpath(__file__))
+AUDIO_PROGRAM = os.path.join(fpath, 'audio')     # path to audio module
 CONTROL_CLIENT = 19101        # TCP comms port for handshaking (client)
 CONTROL_SERVER = 19102        # TCP comms port for handshaking (server)
 AUDIO_SERVER   = 19103        # UDP port for audio data (server mode)
