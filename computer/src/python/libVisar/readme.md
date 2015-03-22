@@ -13,23 +13,18 @@ Contains everything you've ever wanted in a Python augmented reality package.
 * QT4
 * scipy (For terrain generator)
 * libasound2-dev (audio)
-* libspeex-dev (audio compression)
+* either libspeex-dev (default speex codec) or libopus-dev (opus codec mode)
 
 Install all of these for things to work!
 
 ## Install
 Do this! You don't have to run this every time you make a change
     sudo python setup.py develop
+    ./build [opus]
 
 ## Uninstall
     sudo python setup.py develop --uninstall
-
-## Permanent Install
-    sudo python setup.py install
-
-## Uninstall from permanent install
-    sudo pip uninstall libVisar
-
+    ./build clean
 
 # Usage
 Type
