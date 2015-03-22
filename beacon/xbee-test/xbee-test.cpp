@@ -6,8 +6,7 @@
 #include <libopencm3/stm32/usart.h>
 #include <libopencm3/cm3/nvic.h>
 
-#include "lcd.h"
-#include "delay.h"
+
 #include "xbee.h"
 #include "gps.h"
 #include "Queue.hpp"
@@ -22,52 +21,87 @@ gps_state_t gps_tx_state = GPS_START1;
 Queue<gps_packet_t, 10> gps_rx_queue;
 Queue<gps_packet_t, 3> gps_tx_queue;
 
+/*
+ New USART mapping:
+ USART2 - GPS   - PA2, PA3
+ USART1 - DEBUG - PA9, PA10
+ USART3 - XBEE  - PB10, PB11, PB13, PB14
+*/
+
 static void clock_setup(void)
 {
-    // Set STM32 to 168 MHz.
-    rcc_clock_setup_hse_3v3(&hse_8mhz_3v3[CLOCK_3V3_168MHZ]);
-
-    // Enable GPIOD clock for LED, LCD & USARTs. 
-    rcc_periph_clock_enable(RCC_GPIOD); // LCD Data
-    rcc_periph_clock_enable(RCC_GPIOE); // LCD Control
-    rcc_periph_clock_enable(RCC_GPIOA); // USART2 (XBEE), USART1(GPS)
-
-    // Enable clocks for USART2 (XBEE).
-    rcc_periph_clock_enable(RCC_USART2);
-
-    // Enable clocks for USART1 (GPS).
+    // Set STM32 to 72 MHz.
+    rcc_clock_setup_in_hse_8mhz_out_72mhz();
+    
+    // Enable GPIO clocks for USARTs, USB, Reset signals, and GPS Fix/1PPS. 
+    rcc_periph_clock_enable(RCC_GPIOA);
+    rcc_periph_clock_enable(RCC_GPIOB);
+    
+    // Enable clocks for USART1 (DEBUG).
     rcc_periph_clock_enable(RCC_USART1);
+
+    // Enable clocks for USART2 (GPS).
+    rcc_periph_clock_enable(RCC_USART2);
+    
+    // Enable clocks for USART3 (XBEE).
+    rcc_periph_clock_enable(RCC_USART3);
 }
 
 static void gpio_setup(void)
-{
-    // Setup GPIO pin GPIO12 on GPIO port D for LED. 
-    gpio_mode_setup(GPIOD, GPIO_MODE_OUTPUT, GPIO_PUPD_NONE, GPIO12);
+{    
+    // Signal       Pin     Direction
+    // GPS_1PPS     PB0     Input
+    // GPS_FIX      PB1     Input
+    // GPS_RSTN     PB2     Output
+    // XBEE_RESET   PB12    Output
+    // USBPullup    PB15    Output
+    
+    gpio_set_mode(GPIOB, GPIO_MODE_INPUT, GPIO_CNF_INPUT_FLOAT, GPIO0 | GPIO1);
+    gpio_set_mode(GPIOB, GPIO_MODE_OUTPUT_50_MHZ, GPIO_CNF_OUTPUT_PUSHPULL, GPIO2 | GPIO12 | GPIO15); 
+    gpio_set(GPIOB, GPIO2 | GPIO12); // initially, both resets are false
+    gpio_set(GPIOB, GPIO15); // TODO: What should the USB pullup value be?
 }
 
 static void usart_setup(void)
 {
 // ----BEGIN XBEE SETUP
+    // Enable the USART3 interrupt.
+    nvic_enable_irq(NVIC_USART3_IRQ);
+
+    // Setup GPIO pins for USART3 transmit. 
+    gpio_set_mode(GPIOB, GPIO_MODE_OUTPUT_50_MHZ, GPIO_CNF_OUTPUT_ALTFN_PUSHPULL, GPIO_USART3_TX);
+
+    // Setup GPIO pins for USART3 receive.
+    gpio_set_mode(GPIOB, GPIO_MODE_INPUT, GPIO_CNF_INPUT_FLOAT, GPIO_USART3_RX);
+
+    // Setup USART3 RTS and CTS
+    gpio_set_mode(GPIOB, GPIO_MODE_OUTPUT_50_MHZ, GPIO_CNF_OUTPUT_ALTFN_PUSHPULL, GPIO_USART3_RTS);
+    gpio_set_mode(GPIOB, GPIO_MODE_OUTPUT_50_MHZ, GPIO_CNF_INPUT_FLOAT, GPIO_USART3_CTS);
+
+    // Setup USART3 parameters.
+    usart_set_baudrate(USART3, 115200);
+    usart_set_databits(USART3, 8);
+    usart_set_stopbits(USART3, USART_STOPBITS_1);
+    usart_set_mode(USART3, USART_MODE_TX_RX);
+    usart_set_parity(USART3, USART_PARITY_NONE);
+    usart_set_flow_control(USART3, USART_FLOWCONTROL_RTS_CTS);
+
+    // Enable USART3 Receive interrupt. 
+    usart_enable_rx_interrupt(USART3);
+
+    // Finally enable the USART.
+    usart_enable(USART3);
+// ----END XBEE SETUP
+
+// ----BEGIN GPS SETUP
     // Enable the USART2 interrupt.
     nvic_enable_irq(NVIC_USART2_IRQ);
 
-    // Setup GPIO pins for USART2 transmit. 
-    gpio_mode_setup(GPIOA, GPIO_MODE_AF, GPIO_PUPD_NONE, GPIO2);
+    // Setup GPIO pins for USART2 transmit.
+    gpio_set_mode(GPIOA, GPIO_MODE_OUTPUT_50_MHZ, GPIO_CNF_OUTPUT_ALTFN_PUSHPULL, GPIO_USART2_TX);
 
     // Setup GPIO pins for USART2 receive.
-    gpio_mode_setup(GPIOA, GPIO_MODE_AF, GPIO_PUPD_NONE, GPIO3);
-    gpio_set_output_options(GPIOA, GPIO_OTYPE_OD, GPIO_OSPEED_25MHZ, GPIO3);
-
-    // Setup USART2 TX and RX pin as alternate function.
-    gpio_set_af(GPIOA, GPIO_AF7, GPIO2);
-    gpio_set_af(GPIOA, GPIO_AF7, GPIO3);
-
-    // Setup USART2 RTS and CTS
-    gpio_mode_setup(GPIOA, GPIO_MODE_AF, GPIO_PUPD_NONE, GPIO0);
-    gpio_mode_setup(GPIOA, GPIO_MODE_AF, GPIO_PUPD_NONE, GPIO1);
-    gpio_set_af(GPIOA, GPIO_AF7, GPIO0);
-    gpio_set_af(GPIOA, GPIO_AF7, GPIO1);
-
+    gpio_set_mode(GPIOA, GPIO_MODE_INPUT, GPIO_CNF_INPUT_FLOAT, GPIO_USART2_RX);
 
     // Setup USART2 parameters.
     usart_set_baudrate(USART2, 115200);
@@ -75,48 +109,18 @@ static void usart_setup(void)
     usart_set_stopbits(USART2, USART_STOPBITS_1);
     usart_set_mode(USART2, USART_MODE_TX_RX);
     usart_set_parity(USART2, USART_PARITY_NONE);
-    usart_set_flow_control(USART2, USART_FLOWCONTROL_RTS_CTS);
+    usart_set_flow_control(USART2, USART_FLOWCONTROL_NONE);
 
-    // Enable USART2 Receive interrupt. 
+    // Enable USART2 Receive interrupt.
     usart_enable_rx_interrupt(USART2);
 
     // Finally enable the USART.
     usart_enable(USART2);
-// ----END XBEE SETUP
-
-// ----BEGIN GPS SETUP
-    // Enable the USART1 interrupt.
-    nvic_enable_irq(NVIC_USART1_IRQ);
-
-    // Setup GPIO pins for USART1 transmit.
-    gpio_mode_setup(GPIOA, GPIO_MODE_AF, GPIO_PUPD_NONE, GPIO9);
-
-    // Setup GPIO pins for USART1 receive.
-    gpio_mode_setup(GPIOA, GPIO_MODE_AF, GPIO_PUPD_NONE, GPIO10);
-    gpio_set_output_options(GPIOA, GPIO_OTYPE_OD, GPIO_OSPEED_25MHZ, GPIO10);
-
-    // Setup USART1 TX and RX pin as alternate function.
-    gpio_set_af(GPIOA, GPIO_AF7, GPIO9);
-    gpio_set_af(GPIOA, GPIO_AF7, GPIO10);
-
-    // Setup USART1 parameters.
-    usart_set_baudrate(USART1, 115200);
-    usart_set_databits(USART1, 8);
-    usart_set_stopbits(USART1, USART_STOPBITS_1);
-    usart_set_mode(USART1, USART_MODE_TX_RX);
-    usart_set_parity(USART1, USART_PARITY_NONE);
-    usart_set_flow_control(USART1, USART_FLOWCONTROL_NONE);
-
-    // Enable USART2 Receive interrupt.
-    usart_enable_rx_interrupt(USART1);
-
-    // Finally enable the USART.
-    usart_enable(USART1);
 
 // ----END GPS SETUP
 }
 
-void usart2_isr(void)
+void usart3_isr(void)
 {
     static uint8_t rx_checksum = 0x00;
     static uint8_t tx_checksum = 0x00;
@@ -124,10 +128,10 @@ void usart2_isr(void)
     static xbee_packet_t tx_pkt;
 
     // Check if we were called because of RXNE.
-    if (((USART_CR1(USART2) & USART_CR1_RXNEIE) != 0)
-            && ((USART_SR(USART2) & USART_SR_RXNE) != 0)) {
+    if (((USART_CR1(USART3) & USART_CR1_RXNEIE) != 0)
+            && ((USART_SR(USART3) & USART_SR_RXNE) != 0)) {
 
-        uint8_t data = usart_recv(USART2);
+        uint8_t data = usart_recv(USART3);
         static uint16_t rx_index = 0;
 
         switch (xbee_rx_state) {
@@ -169,39 +173,39 @@ void usart2_isr(void)
     }
 
     // Check if we were called because of TXE.
-    if (((USART_CR1(USART2) & USART_CR1_TXEIE) != 0)
-            && ((USART_SR(USART2) & USART_SR_TXE) != 0)) {
+    if (((USART_CR1(USART3) & USART_CR1_TXEIE) != 0)
+            && ((USART_SR(USART3) & USART_SR_TXE) != 0)) {
 
         static uint16_t tx_index = 0;
 
         switch (xbee_tx_state) {
             case XBEE_START:
                 if (xbee_tx_queue.isEmpty()) {
-                    usart_disable_tx_interrupt(USART2);
+                    usart_disable_tx_interrupt(USART3);
                     break;
                 } else {
                     tx_pkt = xbee_tx_queue.dequeue();
                 }
-                usart_send(USART2, 0x7E); // XBEE start
+                usart_send(USART3, 0x7E); // XBEE start
                 tx_index = 0;
                 tx_checksum = 0;
                 xbee_tx_state = XBEE_LENGTH_HIGH;
                 break;
             case XBEE_LENGTH_HIGH:
-                usart_send(USART2, (tx_pkt.length >> 8) & 0xFF);
+                usart_send(USART3, (tx_pkt.length >> 8) & 0xFF);
                 xbee_tx_state = XBEE_LENGTH_LOW;
                 break;
             case XBEE_LENGTH_LOW:
-                usart_send(USART2, (tx_pkt.length) & 0xFF);
+                usart_send(USART3, (tx_pkt.length) & 0xFF);
                 xbee_tx_state = XBEE_TYPE;
                 break;
             case XBEE_TYPE:
-                usart_send(USART2, tx_pkt.type);
+                usart_send(USART3, tx_pkt.type);
                 tx_checksum += tx_pkt.type;
                 xbee_tx_state = XBEE_MESSAGE;
                 break;
             case XBEE_MESSAGE:
-                usart_send(USART2, tx_pkt.payload[tx_index]);
+                usart_send(USART3, tx_pkt.payload[tx_index]);
                 tx_checksum += tx_pkt.payload[tx_index];
                 ++tx_index;
                 if (tx_index == tx_pkt.length - 1) {
@@ -209,14 +213,14 @@ void usart2_isr(void)
                 }
                 break;
             case XBEE_CHECKSUM:
-                usart_send(USART2, 0xFF - tx_checksum);
+                usart_send(USART3, 0xFF - tx_checksum);
                 xbee_tx_state = XBEE_START;
                 break;
         }
     }
 }
 
-void usart1_isr(void)
+void usart2_isr(void)
 {
     static uint8_t rx_checksum = 0x00;
     static uint8_t tx_checksum = 0x00;
@@ -224,10 +228,10 @@ void usart1_isr(void)
     static gps_packet_t tx_pkt;
 
     // Check if we were called because of RXNE.
-    if (((USART_CR1(USART1) & USART_CR1_RXNEIE) != 0)
-            && ((USART_SR(USART1) & USART_SR_RXNE) != 0)) {
+    if (((USART_CR1(USART2) & USART_CR1_RXNEIE) != 0)
+            && ((USART_SR(USART2) & USART_SR_RXNE) != 0)) {
 
-        volatile uint8_t data = usart_recv(USART1);
+        volatile uint8_t data = usart_recv(USART2);
         static uint16_t rx_index = 0;
 
         switch (gps_rx_state) {
@@ -279,8 +283,8 @@ void usart1_isr(void)
     }
 
     // Check if we were called because of TXE.
-    if (((USART_CR1(USART1) & USART_CR1_TXEIE) != 0)
-            && ((USART_SR(USART1) & USART_SR_TXE) != 0)) {
+    if (((USART_CR1(USART2) & USART_CR1_TXEIE) != 0)
+            && ((USART_SR(USART2) & USART_SR_TXE) != 0)) {
 
         static uint16_t tx_index = 0;
 
@@ -292,25 +296,25 @@ void usart1_isr(void)
                 } else {
                     tx_pkt = gps_tx_queue.dequeue();
                 }
-                usart_send(USART1, 0xA0);
+                usart_send(USART2, 0xA0);
                 tx_index = 0;
                 tx_checksum = 0;
                 gps_tx_state = GPS_START2;
                 break;
             case GPS_START2:
-                usart_send(USART1, 0xA1);
+                usart_send(USART2, 0xA1);
                 gps_tx_state = GPS_LENGTH_HIGH;
                 break;
             case GPS_LENGTH_HIGH:
-                usart_send(USART1, (tx_pkt.length >> 8) & 0xFF);
+                usart_send(USART2, (tx_pkt.length >> 8) & 0xFF);
                 gps_tx_state = GPS_LENGTH_LOW;
                 break;
             case GPS_LENGTH_LOW:
-                usart_send(USART1, (tx_pkt.length) & 0xFF);
+                usart_send(USART2, (tx_pkt.length) & 0xFF);
                 gps_tx_state = GPS_MESSAGE;
                 break;
             case GPS_MESSAGE:
-                usart_send(USART1, tx_pkt.payload[tx_index]);
+                usart_send(USART2, tx_pkt.payload[tx_index]);
                 tx_checksum ^= tx_pkt.payload[tx_index];
                 ++tx_index;
                 if (tx_index == tx_pkt.length) {
@@ -318,15 +322,15 @@ void usart1_isr(void)
                 }
                 break;
             case GPS_CHECKSUM:
-                usart_send(USART1, tx_checksum);
+                usart_send(USART2, tx_checksum);
                 gps_tx_state = GPS_END1;
                 break;
             case GPS_END1:
-                usart_send(USART1, 0x0D);
+                usart_send(USART2, 0x0D);
                 gps_tx_state = GPS_END2;
                 break;
             case GPS_END2:
-                usart_send(USART1, 0x0A);
+                usart_send(USART2, 0x0A);
                 gps_tx_state = GPS_START1;
                 break;
         }
@@ -341,8 +345,7 @@ int main(void)
     clock_setup();
     gpio_setup();
     usart_setup();
-//    lcd_init();
-//    lcd_string("------------");
+
     while (1) {
         __asm__("NOP");
 
@@ -353,7 +356,7 @@ int main(void)
 
             if (gps_pkt.payload[0] == GPS_ACK
                     || gps_pkt.payload[0] == GPS_NACK) { // ignore ACK and NACK
-                break;
+                continue;
             }
 
             ++skytraq_packet_id;
@@ -384,7 +387,7 @@ int main(void)
                     xbee_pkt.length = INDEX_SKYTRAQ_START + MAX_FRAG_LENGTH;
                 }
                 xbee_tx_queue.enqueue(xbee_pkt);
-                usart_enable_tx_interrupt(USART2); // enable XBEE TX interrupt
+                usart_enable_tx_interrupt(USART3); // enable XBEE TX interrupt
                 ++current_fragment;
                 src_ptr += bytes_to_copy;
             }
@@ -393,24 +396,6 @@ int main(void)
         if (!xbee_rx_queue.isEmpty()) {
             xbee_rx_queue.dequeue();
         }
-
-//        xbee_packet_t packet;
-//        if (!(xbee_rx_queue.isEmpty())) {
-//            gpio_toggle(GPIOD, GPIO12);
-//            packet = xbee_rx_queue.dequeue();
-//            if (packet.type != 0x90) {
-//                continue;
-//            }
-//            char str[17];
-//            strncpy(str, &(packet.payload[11]), 16);
-//            str[16] = 0;
-//            lcd_command(0x01); // clear and go home
-//            lcd_string(str);
-//        }
-        //xbee_assemble_tx_packet(packet, 0x000000000000FFFF, 0xFFFE, "haha", 5);
-        //xbee_tx_queue.enqueue(packet);
-        //usart_enable_tx_interrupt(USART2);
-
     } // while(1)
 
     return 0;

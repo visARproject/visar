@@ -20,7 +20,7 @@
 
 BINARY = xbee-test
 
-LDSCRIPT = stm32f4-discovery.ld
+LDSCRIPT = stm32f1-beacon.ld
 
 # Be silent per default, but 'make V=1' will show all compiler calls.
 ifneq ($(V),1)
@@ -51,7 +51,7 @@ STYLECHECKFILES	:= $(shell find . -name '*.[ch]')
 
 OOCD		?= openocd
 OOCD_INTERFACE	?= stlink-v2
-OOCD_BOARD	?= stm32f4discovery
+OOCD_BOARD	?= beacon
 
 ################################################################################
 # Black Magic Probe specific variables
@@ -67,7 +67,7 @@ BMP_PORT	?=
 
 LDSCRIPT	?= $(BINARY).ld
 
-OBJS		+= $(BINARY).o lcd.o delay.o xbee.o
+OBJS		+= $(BINARY).o delay.o xbee.o
 
 
 ifeq ($(strip $(OPENCM3_DIR)),)
@@ -94,11 +94,11 @@ LIB_DIR		= $(OPENCM3_DIR)/lib
 SCRIPT_DIR	= $(OPENCM3_DIR)/scripts
 
 ###############################################################################
-LIBNAME		= opencm3_stm32f4
-DEFS		= -DSTM32F4
+LIBNAME		= opencm3_stm32f1
+DEFS		= -DSTM32F1
 
-FP_FLAGS	?= -mfloat-abi=hard -mfpu=fpv4-sp-d16
-ARCH_FLAGS	= -mthumb -mcpu=cortex-m4 $(FP_FLAGS)
+FP_FLAGS	?= -msoft-float
+ARCH_FLAGS	= -mthumb -mcpu=cortex-m3 $(FP_FLAGS) -mfix-cortex-m3-ldrd
 ###############################################################################
 
 ###############################################################################
