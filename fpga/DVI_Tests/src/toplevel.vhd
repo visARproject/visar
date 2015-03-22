@@ -264,9 +264,11 @@ begin
             ram_out => c3_p5_out);
     
     process (clk_100MHz_buf) is
+        variable SCLK_1, SCLK_2 : std_logic;
         constant DELAY : positive := 25;
         variable countdown : integer range 0 to 2*DELAY := 0;
-        variable last_SCLK : std_logic := '0';
+        variable last_SCLK : std_logic;
+        variable last_SCLK_set : boolean := false;
     begin
         if rising_edge(clk_100MHz_buf) then
             if countdown /= 0 then
@@ -275,15 +277,18 @@ begin
                     pair13P <= '0';
                 end if;
                 countdown := countdown - 1;
-            elsif SCLK /= last_SCLK then
-                if SCLK = '1' then
+            elsif not last_SCLK_set or SCLK_2 /= last_SCLK then
+                if SCLK_2 = '1' then
                     pair12P <= '1';
                 else
                     pair13P <= '1';
                 end if;
                 countdown := 2*DELAY;
-                last_SCLK := SCLK;
+                last_SCLK := SCLK_2;
+                last_SCLK_set := true;
             end if;
+            SCLK_2 := SCLK_1;
+            SCLK_1 := SCLK;
         end if;
     end process;
     
