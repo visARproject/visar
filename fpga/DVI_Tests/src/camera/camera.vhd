@@ -231,7 +231,9 @@ begin
             (address =>  72, data => 16#0203#),
             (address =>  40, data => 16#0003#),
             (address =>  48, data => 16#0001#),
-            (address => 112, data => 16#0007#));
+            (address => 112, data => 16#0007#),
+            -- start
+            (address => 192, data => 16#0001#));
         
         variable camera_initialization_index : integer range 0 to initialization_data'length-1;
     begin

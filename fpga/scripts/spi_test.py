@@ -99,8 +99,8 @@ print cpld_state
 cpld_state = [0]*10
 write_cpld(cpld_state)
 
-s.close()
-fdasfsa
+#s.close()
+#fdasfsa
 
 
 def int_to_list(x, n):
