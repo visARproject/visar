@@ -9,7 +9,7 @@ from ..interface import Interface
 
 import os
 import numpy as np
-import socket
+import socket, random
 
 class State(object):
     '''Track the global state of the VisAR unit
@@ -36,7 +36,9 @@ class State(object):
 
     menu_controller = Menu_Controller()
 
-    network_state = NetworkState(socket.gethostname(), 'testname', 'status') # create network state tracker
+    id_code = ''.join(random.choice('0123456789ABCDEFGHIJKLMNOPQRSTUVWKYZ') for i in range(3)) # random 3 char id
+    #id_code = socket.gethostname() # get computer name for id
+    network_state = NetworkState(id_code, 'testname', 'status') # create network state tracker
     audio_controller = AudioController() # create audio manager
     
     # create and start the pose update listener (default to mil)
@@ -44,6 +46,7 @@ class State(object):
     
     @classmethod
     def pose_callback(self, event):
+        Logger.log("Pose Update %s" % (event,))
         self.pose = event # store the full value
         # call the appropriate update methods
         position = (event['position_ecef']['x'], event['position_ecef']['y'], 
@@ -57,10 +60,11 @@ class State(object):
     pose_handler.add_callback(pose_callback)
     
     # define a network status object and callback funciton
-    peers = None
+    network_peers = network_state.peers
     
     @classmethod
     def network_callback(self, event):
+      Logger.log("Netowrk Update: %s" % (event,))
       self.network_peers = event
       
     network_state.add_callback(network_callback) # add the callback
@@ -69,7 +73,7 @@ class State(object):
     @classmethod
     def voice_callback(self, event):
       '''Callback funciton will call appropriate function based on Voice command'''
-      Logger.warn("Voice Callback: " + event[0] + "--" + event[1])
+      Logger.log("Voice Callback: " + event[0] + "--" + event[1])
       if(event[0] == 'VCERR'): print 'Voice Error: ' + event[1]
       elif(event[0] == 'VCCOM'):
         command = Parser.parse(event[1])
@@ -119,21 +123,24 @@ class State(object):
         '''Funciton will make a voice call to target specified in argumets
            It will interrupt the current call if one already exists before starting another
         '''
-        Logger.warn("Attempting to make a call")
-        # end call first
+        # end call first        
         if self.calling:
             self.end_call()
             
         # call the target specified in the args register
         call_target = self.args
-        if self.args is None: call_target = network_state.id_code # default value
-        call_ip = self.network_peers[call_target] # get the ip address
+        self.args = None # clear the argument register
+        if call_target is None: call_target = self.id_code # default value
+        call_ip = self.network_peers[call_target][0] # get the ip address
+        Logger.warn("Attempting to call " + call_target + " at ip " + call_ip + ".")
         self.audio_controller.start(call_ip) # start a call
         self.calling = True
+
 
     @classmethod
     def end_call(self):
         '''End the call'''
+        Logger.warn('Ending Call')
         self.audio_controller.stop() # hang up
         self.calling = False # set flag appropriatley
 
@@ -184,10 +191,19 @@ class State(object):
         self.pose_handler.destroy()
         self.network_state.destroy()
         self.audio_controller.destroy()
-
+        
+    @classmethod
+    # Temporary Method, delete later
+    def set_target(self):
+        self.args = raw_input("Enter a call target: ")
+        
 State.action_dict = {
-        'example': lambda: Logger.log("Example button pressed!"),
-        'make call': State.make_call,
-        'toggle map': State.hide_map,
-        'end call': State.end_call,
+        'example'     : lambda: Logger.warn("Example button pressed!"),
+        'make call'   : State.make_call,
+        'end call'    : State.end_call,
+        'toggle map'  : State.hide_map,
+        'start voice' : State.start_listening,
+        'stop voice'  : State.stop_listening,
+        'list peers'  : lambda: Logger.warn("Peers: %s" % (State.network_peers,)),
+        'set target'  : State.set_target,
     }

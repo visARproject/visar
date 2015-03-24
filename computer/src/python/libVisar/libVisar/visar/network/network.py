@@ -27,7 +27,7 @@ class NetworkState(Interface):
     self.id_code = id_code
     self.name = name
     self.status = status
-    self.peers = {id_code : ('self', name, '')} # list of peers as dictionary
+    self.peers = {id_code : ('127.0.0.1', name, '')} # list of peers as dictionary
     self.lock = threading.RLock() # lock object
     
     # setup and start the treads
@@ -46,7 +46,7 @@ class NetworkState(Interface):
     '''Broadcast an update'''
     #print 'Sending Broadcast'
     self.lock.acquire()
-    self.peers[self.id_code] = ('self', self.name, self.status) # update our status
+    self.peers[self.id_code] = ('127.0.0.1', self.name, self.status) # update our status
     status = self.status
     self.lock.release()
     self.b_sock.sendto(self.id_code + '~' + self.name + '~' + status + '\n', ('<broadcast>',BROADCAST_PORT))
