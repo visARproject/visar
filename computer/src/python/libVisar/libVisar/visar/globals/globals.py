@@ -131,7 +131,8 @@ class State(object):
         call_target = self.args
         self.args = None # clear the argument register
         if call_target is None: call_target = self.id_code # default value
-        call_ip = self.network_peers[call_target][0] # get the ip address
+        if not '.' in call_target: call_ip = self.network_peers[call_target][0] # get the ip address if not one already
+        else: call_ip = call_target # call target is already an ip address
         Logger.warn("Attempting to call " + call_target + " at ip " + call_ip + ".")
         self.audio_controller.start(call_ip) # start a call
         self.calling = True
