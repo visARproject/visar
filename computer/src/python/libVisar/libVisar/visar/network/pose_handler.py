@@ -54,7 +54,7 @@ class PoseHandler(Interface):
       # issue update at if timer is expired
       if (time.clock() - self.timer) > self.freq:
         self.timer = time.clock()  # reset the timer
-        self.do_updates(self.pose) # issue the update
+        self.do_updates(self.pose) # issue the update  
       
     self.sock.close() # close the socket on exit
     

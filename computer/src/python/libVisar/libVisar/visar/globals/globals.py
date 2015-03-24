@@ -126,8 +126,9 @@ class State(object):
             
         # call the target specified in the args register
         call_target = self.args
-        if self.args is None: call_target = '127.0.0.1' # default value
-        self.audio_controller.start(call_target) # start a call
+        if self.args is None: call_target = network_state.id_code # default value
+        call_ip = self.network_peers[call_target] # get the ip address
+        self.audio_controller.start(call_ip) # start a call
         self.calling = True
 
     @classmethod
