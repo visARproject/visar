@@ -6,7 +6,6 @@ from ..interface import Interface
 
 fpath = os.path.dirname(os.path.realpath(__file__))
 AUDIO_PROGRAM = os.path.join(fpath, 'audio')     # path to audio module
-CONTROL_CLIENT = 19101        # TCP comms port for handshaking (client)
 CONTROL_SERVER = 19102        # TCP comms port for handshaking (server)
 AUDIO_SERVER   = 19103        # UDP port for audio data (server mode)
 AUDIO_CLIENT   = 19104        # UDP port for audio data (client mode)
@@ -65,24 +64,45 @@ class AudioController(Interface):
       print 'Error, conection already active' + str(self.connection)
       return None;
   
-    self.connection = (host, port, mode) # store connection information
-    command = 'start ' + mode + ' -host ' + host + ' -port ' + str(AUDIO_CLIENT) + '\n'
-    self.child.stdin.write(command) # send start command
-    
-    self.do_updates('Connected', host) # notify connection success
-  
+    try:
+      self.c_sock.connect((host,CONTROL_SERVER)) # connect to peer for handshake
+      self.c_sock.send(mode + '\n')
 
-  # connect to to client using a name
-  
+      self.connection = (host, port, mode) # store connection information
+      command = 'start ' + mode + ' -host ' + host + ' -port ' + str(AUDIO_CLIENT) + '\n'
+      self.child.stdin.write(command) # send start command
+    
+      # spawn thread to listen for shutdown
+      self.client = threading.Thread(target=self.client_thread)
+      self.client.start()
+              
+      self.do_updates('Connected', host) # notify connection success
+      return True # connection succeeded
+
+    except:
+      return False # connection failed
   
   # stop audio communication
   @thread_lock
   def stop(self):
+    if(self.connection is None or self.connection[0] == 'voice'): return  # not actually connected
+    
     self.child.stdin.write('stop both\n')    # send stop command
     if(self.voice_event is not None): self.connection = ('voice', None, 'mic') # check if voice was active (prevents shutdown)
     else: self.connection = None              # connection is no longer active
     
-    self.do_updates('Disconnected',None) # notify connection termination
+    # disconnect from the peer, must try both server and client sockets
+    try:
+      self.c_sock.send('shutdown\n') # send shutdown command
+      self.c_sock.close() # close the socket conneciton
+      self.c_sock = None # nulify the socket
+    except: pass
+        
+    try:
+      self.s_sock.send('shutdown\n') # send shutdown command
+      self.s_sock.close() # close the connection
+      self.s_sock = None # nullify the socket to signal thread
+    except: pass
   
   @thread_lock
   def set_volume(self, volume):
@@ -163,24 +183,49 @@ class AudioController(Interface):
     while(not self.kill_flag):
       try: conn, addr = self.s_sock.accept() # accept a connection
       except: continue  # loop on timeout
+      print 'connected to ' + addr
       data = conn.recv(1024) # get input from socket
       datas = data.split('\n') # split the input args
       lock.acquire()
       self.connection(addr[0], AUDIO_CLIENT, datas[0]) # setup connection
       command = 'start ' + datas[0] + ' -host ' + addr[0] + ' -port ' + str(AUDIO_SERVER) + '\n'
+      print "command: " + command
       self.child.stdin.write(command) # send start command
       lock.release()
       while conn is not None:
         try:
           if(conn.recv(10) == 'shutdown\n'): # wait for shutdown
+            print 'Disconnected'
             conn.close() # close the socket
             conn = None # set it to none so loop exits
         except: pass # ignore timeouts
       
       # shutdown the module
+      print 'audio shutting down'
       lock.acquire()
       self.child.stdin.write('stop both\n')    # send stop command
       if(voice_event is not None): self.connection = ('voice', None, 'mic') # check if voice was active (prevents shutdown)
       else: self.connection = None              # connection is no longer active
       lock.release()
+
+  def client_thread(self):  
+    # run until server shuts us down
+    while self.c_sock is not None:
+      try:
+        if(self.c_sock.recv(10) == 'shutdown\n'): # wait for shutdown
+          print 'Disconnected'
+          self.c_sock.close() # close the socket
+          self.c_sock = None # set it to none so loop exits
+      except: pass # ignore timeouts
+            
+    global lock        
+    lock.acquire()            
+    self.child.stdin.write('stop both\n')    # send stop command
+    if(self.voice_event is not None): self.connection = ('voice', None, 'mic') # check if voice was active (prevents shutdown)
+    else: self.connection = None              # connection is no longer active
+    lock.release()
+    
+    self.c_sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM) # get a new socket
+
+    self.do_updates('Disconnected',None) # notify connection termination
 
