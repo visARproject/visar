@@ -1,0 +1,14 @@
+ifconfig wlan2 down
+iwconfig wlan2 mode ad-hoc
+iwconfig wlan2 essid 'visar'
+iwconfig wlan2 key 1234567890
+ifconfig wlan2 192.168.1.10
+
+
+./audio
+
+start both [-host] [ip]
+stop both
+shutdown
+
+
