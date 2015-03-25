@@ -62,10 +62,10 @@ class State(object):
     # define a network status object and callback funciton
     network_peers = network_state.peers
     
-    @classmethod
-    def network_callback(self, event):
-      Logger.log("Netowrk Update: %s" % (event,))
-      self.network_peers = event
+    # Callback method for the network event updates
+    def network_callback(event):
+      Logger.log("Network Update: %s" % (event,))
+      State.network_peers = event
       
     network_state.add_callback(network_callback) # add the callback
     
