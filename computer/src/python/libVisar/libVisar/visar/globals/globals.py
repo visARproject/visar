@@ -68,6 +68,12 @@ class State(object):
       State.network_peers = event
       
     network_state.add_callback(network_callback) # add the callback
+
+    # Callback method for audio events
+    def audio_callback(event1, event2):
+      Logger.log("Audio Controller Update: %s" % ((event1, event2),))
+      
+    audio_controller.add_callback(audio_callback) # add the callback
     
     # setup and initialize the voice control event handler
     @classmethod

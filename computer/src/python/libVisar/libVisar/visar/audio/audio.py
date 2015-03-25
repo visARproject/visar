@@ -11,6 +11,7 @@ AUDIO_SERVER   = 19103        # UDP port for audio data (server mode)
 AUDIO_CLIENT   = 19104        # UDP port for audio data (client mode)
 AUDIO_WAIT_TM  = .05          # wait 50ms between operations
 SERVER_TIMEOUT = 1            # timeout for server socket (in seconds)
+BIND_ADDR      = ''
 
 # thread locking
 lock = threading.RLock()
@@ -86,7 +87,9 @@ class AudioController(Interface):
   # stop audio communication
   @thread_lock
   def stop(self):
-    if(self.connection is None or self.connection[0] == 'voice'): return  # not actually connected
+    if(self.connection is None or self.connection[0] == 'voice'): 
+      print 'No active call'
+      return  # not actually connected
     
     self.child.stdin.write('stop both\n')    # send stop command
     if(self.voice_event is not None): self.connection = ('voice', None, 'mic') # check if voice was active (prevents shutdown)
@@ -173,7 +176,7 @@ class AudioController(Interface):
   
   # server handler thread
   def server_thread(self):
-    self.s_sock.bind(('',CONTROL_SERVER))
+    self.s_sock.bind((BIND_ADDR,CONTROL_SERVER))
     self.s_sock.listen(1)
     self.s_sock.settimeout(SERVER_TIMEOUT) # timeout after 1 second
     global lock # use the global lock object
@@ -201,15 +204,15 @@ class AudioController(Interface):
         lock.acquire()
         test = self.connected
         lock.release()
-        
       
       if not test:
-        conn.send('shutdown\n')
-        print 'Disconnected'
-        conn.close()
-        conn = None
-      
-      self.connected = False
+        try:
+          conn.send('shutdown\n')
+          print 'Disconnected'
+          conn.close()
+          conn = None
+        except: pass
+        self.connected = False
       
       # shutdown the module
       print 'audio shutting down'
@@ -235,6 +238,8 @@ class AudioController(Interface):
     if(self.voice_event is not None): self.connection = ('voice', None, 'mic') # check if voice was active (prevents shutdown)
     else: self.connection = None              # connection is no longer active
     lock.release()
+    
+    print 'shutdown audio'
     
     self.c_sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM) # get a new socket
 

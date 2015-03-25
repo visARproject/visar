@@ -8,6 +8,8 @@ BROADCAST_PORT = 19105  # UDP port for status broadcast
 UPDATE_PORT    = 19106  # UDP port for status update
 TIMEOUT        = 1      # socket timeout (seconds)    
 UPDATE_TIMER   = 30     # how often to send updates/ping dead clients
+BIND_ADDR      = '' 
+BROADCAST_ADDR = '192.168.1.255' # TODO: find this dynamically
 
 class NetworkState(Interface):
   ''' Class maintains a list of all peers on the network and polls for updates.
@@ -21,6 +23,7 @@ class NetworkState(Interface):
     self.c_sock = socket(AF_INET, SOCK_DGRAM) # client socket, pings peers to see if alive
     self.s_sock = socket(AF_INET, SOCK_DGRAM) # server socket, handles pings/broadcasts
     self.b_sock.setsockopt(SOL_SOCKET, SO_BROADCAST, 1) # enable broadcasting
+    self.b_sock.bind((BIND_ADDR,0)) # bind to correct interface with any port
     
     # setup other object details
     self.kill_flag = False
@@ -49,18 +52,18 @@ class NetworkState(Interface):
     self.peers[self.id_code] = ('127.0.0.1', self.name, self.status) # update our status
     status = self.status
     self.lock.release()
-    self.b_sock.sendto(self.id_code + '~' + self.name + '~' + status + '\n', ('<broadcast>',BROADCAST_PORT))
+    self.b_sock.sendto(self.id_code + '~' + self.name + '~' + status + '\n', (BROADCAST_ADDR,BROADCAST_PORT))
 
   def broadcast_listener(self):
     '''Thread listens for broadcasts/pings and updates peer list as new information is avliable'''
-    self.s_sock.bind(('',BROADCAST_PORT)) # attach to the port
+    self.s_sock.bind((BIND_ADDR,BROADCAST_PORT)) # attach to the port
     self.s_sock.settimeout(TIMEOUT)       # set the timeout
     while(not self.kill_flag):
       try: data, addr = self.s_sock.recvfrom(1024) # get updates
       except: continue # loop on timeouts
       update = data.split('~') # split input on newline
       if update[0] == self.id_code: continue # ignore local traffic
-      self.s_sock.sendto('ack',addr) # send an ack
+      self.s_sock.sendto(self.id_code,addr) # send an ack with our id code
       #print 'sent ack', addr
       if len(update) < 3: continue # ping, ignore it
       
@@ -79,7 +82,7 @@ class NetworkState(Interface):
   def update_thread(self):
     '''Update thread pings known peers to see if they're still alive.
         Also calls send_update to braodcast. Long waits between updates '''
-    self.c_sock.bind(('',UPDATE_PORT)) # bind to the update port
+    self.c_sock.bind((BIND_ADDR,UPDATE_PORT)) # bind to the update port
     self.c_sock.settimeout(TIMEOUT)    # set the timeout
     
     while(not self.kill_flag):
@@ -92,6 +95,8 @@ class NetworkState(Interface):
         self.c_sock.sendto('ping',(self.peers[peer][0], BROADCAST_PORT))
         try: 
           data, addr = self.c_sock.recvfrom(16) # get the ack
+          if not data == peer:
+            removal_list.append(peer) # remove the entry if code doesnt match
           #print 'got ack', peer
         except: 
           removal_list.append(peer) # no response, peer is dead
