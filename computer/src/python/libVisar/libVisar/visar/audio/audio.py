@@ -116,12 +116,13 @@ class AudioController(Interface):
     self.child.stdin.write('set -volume ' + str(volume) + ' \n')
     
     
-  # start the voice controller, requires an event handler
-  # Events are passed back as tuples of (type, command/error text)
-  @thread_lock
+  # start the voice controller
   def start_voice(self):
+    lock.acquire()
     self.child.stdin.write('voice_start\n')
+    lock.release()
     self.vc_active = True
+    self.voice_event.do_updates(('VCERR','started_vc')) # send start log
     if(self.connection is None):
       self.connection = ('voice', None, 'mic') # connection is in voice mode
   

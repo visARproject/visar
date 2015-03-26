@@ -77,9 +77,16 @@ class State(object):
         command = Parser.parse(event[1])
         State.args = command[1] # store the args, or None as appropriate
         State.action_dict[command[0]]() # call the command
+<<<<<<< HEAD
 
     audio_controller.add_callback(audio_callback) # add the callback
     
+=======
+        
+    voice_event = Interface()
+    voice_event.add_callback(voice_callback)
+
+>>>>>>> 3219bf7354b2f52bd14851a15d53eff0bedf3943
     calling = False # toggle value for call
   
     args = None # arguments for function calls
