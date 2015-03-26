@@ -7,8 +7,7 @@ from ..interface import Interface
 fpath = os.path.dirname(os.path.realpath(__file__))
 AUDIO_PROGRAM = os.path.join(fpath, 'audio')     # path to audio module
 CONTROL_SERVER = 19102        # TCP comms port for handshaking (server)
-AUDIO_SERVER   = 19103        # UDP port for audio data (server mode)
-AUDIO_CLIENT   = 19104        # UDP port for audio data (client mode)
+AUDIO_PORT     = 19103        # UDP port for audio data
 AUDIO_WAIT_TM  = .05          # wait 50ms between operations
 SERVER_TIMEOUT = 1            # timeout for server socket (in seconds)
 BIND_ADDR      = ''
@@ -31,7 +30,7 @@ class AudioController(Interface):
     Interface.__init__(self)
     self.connection = None    # connection state (host, port, mode)
     self.voice_event = None   # event handler for voice comms
-    self.child = Popen(AUDIO_PROGRAM, bufsize=0, stdin=PIPE, stdout=PIPE, universal_newlines=True) # open subprocess
+    self.child = Popen(AUDIO_PROGRAM, bufsize=0, stdin=PIPE, stdout=PIPE, stderr=STDOUT, universal_newlines=True) # open subprocess
     self.kill_flag = False
     self.input_buffer = ''
     
@@ -61,7 +60,7 @@ class AudioController(Interface):
   
   # start audio communication with network device
   @thread_lock
-  def start(self, host, port=AUDIO_SERVER, mode='both'):
+  def start(self, host, port=AUDIO_PORT, mode='both'):
     if(self.connection is not None):
       print 'Error, conection already active' + str(self.connection)
       return None;
@@ -71,7 +70,7 @@ class AudioController(Interface):
       self.c_sock.send(mode + '\n')
 
       self.connection = (host, port, mode) # store connection information
-      command = 'start ' + mode + ' -host ' + host + ' -port ' + str(AUDIO_CLIENT) + '\n'
+      command = 'start ' + mode + ' -host ' + host + ' -port ' + str(AUDIO_PORT) + '\n'
       self.child.stdin.write(command) # send start command
     
       # spawn thread to listen for shutdown
@@ -188,8 +187,8 @@ class AudioController(Interface):
       data = conn.recv(1024) # get input from socket
       datas = data.split('\n') # split the input args
       lock.acquire()
-      self.connection = (addr[0], AUDIO_CLIENT, datas[0]) # setup connection
-      command = 'start ' + datas[0] + ' -host ' + addr[0] + ' -port ' + str(AUDIO_SERVER) + '\n'
+      self.connection = (addr[0], AUDIO_PORT, datas[0]) # setup connection
+      command = 'start ' + datas[0] + ' -host ' + addr[0] + ' -port ' + str(AUDIO_PORT) + '\n'
       print "command: " + command
       self.child.stdin.write(command) # send start command
       lock.release()

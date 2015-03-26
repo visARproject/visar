@@ -44,17 +44,16 @@ class State(object):
     # create and start the pose update listener (default to mil)
     pose = {"position_ecef": {"x":738575.65, "y":-5498374.10, "z":3136355.42}, "orientation_ecef": {"x": 0.50155109,  "y": 0.03353513,  "z": 0.05767266, "w": 0.86255189}, "velocity_ecef": {"x": -0.06585217, "y": 0.49024074, "z": 0.8690958}, "angular_velocity_ecef": {"x": 0.11570315, "y": -0.86135956, "z": 0.4946438}} 
     
-    @classmethod
-    def pose_callback(self, event):
+    def pose_callback(event):
         Logger.log("Pose Update %s" % (event,))
-        self.pose = event # store the full value
+        State.pose = event # store the full value
         # call the appropriate update methods
         position = (event['position_ecef']['x'], event['position_ecef']['y'], 
                     event['position_ecef']['z'])
-        self.set_position(position)
+        State.set_position(position)
         orientation = (event['orientation_ecef']['x'], event['orientation_ecef']['y'], 
                     event['orientation_ecef']['z'], event['orientation_ecef']['w'])
-        self.set_orientation(orientation)
+        State.set_orientation(orientation)
       
     pose_handler = PoseHandler(frequency=1/30)
     pose_handler.add_callback(pose_callback)
@@ -76,18 +75,19 @@ class State(object):
     audio_controller.add_callback(audio_callback) # add the callback
     
     # setup and initialize the voice control event handler
-    @classmethod
-    def voice_callback(self, event):
+    def voice_callback(event):
       '''Callback funciton will call appropriate function based on Voice command'''
       Logger.log("Voice Callback: " + event[0] + "--" + event[1])
       if(event[0] == 'VCERR'): print 'Voice Error: ' + event[1]
       elif(event[0] == 'VCCOM'):
         command = Parser.parse(event[1])
-        self.args = command[1] # store the args, or None as appropriate
-        self.action_dict[command[0]]() # call the command no arguments
+        State.args = command[1] # store the args, or None as appropriate
+        State.action_dict[command[0]]() # call the command
 
     voice_event = Interface()
     voice_event.add_callback(voice_callback)
+
+    audio_controller.voice_event = voice_event # DEBUG, REMOVE THIS LATER
 
     calling = False # toggle value for call
   
@@ -153,7 +153,7 @@ class State(object):
     @classmethod
     def start_listening(self):
       '''Begin listening for voice commands'''
-      self.audio_controller.start_voice(self.voice_listener)
+      self.audio_controller.start_voice(self.voice_event)
 
     @classmethod
     def stop_listening(self):

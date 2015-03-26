@@ -13,6 +13,7 @@
 #include <pthread.h>
 #include <alsa/asoundlib.h>
 #include <signal.h>
+#include <fcntl.h>
 
 #include "audio_controller.h"
 #include "buffer.h"
@@ -47,10 +48,14 @@ int main(int argc, char** argv){
      
   period = setup_codecs(); //setup the codecs and get the period size  
   
+  //FILE* debug_fd = fopen("debug.log", "w"); //DEBUG
+  
   //handler loop, runs until program is killed
   while(!global_kill){
     if(fgets(input, 80, stdin)){ //get a command from stdin
-      printf("Echo: %s",input);
+      //printf("Echo: %s",input);
+      //fprintf(debug_fd, "%s", input); //DEBUG
+      
       char* token = strtok(input, "\n"); //split string to ignore newline
       token = strtok(input, " "); //split string on whitespace, get command
       
@@ -187,6 +192,7 @@ int main(int argc, char** argv){
 }
 
 // create an alsa mixer and use it to set the system volume
+// TODO: Make this work on the embedded board
 void change_volume(long volume){
   if(volume > 100 || volume < 0) return; //check range
 
