@@ -58,7 +58,7 @@ void *reciever_thread(void *ptr){
       } else printf("Error, bad socket read: %s\n", strerror(errno)); //report the error
       //printf("buffer: (%d, %d, %d)\n", buf->start, buf->end, BUFFER_SIZE(*buf));
     } else {
-      printf("Reciever Waiting\n");
+      //printf("Reciever Waiting\n");
       usleep(PERIOD_UTIME/2);
     }
   }

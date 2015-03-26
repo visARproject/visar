@@ -37,8 +37,8 @@ class State(object):
     menu_controller = Menu_Controller()
 
     id_code = ''.join(random.choice('0123456789ABCDEFGHIJKLMNOPQRSTUVWKYZ') for i in range(3)) # random 3 char id
-    #id_code = socket.gethostname() # get computer name for id
-    network_state = NetworkState(id_code, 'testname', 'status') # create network state tracker
+    hostname = socket.gethostname() # get computer name for id
+    network_state = NetworkState(id_code, hostname, 'default status') # create network state tracker
     audio_controller = AudioController() # create audio manager
     
     # create and start the pose update listener (default to mil)
