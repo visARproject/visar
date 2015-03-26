@@ -143,7 +143,6 @@ class State(object):
         self.audio_controller.start(call_ip) # start a call
         self.calling = True
 
-
     @classmethod
     def end_call(self):
         '''End the call'''
@@ -160,6 +159,14 @@ class State(object):
     def stop_listening(self):
       '''Stop listening to voice commands'''
       self.audio_controller.stop_voice()
+
+    @classmethod
+    def update_status(self):
+      '''Change our network status to the contents the args register'''
+      status = self.args # get the status from argument register
+      self.args = None   # clear register
+      if status is None: status = 'default status' # ensure correct value
+      self.network_state.update_status(status)     # send update
 
     @classmethod
     def set_orientation_matrix(self, orientation_matrix):
@@ -202,15 +209,17 @@ class State(object):
     @classmethod
     # Temporary Method, delete later
     def set_target(self):
-        self.args = raw_input("Enter a call target: ")
+        '''set the argument register to value from command line'''
+        self.args = raw_input("Enter target value: ")
         
 State.action_dict = {
-        'example'     : lambda: Logger.warn("Example button pressed!"),
-        'make call'   : State.make_call,
-        'end call'    : State.end_call,
-        'toggle map'  : State.hide_map,
-        'start voice' : State.start_listening,
-        'stop voice'  : State.stop_listening,
-        'list peers'  : lambda: Logger.warn("Peers: %s" % (State.network_peers,)),
-        'set target'  : State.set_target,
+        'example'       : lambda: Logger.warn("Example button pressed!"),
+        'make call'     : State.make_call,
+        'end call'      : State.end_call,
+        'toggle map'    : State.hide_map,
+        'start voice'   : State.start_listening,
+        'stop voice'    : State.stop_listening,
+        'list peers'    : lambda: Logger.warn("Peers: %s" % (State.network_peers,)),
+        'set target'    : State.set_target,
+        'update status' : State.update_status,
     }

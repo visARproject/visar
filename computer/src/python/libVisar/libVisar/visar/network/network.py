@@ -50,9 +50,8 @@ class NetworkState(Interface):
     #print 'Sending Broadcast'
     self.lock.acquire()
     self.peers[self.id_code] = ('127.0.0.1', self.name, self.status) # update our status
-    status = self.status
     self.lock.release()
-    self.b_sock.sendto(self.id_code + '~' + self.name + '~' + status + '\n', (BROADCAST_ADDR,BROADCAST_PORT))
+    self.b_sock.sendto(self.id_code + '~' + self.name + '~' + self.status, (BROADCAST_ADDR,BROADCAST_PORT))
 
   def broadcast_listener(self):
     '''Thread listens for broadcasts/pings and updates peer list as new information is avliable'''
@@ -65,15 +64,22 @@ class NetworkState(Interface):
       if update[0] == self.id_code: continue # ignore local traffic
       self.s_sock.sendto(self.id_code,addr) # send an ack with our id code
       #print 'sent ack', addr
-      if len(update) < 3: continue # ping, ignore it
+      if len(update) < 3: 
+        print 'Ignored: %s' % (update,)
+        continue # ping, ignore it
       
+      print 'Updated: %s' % (update,)
       # update the peer's info
       self.lock.acquire()
-      old_peers = self.peers
+      # try to get old peer info, set to None if nonexistent
+      try: old_peer = self.peers[update[0]] 
+      except: old_peer = None
       self.peers[update[0]] = (addr[0],update[1],update[2]) # update peer info
-      peer_copy = copy.deepcopy(self.peers)
       self.lock.release()
-      if(not old_peers == peer_copy): # don't send frivilous updates
+      if(not old_peer == self.peers[update[0]]): # don't send frivilous updates
+        self.lock.acquire()
+        peer_copy = copy.deepcopy(self.peers) # copy the peer list
+        self.lock.release()
         self.do_updates(peer_copy) # send an update event
       
     #print 'b_listner thread shutdown'      
@@ -89,13 +95,16 @@ class NetworkState(Interface):
       time.sleep(UPDATE_TIMER/2) # wait before doing the ping
       if(self.kill_flag): break
       removal_list = []
-      for peer in self.peers:
+      self.lock.acquire()
+      peer_copy = copy.deepcopy(self.peers)
+      self.lock.release()
+      for peer in peer_copy:
         if peer==self.id_code: continue # don't ping ourselves
         #print 'pinging', peer
-        self.c_sock.sendto('ping',(self.peers[peer][0], BROADCAST_PORT))
+        self.c_sock.sendto('ping',(peer_copy[peer][0], BROADCAST_PORT))
         try: 
           data, addr = self.c_sock.recvfrom(16) # get the ack
-          if not data == peer:
+          if not peer in data:
             removal_list.append(peer) # remove the entry if code doesnt match
           #print 'got ack', peer
         except: 

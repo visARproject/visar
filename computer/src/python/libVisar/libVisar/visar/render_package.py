@@ -63,6 +63,7 @@ class Renderer(app.Canvas): # Canvas is a GUI object
             Button('Stop Voice', self, position=6),
             Button('List Peers', self, position=7),
             Button('Set Target', self, position=8),
+            Button('Update Status', self, position=9),
         ]
 
         self.view = np.eye(4)
