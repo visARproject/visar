@@ -87,8 +87,6 @@ class State(object):
     voice_event = Interface()
     voice_event.add_callback(voice_callback)
 
-    audio_controller.voice_event = voice_event # DEBUG, REMOVE THIS LATER
-
     calling = False # toggle value for call
   
     args = None # arguments for function calls
