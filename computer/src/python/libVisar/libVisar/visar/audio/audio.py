@@ -29,7 +29,7 @@ class AudioController(Interface):
   def __init__(self):
     Interface.__init__(self)
     self.connection = None    # connection state (host, port, mode)
-    self.voice_event = None   # event handler for voice comms
+    self.vc_active  = False   # Boolean to track when vc is active
     self.child = Popen(AUDIO_PROGRAM, bufsize=0, stdin=PIPE, stdout=PIPE, stderr=STDOUT, universal_newlines=True) # open subprocess
     self.kill_flag = False
     self.input_buffer = ''
@@ -62,7 +62,7 @@ class AudioController(Interface):
   @thread_lock
   def start(self, host, port=AUDIO_PORT, mode='both'):
     if(self.connection is not None):
-      self.do_updates('Warn','Start() ignored due to active connection ' + str(self.connection))
+      self.do_updates(('Warn','Start() ignored due to active connection ' + str(self.connection)))
       return None;
   
     try:
@@ -77,7 +77,7 @@ class AudioController(Interface):
       self.client = threading.Thread(target=self.client_thread)
       self.client.start()
               
-      self.do_updates('Connected', host) # notify connection success
+      self.do_updates(('Connected', host)) # notify connection success
       return True # connection succeeded
 
     except:
@@ -96,7 +96,7 @@ class AudioController(Interface):
       self.c_sock.close() # close the socket conneciton
       self.c_sock = None # nulify the socket
       self.child.stdin.write('stop both\n')    # send stop command
-      if(self.voice_event is not None): self.connection = ('voice', None, 'mic') # check if voice was active (prevents shutdown)
+      if self.vc_active: self.connection = ('voice', None, 'mic') # check if voice was active (prevents shutdown)
       else: self.connection = None              # connection is no longer active
     except: pass
         
@@ -110,32 +110,35 @@ class AudioController(Interface):
     
     #check range and type of volume
     if (type(volume) is not int) or volume > 100 or volume < 0: 
-      self.do_updates('Warn','Ignored Invalid Volume: ' + str(volume))
+      self.do_updates(('Warn','Ignored Invalid Volume: ' + str(volume)))
       return
     
     self.child.stdin.write('set -volume ' + str(volume) + ' \n')
     
     
-  # start the voice controller, requires an event handler
-  # Events are passed back as tuples of (type, command/error text)
-  def start_voice(self, event):
-    global lock
+  # start the voice controller
+  def start_voice(self):
+    if self.vc_active: # check if already listening
+      self.do_updates(('Error','VC is already active'))
+      return
     lock.acquire()
     self.child.stdin.write('voice_start\n')
     lock.release()
-    self.voice_event = event
-    self.voice_event.do_updates(('VCERR','started_vc')) # send start log
+    self.vc_active = True
+    self.do_updates(('started_vc','')) # send start log
     if(self.connection is None):
       self.connection = ('voice', None, 'mic') # connection is in voice mode
   
   # stops the voice controller
   def stop_voice(self):
+    if not self.vc_active: 
+      return None # exit if not listening
     global lock
     lock.acquire()
     self.child.stdin.write('voice_stop\n')
     lock.release()
-    self.voice_event.do_updates(('VCERR','stopped_vc')) # send shutdown update
-    self.voice_event = None # remove the event handler
+    self.do_updates(('stopped_vc','')) # send shutdown update
+    self.vc_active = False # stop vc activities
     if(self.connection is not None and self.connection[0] == 'voice'): 
       self.connection = None  # clear the connection state
   
@@ -151,7 +154,7 @@ class AudioController(Interface):
       lock.acquire()
       self.input_buffer += out # append responses to input buffer
       lock.release()
-    except: self.do_updates('Warn','Comms Error, Possibly the result of a shutdown')
+    except: self.do_updates(('Warn','Comms Error, Possibly the result of a shutdown'))
   
   # thread to handle parsing the output from the child process
   def parse_thread(self):
@@ -171,8 +174,8 @@ class AudioController(Interface):
     for line in parse:
       part = line.split(':') # split line across colon
       if len(part) < 2: part.insert(0,'') # make sure we have 2 inputs
-      if(self.voice_event is not None): 
-        self.voice_event.do_updates((part[0], part[1])) # send the event
+      if self.vc_active: 
+        self.do_updates((part[0], part[1])) # send the event
   
   # server handler thread
   def server_thread(self):
@@ -193,7 +196,7 @@ class AudioController(Interface):
       command = 'start ' + datas[0] + ' -host ' + addr[0] + ' -port ' + str(AUDIO_PORT) + '\n'
       self.child.stdin.write(command) # send start command
       lock.release()
-      self.do_updates('Conncted',addr[0]) # notify connection termination
+      self.do_updates(('Conncted',addr[0])) # notify connection termination
       while ((conn is not None) and self.connected):
         try:
           if(conn.recv(10) == 'shutdown\n'): # wait for shutdown
@@ -212,10 +215,10 @@ class AudioController(Interface):
       # shutdown the module
       lock.acquire()
       self.child.stdin.write('stop both\n')    # send stop command
-      if(self.voice_event is not None): self.connection = ('voice', None, 'mic') # check if voice was active (prevents shutdown)
+      if self.vc_active: self.connection = ('voice', None, 'mic') # check if voice was active (prevents shutdown)
       else: self.connection = None              # connection is no longer active
       lock.release()
-      self.do_updates('Disconnected',None) # notify connection termination
+      self.do_updates(('Disconnected',None)) # notify connection termination
 
   def client_thread(self):  
     # run until server shuts us down
@@ -229,11 +232,11 @@ class AudioController(Interface):
     global lock        
     lock.acquire()            
     self.child.stdin.write('stop both\n')    # send stop command
-    if(self.voice_event is not None): self.connection = ('voice', None, 'mic') # check if voice was active (prevents shutdown)
+    if self.vc_active: self.connection = ('voice', None, 'mic') # check if voice was active (prevents shutdown)
     else: self.connection = None              # connection is no longer active
     lock.release()
     
     self.c_sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM) # get a new socket
 
-    self.do_updates('Disconnected',None) # notify connection termination
+    self.do_updates(('Disconnected',None)) # notify connection termination
 
