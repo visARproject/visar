@@ -83,7 +83,7 @@ class State(object):
         command = Parser.parse(event[1])
         State.args = command[1] # store the args, or None as appropriate
         State.action_dict[command[0]]() # call the command
-
+        
     voice_event = Interface()
     voice_event.add_callback(voice_callback)
 
