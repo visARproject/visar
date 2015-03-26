@@ -65,10 +65,10 @@ class NetworkState(Interface):
       self.s_sock.sendto(self.id_code,addr) # send an ack with our id code
       #print 'sent ack', addr
       if len(update) < 3: 
-        print 'Ignored: %s' % (update,)
+        #print 'Ignored: %s' % (update,)
         continue # ping, ignore it
       
-      print 'Updated: %s' % (update,)
+      #print 'Updated: %s' % (update,)
       # update the peer's info
       self.lock.acquire()
       # try to get old peer info, set to None if nonexistent
@@ -129,6 +129,7 @@ class NetworkState(Interface):
     '''update our current status'''
     self.lock.acquire()
     self.status = status
+    self.peers[self.id_code] = ('127.0.0.1', self.name, self.status)
     peer_copy = copy.deepcopy(self.peers)
     self.lock.release()
     self.send_update()
