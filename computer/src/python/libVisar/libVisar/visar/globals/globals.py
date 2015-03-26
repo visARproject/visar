@@ -67,26 +67,19 @@ class State(object):
       State.network_peers = event
       
     network_state.add_callback(network_callback) # add the callback
-
-    # Callback method for audio events
-    def audio_callback(event1, event2):
-      Logger.log("Audio Controller Update: %s" % ((event1, event2),))
-      
-    audio_controller.add_callback(audio_callback) # add the callback
     
-    # setup and initialize the voice control event handler
-    def voice_callback(event):
+    # setup and initialize the voice control/audio event handler
+    def audio_callback(event):
       '''Callback funciton will call appropriate function based on Voice command'''
-      Logger.log("Voice Callback: " + event[0] + "--" + event[1])
-      if(event[0] == 'VCERR'): print 'Voice Error: ' + event[1]
-      elif(event[0] == 'VCCOM'):
+      Logger.log("Audio Callback: %s" % (event,))
+      # if(event[0] == 'VCERR'): print 'Voice Error: ' + event[1]
+      if(event[0] == 'VCCOM'):
         command = Parser.parse(event[1])
         State.args = command[1] # store the args, or None as appropriate
         State.action_dict[command[0]]() # call the command
 
-    voice_event = Interface()
-    voice_event.add_callback(voice_callback)
-
+    audio_controller.add_callback(audio_callback) # add the callback
+    
     calling = False # toggle value for call
   
     args = None # arguments for function calls
@@ -151,7 +144,7 @@ class State(object):
     @classmethod
     def start_listening(self):
       '''Begin listening for voice commands'''
-      self.audio_controller.start_voice(self.voice_event)
+      self.audio_controller.start_voice()
 
     @classmethod
     def stop_listening(self):
