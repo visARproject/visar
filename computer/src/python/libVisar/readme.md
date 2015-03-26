@@ -14,6 +14,16 @@ Contains everything you've ever wanted in a Python augmented reality package.
 * scipy (For terrain generator)
 * libasound2-dev (audio)
 * either libspeex-dev (default speex codec) or libopus-dev (opus codec mode)
+* gcc
+* automake
+* autoconf
+* libtool
+* bison
+* swig
+* python-dev
+* libpulse-dev
+* https://github.com/cmusphinx/sphinxbase
+* https://github.com/cmusphinx/pocketsphinx
 
 Install all of these for things to work!
 
