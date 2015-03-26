@@ -19,6 +19,15 @@ class Parser(object):
     @classmethod
     def parse(self, text):
         words = text.split(' ')
+
+        # handle one word text segments
+        if len(words) == 1:
+          if text.lower() in self.key_words:
+            return (self.key_words[text.lower()], '')
+          else:
+            return ('',text)
+            
+            
         tup = ()
         for x in range(1, len(words)):
             command = ""
