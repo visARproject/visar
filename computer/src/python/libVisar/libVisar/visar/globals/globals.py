@@ -75,8 +75,10 @@ class State(object):
       # if(event[0] == 'VCERR'): print 'Voice Error: ' + event[1]
       if(event[0] == 'VCCOM'):
         command = Parser.parse(event[1])
-        State.args = command[1] # store the args, or None as appropriate
-        State.action_dict[command[0]]() # call the command
+        try:
+          State.args = command[1] # store the args, or None as appropriate
+          State.action_dict[command[0]]() # call the command
+        except: Logger.log('Bad Command, expected: (func, args), got: %s' % (command,))
         
     audio_controller.add_callback(audio_callback) # add the callback
 

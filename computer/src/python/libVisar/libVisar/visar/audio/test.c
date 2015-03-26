@@ -15,7 +15,8 @@ void start_voice(int* fd){
   write(fd[1],text,11); //test the output stream
   while((rc = read(fd[0], buffer, 80)) > 0){
     //read operation blocks, DO NOT SLEEP.
-    printf("Read %d bytes\n",rc);
+    //printf("Read %d bytes\n",rc);
+    printf("VCCOM:Example\n");
   }
   printf("Exiting Test function\n");
   

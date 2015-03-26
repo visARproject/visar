@@ -6,4 +6,5 @@
   </command>
   <command name="End Call" alias="False">
   </command>
+  <command name="Example" alias="False">  </command>  
 </root>
