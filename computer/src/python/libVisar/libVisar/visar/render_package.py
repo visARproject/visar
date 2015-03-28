@@ -195,6 +195,7 @@ class Renderer(app.Canvas): # Canvas is a GUI object
 
     
 def main():
+    State.do_init() # initialize the state objects/threads
     c = Renderer()
     c.show()
     c.app.run()
