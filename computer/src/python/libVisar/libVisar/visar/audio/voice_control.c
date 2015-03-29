@@ -5,7 +5,7 @@
  */
 
 // Comment these lines to disable
-#define WRITE_RAW_FILE
+// #define WRITE_RAW_FILE
 // #define PROCESS_INPUT_FILE
 
 #include <pocketsphinx.h>
@@ -14,8 +14,21 @@
 #include <unistd.h>
 #include <string.h>
 #include <fcntl.h>
+#include "voice_control.h"
 
-void start_voice(int* fd) {
+#define IN_NAME "/tmp/vsr_audio_pipe"
+#define OUT_NAME "/tmp/vsr_vc_pipe"
+int main(int argc, char** argv) {
+  FILE *fp;
+  fp = fopen("vclog.log", "w+");
+
+  int fd[2];
+
+  do {
+    usleep(50000);
+  } while((fd[0] = open(IN_NAME, O_RDONLY)) < 0);
+  fd[1] = open(OUT_NAME, O_WRONLY);
+
   int buffer_size = 640; // buffer size
   uint8 utt_started = FALSE; //a new utterance check
   uint8 in_speech; //currently taking in speech
@@ -59,7 +72,7 @@ void start_voice(int* fd) {
     #ifdef WRITE_RAW_FILE
       int f_out;
       f_out = open("input_data.raw", O_TRUNC | O_CREAT | O_WRONLY, 0666);
-      printf("%d\n", f_out);
+      // printf("%d\n", f_out);
     #endif
     if (rv < 0)
         return;
@@ -77,16 +90,21 @@ void start_voice(int* fd) {
     hyp = ps_get_hyp(ps, NULL);
     if (hyp == NULL)
       return;
-    printf("Recognized from input file: %s\n", hyp);
+    // printf("Recognized from input file: %s\n", hyp);
   #endif
 
+  fprintf(fp, "Here\n");
+
   //begin utterance
-  ps_start_utt(ps);
+  if(ps_start_utt(ps) < 0) { //if a new utterance can't begin, then error
+    fprintf(fp, "%s\n", "VCERR:Failed to start utterance\n");
+  }
+  fclose(fp);
 
   #ifdef WRITE_RAW_FILE
     int f;
     f = open("audio_data.raw", O_TRUNC | O_CREAT | O_WRONLY, 0666);
-    printf("%d\n", f);
+    // printf("%d\n", f);
   #endif
 
   //go as long as there's a pipe
@@ -124,13 +142,13 @@ void start_voice(int* fd) {
     if(!utt_started) {
       utt_started = TRUE;
       time(&start_time_in_speech);
-      printf("Listening...\n");
+      // printf("Listening...\n");
     }
     else if(utt_started) {
       // printf("Time elapsed: %d\n", time(0) - start_time_in_speech );
       if( time(0) - start_time_in_speech > 5 ) {
         time_gate_pass = 1;
-        printf("No longer listening.\n");
+        // printf("No longer listening.\n");
       }
     }
 
@@ -165,5 +183,6 @@ void start_voice(int* fd) {
     memset(buffer, 0, buffer_size);
   }
 
+  close(fd[0]);
   close(fd[1]); //close output pipe
 }
