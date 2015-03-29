@@ -35,6 +35,7 @@ TARGETS:
         -- Ignore depth-buffer
         -- Use a third "overlay" context distinct from UI and world objects
         -- NOTE: Without environments, these make no difference
+    - Dynamic texture for target
 
 
 

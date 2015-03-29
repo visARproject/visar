@@ -29,7 +29,7 @@ int main(int argc, char** argv) {
   fd[1] = open(OUT_NAME, O_WRONLY);
 
   int buffer_size = 640; // buffer size
-  uint8 utt_started = FALSE; //a new utterance check
+  uint8 utt_started = 0; //a new utterance check
   uint8 in_speech; //currently taking in speech
   int32 k; //number of frames read
   char const *hyp; //hypothesis of decoding, i.e. what pocketsphinx thinks was said
@@ -38,14 +38,14 @@ int main(int argc, char** argv) {
   char time_gate_pass = 0;
 
   // initial configuration for pocketsphinx
-  // cmd_ln_t *config = cmd_ln_init(NULL, ps_args(), TRUE,
+  // cmd_ln_t *config = cmd_ln_init(NULL, ps_args(), 1,
   //   "-hmm", MODELDIR "/en-us/en-us",
   //   "-lm", MODELDIR "/en-us/en-us.lm.dmp",
   //   "-dict", MODELDIR "/en-us/cmudict-en-us.dict",
   //   "-logfn", "/dev/null",
   //   NULL);
 
-  cmd_ln_t *config = cmd_ln_init(NULL, ps_args(), TRUE,
+  cmd_ln_t *config = cmd_ln_init(NULL, ps_args(), 1,
     "-hmm", MODELDIR "/en-us/en-us",
     "-lm", "./dictionary.lm",
     "-dict", "./dictionary.dic",
@@ -81,7 +81,7 @@ int main(int argc, char** argv) {
               #ifdef WRITE_RAW_FILE
                 write(f_out, buf, nsamp*2);
               #endif
-              rv = ps_process_raw(ps, buf, nsamp, FALSE, FALSE);
+              rv = ps_process_raw(ps, buf, nsamp, 0, 0);
           }
           rv = ps_end_utt(ps);
     if (rv < 0)
@@ -92,13 +92,10 @@ int main(int argc, char** argv) {
     // printf("Recognized from input file: %s\n", hyp);
   #endif
 
-  fprintf(fp, "Here\n");
-
   //begin utterance
   if(ps_start_utt(ps) < 0) { //if a new utterance can't begin, then error
     fprintf(fp, "%s\n", "VCERR:Failed to start utterance\n");
   }
-  fclose(fp);
 
   #ifdef WRITE_RAW_FILE
     int f;
@@ -106,18 +103,20 @@ int main(int argc, char** argv) {
     // printf("%d\n", f);
   #endif
 
-  //go as long as there's a pipe
-  while(TRUE) {
-    int point = 0;
-    int stop_check = FALSE;
+  int time_check = 0;
 
-    while(TRUE) {
+  //go as long as there's a pipe
+  while(1) {
+    int point = 0;
+    int stop_check = 0;
+
+    while(1) {
       k = read(fd[0], buffer + point, buffer_size - point);
 
       if(point == buffer_size) {
         break;
       } else if(k == 0) {
-        stop_check = TRUE;
+        stop_check = 1;
         break;
       } else {
         point += k;
@@ -128,25 +127,33 @@ int main(int argc, char** argv) {
       break;
     }
 
+    fprintf(fp, "%d\n", time_check);
+    if(time_check && (time(0) - start_time_in_speech < 10)) {
+      continue;
+    } else {
+      time_check = 0;
+    }
+
     #ifdef WRITE_RAW_FILE
       write(f, buffer, point);
     #endif
     // printf("%d\n", k);
 
     char *sentence; //output
-    ps_process_raw(ps, buffer, point/2, FALSE, FALSE); //begins decoding using the number of frames it could read
+    ps_process_raw(ps, buffer, point/2, 0, 0); //begins decoding using the number of frames it could read
 
     //when speech is introduced in each new utterance
     // if(in_speech && !utt_started) {
     if(!utt_started) {
-      utt_started = TRUE;
+      utt_started = 1;
       time(&start_time_in_speech);
       // printf("Listening...\n");
-    }
-    else if(utt_started) {
+    } else if(utt_started) {
       // printf("Time elapsed: %d\n", time(0) - start_time_in_speech );
-      if( time(0) - start_time_in_speech > 5 ) {
+      if(time(0) - start_time_in_speech > 5) {
         time_gate_pass = 1;
+        fprintf(fp, "Here\n");
+        time_check = 1;
         // printf("No longer listening.\n");
       }
     }
@@ -174,7 +181,7 @@ int main(int argc, char** argv) {
 
       write(fd[1], sentence, strlen(sentence)); //send results to output pipe
 
-      utt_started = FALSE; //reset check back to FALSE
+      utt_started = 0; //reset check back to FALSE
       time_gate_pass = 0;
     }
 
@@ -184,4 +191,5 @@ int main(int argc, char** argv) {
 
   close(fd[0]);
   close(fd[1]); //close output pipe
+  fclose(fp);
 }
