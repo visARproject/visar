@@ -19,7 +19,6 @@
 #include "buffer.h"
 #include "comms.h"
 #include "sound.h"
-#include "voice_control.h"
 #include "encode.h"
 
 #define DEFAULT_RATE 16000   //encoder uses narrowband audio
@@ -27,11 +26,12 @@
 #define DEFAULT_PORT 19101
 #define DEFAULT_ADDR "127.0.0.1"
 
+#define FIFO_NAME "/tmp/vsr_audio_pipe"
+
 int global_kill = 0;  //global program kill flag, will stop all threads if set
 int vc_pipe;          //voice control pipe
 int vc_flag;          //voice control active flag
 int vc_hold_flag;     //voice control pipe active flag
-static pid_t child;   //pid of child process
 static int reciever_kill_flag; //kill flag for network reciever thread
 static int period;    //period (samples/frame) required by the codecs
 
@@ -219,36 +219,15 @@ void change_volume(long volume){
   snd_mixer_close(handle);
 }
 
-//setup the pipes and create a thread for the child process
+//setup the pipe
 int setup_voice_control(){
   vc_flag = 0;      //voice control is not active
   vc_hold_flag = 0; //nor is the voice control pipe
 
-  int pipe_fd[2];
-  if(pipe(pipe_fd)){ //create the pipes
-    printf("Audio Controller: Couldn't start pipe\n");
-    return -1; //return in failure
-  }
-  
-  //create copy of output file descriptor for child process
-  int out_dup;
-  if((out_dup = dup(STDOUT_FILENO)) == -1){
-    printf("Audio Controller: Couldn't dup output\n");
-    return -2; //return in failure
-  }
-  
-  if(!(child = fork())){  //spawn the child processs
-    close(pipe_fd[1]);    //close sender side of pipe
-    pipe_fd[1] = out_dup; //give child the duped output fd
-    start_voice(pipe_fd); //throw to voice controller
-    exit(0);              //exit child program
-  } else {                //parent process
-    close(pipe_fd[0]);    //parent closes reciever side of pipe
-    vc_pipe = pipe_fd[1]; //save the pipe's fd
-    int flags = fcntl(vc_pipe, F_GETFL); //get file flags
-    fcntl(vc_pipe, F_SETFL, flags | O_NONBLOCK); //set output pipe in nonblocking mode
-  }
-  
+  //create fifo and get fd
+  mkfifo(FIFO_NAME, 0666);
+  vc_pipe = open(FIFO_NAME, O_WRONLY);
+
   printf("Audio Controller: Voice Controller Started\n");
   return 0;
 }
@@ -261,12 +240,8 @@ void destroy_voice_control(){
   while(vc_hold_flag);  //wait for pending writes to finish
   close(vc_pipe);       //close the pipe, signaling that child should close
   sleep(TIMEOUT);       //wait for child to respond
+  unlink(FIFO_NAME);    //destroy the pipe
   
-  //check if child pid is valid, try to kill the child, check if it existed
-  if(child && ESRCH != kill(child,SIGKILL)){ 
-    printf("Audio Controller: Voice Controller Killed Manually\n");
-  }
-  child = 0; //child is no longer valid
   printf("Audio Controller: Voice Controller Shutdown\n");
 }
 

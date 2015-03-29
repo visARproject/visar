@@ -5,12 +5,13 @@ import socket
 from ..interface import Interface
 
 fpath = os.path.dirname(os.path.realpath(__file__))
-AUDIO_PROGRAM = os.path.join(fpath, 'audio')     # path to audio module
+AUDIO_PROGRAM  = os.path.join(fpath, 'audio') # path to audio module
+VC_PROGRAM     = os.path.join(fpath, 'vc')    # path to vc module
 CONTROL_SERVER = 19102        # TCP comms port for handshaking (server)
 AUDIO_PORT     = 19103        # UDP port for audio data
+VC_FIFO_NAME   = '/tmp/vsr_vc_pipe' # pipe for voice commands
 AUDIO_WAIT_TM  = .05          # wait 50ms between operations
 SERVER_TIMEOUT = 1            # timeout for server socket (in seconds)
-BIND_ADDR      = ''
 
 # thread locking
 lock = threading.RLock()
@@ -34,10 +35,24 @@ class AudioController(Interface):
     self.kill_flag = False
     self.input_buffer = ''
     
-    # create the socket objects
+    # create the socket/pipe objects
     self.c_sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     self.s_sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     self.connected = False
+    
+    # create the fifo pipe
+    try:    
+      os.mkfifo(VC_FIFO_NAME) # create the fifo
+    except: 
+      os.unlink(VC_FIFO_NAME) # remove existing fifo
+      os.mkfifo(VC_FIFO_NAME) # recreate the fifo
+    
+    #open the vc program
+    target = lambda : os.system(VC_PROGRAM)
+    vc = threading.Thread(target=target)
+    vc.start()
+    
+    self.vc_pipe = os.open(VC_FIFO_NAME, os.O_RDONLY) # open the pipe
     
     # create the thread objects and start the threads
     self.comms  = threading.Thread(target=self.comms_thread)
@@ -57,6 +72,9 @@ class AudioController(Interface):
     lock.release()
     
     self.c_sock.close() # close the socket
+    os.close(self.vc_pipe) # close the pipe
+    time.sleep(1) # sleep to give process things
+    os.unlink(VC_FIFO_NAME) # delete the fifo
   
   # start audio communication with network device
   @thread_lock
@@ -143,13 +161,14 @@ class AudioController(Interface):
       self.connection = None  # clear the connection state
   
   # thread to handle communicating with child process
-  def comms_thread(self):
+  def comms_thread(self):    
     while(not self.kill_flag): self.do_comms() # do the comms
   
   # do the communcation to child process
   def do_comms(self):
     try: 
-      out = os.read(self.child.stdout.fileno(),80) # get data out
+      #out = os.read(self.child.stdout.fileno(),80) # get data out
+      out = os.read(self.vc_pipe, 80) # read from the pipe
       global lock
       lock.acquire()
       self.input_buffer += out # append responses to input buffer

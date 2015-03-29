@@ -6,8 +6,8 @@ Contains everything you've ever wanted in a Python augmented reality package.
 # Setup
 
 ## Requirements
-* vispy (Install from source, ```git clone git@github.com:vispy/vispy.git```)
-* OSMViz (For mapping, install from source, ```git clone https://github.com/cbick/osmviz.git```)
+* vispy (Install from source, ```git clone git@github.com:vispy/vispy.git```, must be commit b64489b)
+* OSMViz (Now included in vsr)(For mapping, install from source, ```git clone https://github.com/cbick/osmviz.git```)
 * numpy
 * PyOpenGL
 * QT4
@@ -30,11 +30,11 @@ Install all of these for things to work!
 ## Install
 Do this! You don't have to run this every time you make a change
     sudo python setup.py develop
-    ./build [opus]
+    ./build_vsr [opus]
 
 ## Uninstall
     sudo python setup.py develop --uninstall
-    ./build clean
+    ./build_vsr clean
 
 # Usage
 Type

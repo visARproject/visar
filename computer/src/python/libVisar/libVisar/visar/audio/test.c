@@ -3,20 +3,27 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <unistd.h>
+#include <fcntl.h>
 
-#include "voice_control.h"
+#define VC_FIFO    "/tmp/vsr_vc_pipe"
+#define AUDIO_FIFO "/tmp/vsr_audio_pipe"
 
-
-void start_voice(int* fd){
+int main(int argc, char** argv){
   printf("Entered Test function\n");
+  int fd[2];
+  do{
+    usleep(50000);
+    fd[0] = open(AUDIO_FIFO, O_RDONLY);
+    fd[1] = open(VC_FIFO, O_WRONLY);
+  } while(fd[0]<0 || fd[1]<0);
+  
   char buffer[80]; //buffer for reading data
-  char* text = "Piggyback\n";
+  write(fd[1],"piggyback\n",10);  
   int rc = 0;
-  write(fd[1],text,11); //test the output stream
   while((rc = read(fd[0], buffer, 80)) > 0){
     //read operation blocks, DO NOT SLEEP.
     //printf("Read %d bytes\n",rc);
-    printf("VCCOM:Example\n");
+    write(fd[1],"VCCOM:Example\n",14);
   }
   printf("Exiting Test function\n");
   

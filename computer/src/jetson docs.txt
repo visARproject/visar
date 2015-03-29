@@ -22,6 +22,14 @@ sudo cp zImage /boot/zImage
 
 #Reboot
  
+--Apt-get Update/Upgrade Warning:
+#xserver-xorg will brick the board, don't update without first doing:
+sudo apt-mark hold xserver-xorg-core
+ 
+--Vsr Driver Dependencies:
+(apt-get) pyqt5-dev 
+ 
+ 
 --Setting up the microphone: https://devtalk.nvidia.com/default/topic/772401/audio-input-on-jetson-tk1/
 amixer cset name="Stereo ADC MIXL ADC2 Switch" 0
 amixer cset name="Stereo ADC MIXR ADC2 Switch" 0
