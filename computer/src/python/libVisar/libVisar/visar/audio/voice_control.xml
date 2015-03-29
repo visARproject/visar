@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <root>
-  <command name="Call" alias="True">
-    <alias name="Make Call"/>
+  <command name="Make Call" alias="True">
+    <alias name="Call"/>
     <alias name="Call Now"/>
   </command>
   <command name="End Call" alias="False">

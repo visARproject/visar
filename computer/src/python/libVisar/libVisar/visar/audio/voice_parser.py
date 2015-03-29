@@ -51,7 +51,7 @@ class Parser(object):
             else:
                 break
 
-        Logger.log('tuple: %s' % tup) #Debug
+        # Logger.log('tuple: %s' % (tup,)) #Debug
 
         return tup
 
