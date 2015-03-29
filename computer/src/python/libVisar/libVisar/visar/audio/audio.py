@@ -48,9 +48,9 @@ class AudioController(Interface):
       os.mkfifo(VC_FIFO_NAME) # recreate the fifo
     
     #open the vc program
-    target = lambda : os.system(VC_PROGRAM)
-    vc = threading.Thread(target=target)
-    vc.start()
+    # target = lambda : os.system(VC_PROGRAM)
+    # vc = threading.Thread(target=target)
+    # vc.start()
     
     self.vc_pipe = os.open(VC_FIFO_NAME, os.O_RDONLY) # open the pipe
     
@@ -197,7 +197,7 @@ class AudioController(Interface):
   
   # server handler thread
   def server_thread(self):
-    self.s_sock.bind((BIND_ADDR,CONTROL_SERVER))
+    self.s_sock.bind(('',CONTROL_SERVER))
     self.s_sock.listen(1)
     self.s_sock.settimeout(SERVER_TIMEOUT) # timeout after 1 second
     global lock # use the global lock object

@@ -1,5 +1,6 @@
 import xml.etree.ElementTree as ET
 import os
+from ...OpenGL.utils import Logger
 
 class Parser(object):
     fpath = os.path.dirname(os.path.realpath(__file__))
@@ -49,6 +50,8 @@ class Parser(object):
                 tup = (self.key_words[command.lower()], args)
             else:
                 break
+
+        Logger.log('tuple: %s' % tup) #Debug
 
         return tup
 

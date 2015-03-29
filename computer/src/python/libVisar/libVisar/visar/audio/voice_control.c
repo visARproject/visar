@@ -14,7 +14,6 @@
 #include <unistd.h>
 #include <string.h>
 #include <fcntl.h>
-#include "voice_control.h"
 
 #define IN_NAME "/tmp/vsr_audio_pipe"
 #define OUT_NAME "/tmp/vsr_vc_pipe"
