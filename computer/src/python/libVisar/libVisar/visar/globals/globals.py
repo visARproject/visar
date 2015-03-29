@@ -6,6 +6,7 @@ from ...OpenGL.utils import Logger
 from ..audio import AudioController, Parser
 from ..network import NetworkState, PoseHandler
 from ..interface import Interface
+from .actions import Actions
 
 import os
 import numpy as np
@@ -13,6 +14,8 @@ import socket, random
 
 class State(object):
     '''Track the global state of the VisAR unit
+       You must call State.do_init() before using this module
+       State.destroy() must be called before exit if do_init() was called.
 
     Notes:
         Position - ECEF
@@ -35,53 +38,22 @@ class State(object):
     position_ecef = np.array((738575.65, -5498374.10, 3136355.42))
 
     menu_controller = Menu_Controller()
-
+    
+    # create placeholder references for status objects
+    network_state = None
+    audio_controller = None
+    pose_handler = None
+    
+    action_dict = None
+    
+    # create pose update listener reference and default pose (default to mil)
+    pose = {"position_ecef": {"x":738575.65, "y":-5498374.10, "z":3136355.42}, "orientation_ecef": {"x": 0.50155109,  "y": 0.03353513,  "z": 0.05767266, "w": 0.86255189}, "velocity_ecef": {"x": -0.06585217, "y": 0.49024074, "z": 0.8690958}, "angular_velocity_ecef": {"x": 0.11570315, "y": -0.86135956, "z": 0.4946438}} 
+        
+    # network information    
+    network_peers = None # create object reference, but don't init it yet
     id_code = ''.join(random.choice('0123456789ABCDEFGHIJKLMNOPQRSTUVWKYZ') for i in range(3)) # random 3 char id
     hostname = socket.gethostname() # get computer name for id
-    network_state = NetworkState(id_code, hostname, 'default status') # create network state tracker
-    audio_controller = AudioController() # create audio manager
-    
-    # create and start the pose update listener (default to mil)
-    pose = {"position_ecef": {"x":738575.65, "y":-5498374.10, "z":3136355.42}, "orientation_ecef": {"x": 0.50155109,  "y": 0.03353513,  "z": 0.05767266, "w": 0.86255189}, "velocity_ecef": {"x": -0.06585217, "y": 0.49024074, "z": 0.8690958}, "angular_velocity_ecef": {"x": 0.11570315, "y": -0.86135956, "z": 0.4946438}} 
-    
-    def pose_callback(event):
-        Logger.log("Pose Update %s" % (event,))
-        State.pose = event # store the full value
-        # call the appropriate update methods
-        position = (event['position_ecef']['x'], event['position_ecef']['y'], 
-                    event['position_ecef']['z'])
-        State.set_position(position)
-        orientation = (event['orientation_ecef']['x'], event['orientation_ecef']['y'], 
-                    event['orientation_ecef']['z'], event['orientation_ecef']['w'])
-        State.set_orientation(orientation)
-      
-    pose_handler = PoseHandler(frequency=1/30)
-    pose_handler.add_callback(pose_callback)
-    
-    # define a network status object and callback funciton
-    network_peers = network_state.peers
-    
-    # Callback method for the network event updates
-    def network_callback(event):
-      Logger.log("Network Update: %s" % (event,))
-      State.network_peers = event
-      
-    network_state.add_callback(network_callback) # add the callback
-    
-    # setup and initialize the voice control/audio event handler
-    def audio_callback(event):
-      '''Callback funciton will call appropriate function based on Voice command'''
-      Logger.log("Audio Callback: %s" % (event,))
-      # if(event[0] == 'VCERR'): print 'Voice Error: ' + event[1]
-      if(event[0] == 'VCCOM'):
-        command = Parser.parse(event[1])
-        try:
-          State.args = command[1] # store the args, or None as appropriate
-          State.action_dict[command[0]]() # call the command
-        except: Logger.log('Bad Command, expected: (func, args), got: %s' % (command,))
         
-    audio_controller.add_callback(audio_callback) # add the callback
-
     calling = False # toggle value for call
   
     args = None # arguments for function calls
@@ -92,6 +64,59 @@ class State(object):
 
     hide_map = False
 
+    @classmethod
+    def do_init(self):
+        '''Function will initialize all status listeners and controllers
+           Once this function is called, you must call State.destroy() before 
+              exiting or hanging threads will prevent program from closing.
+        '''
+
+        self.action_dict = Actions.get_actions(self) # bind the avaliable actions
+        
+        # initialize state listeners and controllers
+        self.network_state = NetworkState(self.id_code, self.hostname, 'default status') # create network state tracker
+
+        self.audio_controller = AudioController() # create audio manager
+        self.pose_handler = PoseHandler(frequency=1/30)
+
+        # setup the pose handler and callback functions
+        def pose_callback(event):
+            Logger.log("Pose Update %s" % (event,))
+            State.pose = event # store the full value
+            # call the appropriate update methods
+            position = (event['position_ecef']['x'], event['position_ecef']['y'], 
+                        event['position_ecef']['z'])
+            State.set_position(position)
+            orientation = (event['orientation_ecef']['x'], event['orientation_ecef']['y'], 
+                        event['orientation_ecef']['z'], event['orientation_ecef']['w'])
+            State.set_orientation(orientation)
+          
+        self.pose_handler.add_callback(pose_callback)
+
+
+        # setup and initialize the voice control/audio event handler
+        def audio_callback(event):
+            '''Callback funciton will call appropriate function based on Voice command'''
+            Logger.log("Audio Callback: %s" % (event,))
+            # if(event[0] == 'VCERR'): print 'Voice Error: ' + event[1]
+            if(event[0] == 'VCCOM'):
+                command = Parser.parse(event[1])
+                try:
+                    State.args = command[1] # store the args, or None as appropriate
+                    State.action_dict[command[0]]() # call the command
+                except: Logger.log('Bad Command, expected: (func, args), got: %s' % (command,))
+            
+        self.audio_controller.add_callback(audio_callback) # add the callback
+        
+        self.network_peers = self.network_state.peers # get the initial peers
+    
+        # Callback method for the network event updates
+        def network_callback(event):
+            Logger.log("Network Update: %s" % (event,))
+            State.network_peers = event
+      
+        self.network_state.add_callback(network_callback) # add the callback
+                  
     @classmethod
     def register_button(self, position, action):
         self.buttons = self.buttons.union({position})
@@ -129,12 +154,15 @@ class State(object):
         # call the target specified in the args register
         call_target = self.args
         self.args = None # clear the argument register
-        if call_target is None: call_target = self.id_code # default value
-        if not '.' in call_target: call_ip = self.network_peers[call_target][0] # get the ip address if not one already
-        else: call_ip = call_target # call target is already an ip address
-        Logger.warn("Attempting to call " + call_target + " at ip " + call_ip + ".")
-        self.audio_controller.start(call_ip) # start a call
-        self.calling = True
+        try:
+            if call_target is None: call_target = self.id_code # default value
+            if not '.' in call_target: call_ip = self.network_peers[call_target][0] # get the ip address if not one already
+            else: call_ip = call_target # call target is already an ip address
+            Logger.log("Attempting to call " + call_target + " at ip " + call_ip + ".")
+            self.audio_controller.start(call_ip) # start a call
+            self.calling = True
+        except: Logger.warn('Could not make call: %s ' % (call_target,))
+          
 
     @classmethod
     def end_call(self):
@@ -204,15 +232,3 @@ class State(object):
     def set_target(self):
         '''set the argument register to value from command line'''
         self.args = raw_input("Enter target value: ")
-        
-State.action_dict = {
-        'example'       : lambda: Logger.warn("Example button pressed!"),
-        'make call'     : State.make_call,
-        'end call'      : State.end_call,
-        'toggle map'    : State.hide_map,
-        'start voice'   : State.start_listening,
-        'stop voice'    : State.stop_listening,
-        'list peers'    : lambda: Logger.warn("Peers: %s" % (State.network_peers,)),
-        'set target'    : State.set_target,
-        'update status' : State.update_status,
-    }

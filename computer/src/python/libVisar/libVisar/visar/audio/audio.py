@@ -173,9 +173,8 @@ class AudioController(Interface):
   def do_parse(self, parse):
     for line in parse:
       part = line.split(':') # split line across colon
-      if len(part) < 2: part.insert(0,'') # make sure we have 2 inputs
-      if self.vc_active: 
-        self.do_updates((part[0], part[1])) # send the event
+      if len(part) < 2: self.do_updates((line, '')) # make sure we have 2 inputs
+      else: self.do_updates((part[0], part[1])) # send the event
   
   # server handler thread
   def server_thread(self):
