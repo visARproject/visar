@@ -22,8 +22,8 @@ Contains everything you've ever wanted in a Python augmented reality package.
 * swig
 * python-dev
 * libpulse-dev
-* https://github.com/cmusphinx/sphinxbase
-* https://github.com/cmusphinx/pocketsphinx
+* sphinxBase (Install from source, ```git clone https://github.com/cmusphinx/sphinxbase```)
+* pocketSphinx (Install from source, ```git clone https://github.com/cmusphinx/pocketsphinx```)
 
 Install all of these for things to work!
 
