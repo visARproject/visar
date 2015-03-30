@@ -53,7 +53,7 @@ and run
 - Audio Communication
 
 # Voice Control
-To add words to be recognized navigate to the file "/libVisar/visar/audio/corpus.txt". Add the words you wish to add at the bottom. Go to "http://www.speech.cs.cmu.edu/tools/lmtool-new.html", and upload the file. Take the .dic and the .lm, rename them to dictionary.dic and dictionary.lm, respectively, and replace the other two in the aforementioned folder.
+To add words to be recognized navigate to the file "libVisar/visar/audio/corpus.txt". Add the words you wish to add at the bottom. Go to "http://www.speech.cs.cmu.edu/tools/lmtool-new.html", and upload the file. Take the .dic and the .lm, rename them to dictionary.dic and dictionary.lm, respectively, and replace the other two in the aforementioned folder.
 
 
 # Consideration

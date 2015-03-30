@@ -18,8 +18,8 @@
 #define IN_NAME "/tmp/vsr_audio_pipe"
 #define OUT_NAME "/tmp/vsr_vc_pipe"
 int main(int argc, char** argv) {
-  FILE *fp;
-  fp = fopen("vclog.log", "w+");
+  //FILE *fp;
+  //fp = fopen("vclog.log", "w+");
 
   int fd[2];
 
@@ -94,7 +94,7 @@ int main(int argc, char** argv) {
 
   //begin utterance
   if(ps_start_utt(ps) < 0) { //if a new utterance can't begin, then error
-    fprintf(fp, "%s\n", "VCERR:Failed to start utterance\n");
+    printf(fp, "%s\n", "VCERR:Failed to start utterance\n");
   }
 
   #ifdef WRITE_RAW_FILE
@@ -127,7 +127,7 @@ int main(int argc, char** argv) {
       break;
     }
 
-    fprintf(fp, "%d\n", time_check);
+    //fprintf(fp, "%d\n", time_check);
     if(time_check && (time(0) - start_time_in_speech < 10)) {
       continue;
     } else {
@@ -152,7 +152,7 @@ int main(int argc, char** argv) {
       // printf("Time elapsed: %d\n", time(0) - start_time_in_speech );
       if(time(0) - start_time_in_speech > 5) {
         time_gate_pass = 1;
-        fprintf(fp, "Here\n");
+        //fprintf(fp, "Here\n");
         time_check = 1;
         // printf("No longer listening.\n");
       }
@@ -191,5 +191,5 @@ int main(int argc, char** argv) {
 
   close(fd[0]);
   close(fd[1]); //close output pipe
-  fclose(fp);
+  //fclose(fp);
 }

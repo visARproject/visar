@@ -182,7 +182,7 @@ class Renderer(app.Canvas): # Canvas is a GUI object
             State.button_down()
         elif event.key == 'Enter':
             State.press_enter()
-        else:
+        elif event.key is not None and event.text is not None:
             Logger.warn('Unrecognized key', event.text)
             Logger.warn(event.key)
         translate(self.view, -self.translate[0], -self.translate[1],

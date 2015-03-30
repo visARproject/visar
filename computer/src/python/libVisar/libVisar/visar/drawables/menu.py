@@ -149,14 +149,17 @@ class Button(Drawable):
 
     def make_text(self, _string):
         self.font_size = 150
-        self.canvas.text_renderer = visuals.TextVisual('', bold=True)
+        self.color = (.1, .1, .1, 1.0)
+        self.canvas.text_renderer = visuals.TextVisual('', bold=True, color=self.color)
         self.tr_sys = visuals.transforms.TransformSystem(self.canvas)
         self.canvas.text_renderer.text = _string
 
         self.canvas.text_renderer.font_size = self.font_size
         # self.canvas.text_renderer.pos = 200, 200
-        self.size = 1000, 1500
-        self.canvas.text_renderer.pos = self.size[0] // 2, self.size[1] // 2
+        self.size = 500, 1500
+        self.canvas.text_renderer.pos = self.size[0] * 1.75, self.size[1] // 1.9
+        # Logger.log("Color: %s" % (self.canvas.text_renderer.color,))
+
 
     def make_texture(self):        
         # gloo.clear(color=True, depth=True)
