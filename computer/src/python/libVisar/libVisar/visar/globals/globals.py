@@ -77,19 +77,27 @@ class State(object):
         self.network_state = NetworkState(self.id_code, self.hostname, 'default status') # create network state tracker
 
         self.audio_controller = AudioController() # create audio manager
-        self.pose_handler = PoseHandler(frequency=1/30)
+        self.pose_handler = PoseHandler(frequency=1.0/30.0)
+        self.pose_count = 0
 
         # setup the pose handler and callback functions
         def pose_callback(event):
-            Logger.log("Pose Update %s" % (event,))
-            State.pose = event # store the full value
+            # don't issue all updates
+            if(self.pose_count == 60):
+                Logger.log("Pose Update #60: %s" % (event,))
+                self.pose_count = 0
+            self.pose_count += 1
+            
             # call the appropriate update methods
-            position = (event['position_ecef']['x'], event['position_ecef']['y'], 
-                        event['position_ecef']['z'])
-            State.set_position(position)
-            orientation = (event['orientation_ecef']['x'], event['orientation_ecef']['y'], 
-                        event['orientation_ecef']['z'], event['orientation_ecef']['w'])
-            State.set_orientation(orientation)
+            try:
+                position = (event['position_ecef']['x'], event['position_ecef']['y'], 
+                            event['position_ecef']['z'])
+                State.set_position(position)
+                orientation = (event['orientation_ecef']['x'], event['orientation_ecef']['y'], 
+                            event['orientation_ecef']['z'], event['orientation_ecef']['w'])
+                State.set_orientation(orientation)
+                State.pose = event # store the full value
+            except: Logger.log("Bad Pose Update")
           
         self.pose_handler.add_callback(pose_callback)
 

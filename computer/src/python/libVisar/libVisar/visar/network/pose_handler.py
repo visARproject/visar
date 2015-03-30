@@ -15,14 +15,13 @@ class PoseHandler(Interface):
          "velocity_ecef": {"x", "y", "z"}, "angular_velocity_ecef": {"x", "y", "z"}}
   '''
 
-  def __init__(self, frequency = 1/60):
+  def __init__(self, frequency = 1.0/60.0):
     ''' Create the object, and connect to the server '''
     Interface.__init__(self) # call superclass init
     
     # setup the object vars
     self.pose = None          # this units current pose
     self.kill_flag = False    # kill flag for threads
-    self.line_buffer = ''     # input line buffer
     self.timer = time.clock() # get system time for update timer
     self.freq = frequency  # update frequency
     
@@ -42,14 +41,15 @@ class PoseHandler(Interface):
     
   def update_thread(self):
     ''' Thread will listen on specified port and issue updates as appropriate '''
-    while (not kill_flag): # loop until killed
-      line_buffer += sock.recv(4096)
+    line_buffer = '' # buffer for socket input
+    while (not self.kill_flag): # loop until killed
+      line_buffer += self.sock.recv(4096)
       lines = line_buffer.split('\r\n')
       
       if len(lines) > 1: # line data is avaliable
         # extract the json object from most recent full line
         self.pose = json.loads(lines[len(lines) - 2])
-        self.line_buffer = lines[len(lines)] # put unfinished line into buffer
+        self.line_buffer = lines[len(lines) - 1] # put unfinished line into buffer
       
       # issue update at if timer is expired
       if (time.clock() - self.timer) > self.freq:
