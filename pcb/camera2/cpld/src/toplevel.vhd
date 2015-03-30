@@ -16,29 +16,29 @@ entity toplevel is
         C1_monitor0:       in  std_logic;
         C1_monitor1:       in  std_logic;
         C1_MOSI:           out std_logic;
-        C1_reset_n:        out std_logic := '0';
+        C1_reset_n:        out std_logic;
         C1_SCLK:           out std_logic;
         C1_ss_n:           out std_logic;
         C1_trigger0:       out std_logic := '0';
         C1_trigger1:       out std_logic := '0';
         C1_trigger2:       out std_logic := '0';
-        C1_vcc1_8_en:      out std_logic := '0';
-        C1_vcc3_0_main_en: out std_logic := '0';
-        C1_vcc3_0_pix_en:  out std_logic := '0';
+        C1_vcc1_8_en:      out std_logic;
+        C1_vcc3_0_main_en: out std_logic;
+        C1_vcc3_0_pix_en:  out std_logic;
         
         C2_MISO:           in  std_logic;
         C2_monitor0:       in  std_logic;
         C2_monitor1:       in  std_logic;
         C2_MOSI:           out std_logic;
-        C2_reset_n:        out std_logic := '0';
+        C2_reset_n:        out std_logic;
         C2_SCLK:           out std_logic;
         C2_ss_n:           out std_logic;
         C2_trigger0:       out std_logic := '0';
         C2_trigger1:       out std_logic := '0';
         C2_trigger2:       out std_logic := '0';
-        C2_vcc1_8_en:      out std_logic := '0';
-        C2_vcc3_0_main_en: out std_logic := '0';
-        C2_vcc3_0_pix_en:  out std_logic := '0';
+        C2_vcc1_8_en:      out std_logic;
+        C2_vcc3_0_main_en: out std_logic;
+        C2_vcc3_0_pix_en:  out std_logic;
         
         imu_FSYNC:   out std_logic;
         imu_INT:     in  std_logic;
@@ -84,8 +84,13 @@ end toplevel;
 architecture arc of toplevel is
     signal MISO, MOSI, SCLK, nCS : std_logic;
     signal my_MISO : std_logic;
-    signal data_in : std_logic_vector(9 downto 0);
-    signal data_out : std_logic_vector(9 downto 0);
+    constant CHECK_LENGTH : natural := 10;
+    constant CHECK_DATA : std_logic_vector(CHECK_LENGTH-1 downto 0) := "1010011001";
+    constant DATA_LENGTH : natural := 10;
+    constant WORD_LENGTH : natural := CHECK_LENGTH + DATA_LENGTH;
+    signal data_in : std_logic_vector(WORD_LENGTH-1 downto 0);
+    signal good_data_in : std_logic_vector(DATA_LENGTH-1 downto 0) := (others => '0');
+    signal data_out : std_logic_vector(WORD_LENGTH-1 downto 0);
 begin
     pair13N <= MISO;
     process (pair12P, pair13P) is
@@ -112,30 +117,32 @@ begin
     process (nCS, SCLK) is
     begin
         if rising_edge(nCS) then
-            if data_in(data_in'length-1) = '1' then
-                C1_vcc1_8_en <= data_in(data_in'length-2);
-                C1_vcc3_0_main_en <= data_in(data_in'length-3);
-                C1_vcc3_0_pix_en <= data_in(data_in'length-4);
-                C1_reset_n <= data_in(data_in'length-5);
-                
-                C2_vcc1_8_en <= data_in(data_in'length-6);
-                C2_vcc3_0_main_en <= data_in(data_in'length-7);
-                C2_vcc3_0_pix_en <= data_in(data_in'length-8);
-                C2_reset_n <= data_in(data_in'length-9);
+            if data_in(WORD_LENGTH-1 downto DATA_LENGTH) = CHECK_DATA then
+                good_data_in <= data_in(DATA_LENGTH-1 downto 0);
             end if;
         end if;
         
         if nCS = '1' then
             data_in <= (others => '0');
         elsif rising_edge(SCLK) then
-            data_in <= data_in(data_in'length-2 downto 0) & MOSI;
+            data_in <= data_in(WORD_LENGTH-2 downto 0) & MOSI;
         end if;
         
         if nCS = '1' then
-            data_out <= "1010011001";
-        elsif falling_edge(SCLK) then
+            data_out <= CHECK_DATA & good_data_in;
+        elsif rising_edge(SCLK) then
             MISO <= data_out(data_out'length-1);
             data_out <= data_out(data_out'length-2 downto 0) & '-';
         end if;
     end process;
+    
+    C1_vcc1_8_en      <= good_data_in(7);
+    C1_vcc3_0_main_en <= good_data_in(6);
+    C1_vcc3_0_pix_en  <= good_data_in(5);
+    C1_reset_n        <= good_data_in(4);
+    
+    C2_vcc1_8_en      <= good_data_in(3);
+    C2_vcc3_0_main_en <= good_data_in(2);
+    C2_vcc3_0_pix_en  <= good_data_in(1);
+    C2_reset_n        <= good_data_in(0);
 end arc;

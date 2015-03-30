@@ -72,7 +72,7 @@ begin
             end if;
             
             -- keep RAM read FIFO filled
-            if next_fifo_count <= RAM_FIFO_LENGTH - READ_BURST_LENGTH_WORDS then
+            if fifo_count <= RAM_FIFO_LENGTH - READ_BURST_LENGTH_WORDS then
                 ram_in.cmd.en <= '1';
                 ram_in.cmd.instr <= READ_PRECHARGE_COMMAND;
                 ram_in.cmd.byte_addr <= std_logic_vector(to_unsigned(mem_pos, ram_in.cmd.byte_addr'length));

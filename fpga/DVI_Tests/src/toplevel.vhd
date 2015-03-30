@@ -7,8 +7,10 @@ use unisim.vcomponents.all;
 
 use work.video_bus.all;
 use work.ram_port.all;
-use work.camera.all;
+use work.camera_pkg.all;
 use work.simple_mac_pkg.all;
+use work.util_arbiter_pkg.all;
+
 
 entity toplevel is
     port (
@@ -97,8 +99,13 @@ architecture RTL of toplevel is
     signal clk_pixel         : std_logic;
     signal clk_ethernet      : std_logic;
     signal clk_locked        : std_logic;
-
-    signal left_camera_output, right_camera_output : camera_output;
+    
+    constant SPI_ARBITER_USERS : natural := 3;
+    
+    signal spi_arbiter_users_in  : ArbiterUserInArray (0 to SPI_ARBITER_USERS-1);
+    signal spi_arbiter_users_out : ArbiterUserOutArray(0 to SPI_ARBITER_USERS-1);
+    
+    signal SCLK : std_logic;
 
     -- DDR2 Signals
     signal c3_calib_done : std_logic;
@@ -170,63 +177,125 @@ begin
         RESET                 => '0',
         LOCKED                => clk_locked);
     
-
-    U_LEFT_CAMERA_WRAPPER : entity work.camera_wrapper
+    U_SPI_ARBITER : entity work.util_arbiter
         generic map (
-            SYNC_INVERTED  => false,
-            DATA3_INVERTED => false,
-            DATA2_INVERTED => true,
-            DATA1_INVERTED => false,
-            DATA0_INVERTED => false)
+            USERS => SPI_ARBITER_USERS)
         port map (
-            clock_camera_unbuf => clk_camera_unbuf,
+            clock => clk_100MHz_buf,
+            users_in => spi_arbiter_users_in,
+            users_out => spi_arbiter_users_out);
+
+    U_LEFT_CAMERA : entity work.camera -- C2
+        generic map (
+            CLOCK_FREQUENCY => 100.0E6,
+            
+            CPLD_CONFIG_BASE => 0,
+            
+            SYNC_INVERTED   => false,
+            DATA3_INVERTED  => false,
+            DATA2_INVERTED  => true,
+            DATA1_INVERTED  => false,
+            DATA0_INVERTED  => false,
+            MEMORY_LOCATION => LEFT_CAMERA_MEMORY_LOCATION)
+        port map (
+            clock               => clk_100MHz_buf,
+            clock_camera_unbuf  => clk_camera_unbuf,
             clock_camera_over_2 => clk_camera_over_2,
             clock_camera_over_5 => clk_camera_over_5,
-            clock_locked => clk_locked,
-            reset        => reset,
+            clock_locked        => clk_locked,
+            reset               => reset,
             
             camera_out => left_camera_out,
             camera_in  => left_camera_in,
             
-            output => left_camera_output);
-    
-    U_RIGHT_CAMERA_WRAPPER : entity work.camera_wrapper
-        generic map (
-            SYNC_INVERTED  => true,
-            DATA3_INVERTED => true,
-            DATA2_INVERTED => true,
-            DATA1_INVERTED => false,
-            DATA0_INVERTED => false)
-        port map (
-            clock_camera_unbuf => clk_camera_unbuf,
-            clock_camera_over_2 => clk_camera_over_2,
-            clock_camera_over_5 => clk_camera_over_5,
-            clock_locked => clk_locked,
-            reset        => reset,
+            MISO => pair8P,
+            MOSI => pair14N,
+            SCLK => SCLK,
+            nSS  => pair7P,
             
-            camera_out => right_camera_out,
-            camera_in  => right_camera_in,
+            cpld_MOSI => pair14N,
+            cpld_MISO => pair13N,
+            cpld_SCLK => SCLK,
+            cpld_nSS  => pair14P,
             
-            output => right_camera_output);
-    
-    U_LEFT_CAMERA_WRITER : entity work.camera_writer
-        generic map (
-            BUFFER_ADDRESS => LEFT_CAMERA_MEMORY_LOCATION)
-        port map (
-            camera_output => left_camera_output,
+            spi_arbiter_in => spi_arbiter_users_in(2),
+            spi_arbiter_out => spi_arbiter_users_out(2),
             
             ram_in  => c3_p1_wronly_in,
             ram_out => c3_p1_wronly_out);
     
-    U_RIGHT_CAMERA_WRITER : entity work.camera_writer
+    U_RIGHT_CAMERA : entity work.camera -- C1
         generic map (
-            BUFFER_ADDRESS => RIGHT_CAMERA_MEMORY_LOCATION)
+            CLOCK_FREQUENCY => 100.0E6,
+            
+            CPLD_CONFIG_BASE => 4,
+            
+            SYNC_INVERTED   => true,
+            DATA3_INVERTED  => true,
+            DATA2_INVERTED  => true,
+            DATA1_INVERTED  => false,
+            DATA0_INVERTED  => false,
+            MEMORY_LOCATION => RIGHT_CAMERA_MEMORY_LOCATION)
         port map (
-            camera_output => right_camera_output,
+            clock               => clk_100MHz_buf,
+            clock_camera_unbuf  => clk_camera_unbuf,
+            clock_camera_over_2 => clk_camera_over_2,
+            clock_camera_over_5 => clk_camera_over_5,
+            clock_locked        => clk_locked,
+            reset               => reset,
+            
+            camera_out => right_camera_out,
+            camera_in  => right_camera_in,
+            
+            MISO => pair8N,
+            MOSI => pair14N,
+            SCLK => SCLK,
+            nSS  => pair7N,
+            
+            cpld_MOSI => pair14N,
+            cpld_MISO => pair13N,
+            cpld_SCLK => SCLK,
+            cpld_nSS  => pair14P,
+            
+            spi_arbiter_in => spi_arbiter_users_in(1),
+            spi_arbiter_out => spi_arbiter_users_out(1),
             
             ram_in  => c3_p5_in,
             ram_out => c3_p5_out);
-
+    
+    process (clk_100MHz_buf) is
+        variable SCLK_1, SCLK_2 : std_logic;
+        constant DELAY : positive := 25;
+        variable countdown : integer range 0 to 2*DELAY := 0;
+        variable last_SCLK : std_logic;
+        variable last_SCLK_set : boolean := false;
+    begin
+        if rising_edge(clk_100MHz_buf) then
+            if countdown /= 0 then
+                if countdown = DELAY then
+                    pair12P <= '0';
+                    pair13P <= '0';
+                end if;
+                countdown := countdown - 1;
+            elsif not last_SCLK_set or SCLK_2 /= last_SCLK then
+                if SCLK_2 = '1' then
+                    pair12P <= '1';
+                else
+                    pair13P <= '1';
+                end if;
+                countdown := 2*DELAY;
+                last_SCLK := SCLK_2;
+                last_SCLK_set := true;
+            end if;
+            SCLK_2 := SCLK_1;
+            SCLK_1 := SCLK;
+        end if;
+    end process;
+    
+    --SCLK <= 'H';
+    --pair7N <= 'H';
+    --pair7P <= 'H';
+    
     --------------------------
     -- DDR2 Interface
     --------------------------
@@ -530,18 +599,19 @@ begin
             uart_tx_write => uart_tx_write,
             uart_rx_valid => uart_rx_valid,
             uart_rx_data => uart_rx_data,
+            arbiter_in => spi_arbiter_users_in(0),
+            arbiter_out => spi_arbiter_users_out(0),
             pair7P => pair7P,
             pair7N => pair7N,
             pair8P => pair8P,
             pair8N => pair8N,
             pair9P => pair9P,
             pair9N => pair9N,
-            pair12P => pair12P,
             pair12N => pair12N,
-            pair13P => pair13P,
             pair13N => pair13N,
             pair14P => pair14P,
-            pair14N => pair14N);
+            pair14N => pair14N,
+            SCLK => SCLK);
     
     reset_for_ram_user <= reset or not c3_calib_done or c3_rst0;
     

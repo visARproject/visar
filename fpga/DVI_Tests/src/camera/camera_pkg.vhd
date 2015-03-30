@@ -2,7 +2,7 @@ library ieee;
 use ieee.std_logic_1164.all;
 use ieee.numeric_std.all;
 
-package camera is
+package camera_pkg is
     type camera_out is record
         clock_p : std_logic;
         clock_n : std_logic;

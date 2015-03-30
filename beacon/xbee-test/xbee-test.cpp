@@ -118,6 +118,28 @@ static void usart_setup(void)
     usart_enable(USART2);
 
 // ----END GPS SETUP
+
+// ----BEGIN DEBUG SETUP
+
+    // Setup GPIO pins for USART2 transmit.
+    gpio_set_mode(GPIOA, GPIO_MODE_OUTPUT_50_MHZ, GPIO_CNF_OUTPUT_ALTFN_PUSHPULL, GPIO_USART1_TX);
+
+    // Setup GPIO pins for USART1 receive.
+    gpio_set_mode(GPIOA, GPIO_MODE_INPUT, GPIO_CNF_INPUT_FLOAT, GPIO_USART1_RX);
+
+    // Setup USART1 parameters.
+    usart_set_baudrate(USART1, 115200);
+    usart_set_databits(USART1, 8);
+    usart_set_stopbits(USART1, USART_STOPBITS_1);
+    usart_set_mode(USART1, USART_MODE_TX_RX);
+    usart_set_parity(USART1, USART_PARITY_NONE);
+    usart_set_flow_control(USART1, USART_FLOWCONTROL_NONE);
+
+    // Finally enable the USART.
+    usart_enable(USART1);
+
+// ----END DEBUG SETUP
+
 }
 
 void usart3_isr(void)
@@ -233,6 +255,8 @@ void usart2_isr(void)
 
         volatile uint8_t data = usart_recv(USART2);
         static uint16_t rx_index = 0;
+
+        usart_send(USART1, data);
 
         switch (gps_rx_state) {
             case GPS_START1:
@@ -365,7 +389,8 @@ int main(void)
                     + (((gps_pkt.length % MAX_FRAG_LENGTH) > 0) ? 1 : 0);
 
             xbee_build_header(xbee_pkt);
-            xbee_set_dest_addr(xbee_pkt, 0x0013A20040AD1B15, 0xFFFE);
+            //xbee_set_dest_addr(xbee_pkt, 0x0013A20040AD1B15, 0xFFFE);
+            xbee_set_dest_addr(xbee_pkt, 0x000000000000FFFF, 0xFFFE);
             uint8_t current_fragment = 1;
             char* src_ptr = &(gps_pkt.payload[0]);
 

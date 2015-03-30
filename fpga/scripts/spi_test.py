@@ -10,10 +10,14 @@ import ram_test
 class SPIer(object):
     def __init__(self):
         self._r = ram_test.RAMPoker()
-        self._drive = 0b110101000011
+        self._drive = 0b1110101000011
         self._drive |= 1<<31
-        self._pins = 0b110100000011
+        self._pins = 0b0110100000011
         self._r.write(0xFFFFFFF4, self._pins)
+        assert self.read_pin(12) == 0, "arbiter request was already set!"
+        assert self.read_pin(13) == 0, "arbiter enable was already set!"
+        self.set_pin(12) # arbiter request
+        assert self.read_pin(13) == 1
         self._r.write(0xFFFFFFF8, self._drive)
     def _read_pins(self):
         self._r.write(0xFFFFFFFC, 0)
@@ -27,19 +31,16 @@ class SPIer(object):
         self._pins = ~(~self._pins | (1<<n))
         self._r.write(0xFFFFFFF4, self._pins)
     def read_pin(self, n):
-        assert not ((self._drive >> n) & 1)
+        #assert not ((self._drive >> n) & 1)
         return (self._read_pins() >> n) & 1
     def set_SCLK(self, x):
-        SCLK0_pin = 8
-        SCLK1_pin = 6
         assert x in [0, 1]
         if x == 0:
-            self.set_pin(SCLK0_pin)
-            self.clear_pin(SCLK0_pin)
+            self.clear_pin(31)
         else:
-            self.set_pin(SCLK1_pin)
-            self.clear_pin(SCLK1_pin)
+            self.set_pin(31)
     def do_spi(self, nCS_pin, MISO_pin, bits, read=True):
+        return self.do_camera_spi(nCS_pin, MISO_pin, bits, read)
         MOSI_pin = 11
         
         self.set_SCLK(1)
@@ -77,19 +78,30 @@ class SPIer(object):
         
         if read:
             return res
+    def close(self):
+        self.clear_pin(12) # arbiter request
+        self._r.write(0xFFFFFFF8, 0) # drive
 
-cpld_state = [1, 0, 0, 0, 0, 0, 0, 0, 0, 0]
+def read_cpld():
+    x = s.do_spi(10, 9, [0]*20)
+    assert x[:10] == [1, 0, 1, 0, 0, 1, 1, 0, 0, 1]
+    return x[10:]
+def write_cpld(x):
+    assert len(x) == 10
+    y = s.do_spi(10, 9, [1, 0, 1, 0, 0, 1, 1, 0, 0, 1] + x)
+    assert y[:10] == [1, 0, 1, 0, 0, 1, 1, 0, 0, 1]
+    assert read_cpld() == x, (read_cpld(), x)
 
 s = SPIer()
-print s.do_spi(10, 9, [1, 0, 0, 0, 0, 0, 0, 0, 0, 0]) # needed to initialize ... something?
-assert s.do_spi(10, 9, cpld_state) == [1, 0, 1, 0, 0, 1, 1, 0, 0, 1]
-'''while True:
-    print '{0:025b}'.format(s._r.read(32*1024*1024))
-    time.sleep(.1)'''
-#assert s.do_spi(10, 9, [1, 1, 0, 0, 0, 1, 0, 0, 0, 0]) == [1, 0, 1, 0, 0, 1, 1, 0, 0, 1]
-#assert s.do_spi(10, 9, [1, 1, 1, 0, 0, 1, 1, 0, 0, 0]) == [1, 0, 1, 0, 0, 1, 1, 0, 0, 1]
-#assert s.do_spi(10, 9, [1, 1, 1, 1, 0, 1, 1, 1, 0, 0]) == [1, 0, 1, 0, 0, 1, 1, 0, 0, 1]
-#assert s.do_spi(10, 9, [1, 1, 1, 1, 1, 1, 1, 1, 1, 0]) == [1, 0, 1, 0, 0, 1, 1, 0, 0, 1]
+
+cpld_state = read_cpld()
+print cpld_state
+cpld_state = [0]*10
+write_cpld(cpld_state)
+
+#s.close()
+#fdasfsa
+
 
 def int_to_list(x, n):
     res = []
@@ -115,14 +127,12 @@ class Camera(object):
         print 'starting', name
         
         cpld_state[power_start:power_start+4] = [0]*4
-        print cpld_state
-        assert s.do_spi(10, 9, cpld_state) == [1, 0, 1, 0, 0, 1, 1, 0, 0, 1]
+        write_cpld(cpld_state)
         time.sleep(.1)
         
         for i in xrange(4):
             cpld_state[power_start+i] = 1
-            print cpld_state
-            assert s.do_spi(10, 9, cpld_state) == [1, 0, 1, 0, 0, 1, 1, 0, 0, 1]
+            write_cpld(cpld_state)
             time.sleep(.1)
         
         assert self.camera_read(0) == int_to_list(0x560D, 16)
@@ -259,8 +269,10 @@ class Camera(object):
     def camera_write(self, addr, value):
         s.do_camera_spi(self.nCS_pin, self.MISO_pin, int_to_list(addr, 9) + [1] + int_to_list(value, 16), read=False)
 
-c1 = Camera('C1', 1, 3, 32*1024*1024, 1)
-c2 = Camera('C2', 0, 2, 0*1024*1024, 5)
+c1 = Camera('C1', 1, 3, 32*1024*1024, 2)
+c2 = Camera('C2', 0, 2, 0*1024*1024, 6)
+
+s.close()
 
 """
     if i == 1000:

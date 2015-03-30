@@ -5,7 +5,7 @@ use ieee.numeric_std.all;
 library unisim;
 use unisim.vcomponents.all;
 
-use work.camera.all;
+use work.camera_pkg.all;
 
 entity camera_wrapper is
     generic (

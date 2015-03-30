@@ -2,12 +2,12 @@ library ieee;
 use ieee.std_logic_1164.all;
 use ieee.numeric_std.all;
 
-use work.camera.all;
+use work.camera_pkg.all;
 use work.ram_port.all;
 
 entity camera_writer is
     generic (
-        BUFFER_ADDRESS : in integer); -- needs to be 4-byte aligned
+        BUFFER_ADDRESS : integer); -- needs to be 4-byte aligned
     port (
         camera_output : in camera_output;
         

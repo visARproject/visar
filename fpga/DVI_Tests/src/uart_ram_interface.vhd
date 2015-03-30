@@ -3,6 +3,7 @@ use ieee.std_logic_1164.all;
 use ieee.numeric_std.all;
 
 use work.ram_port.all;
+use work.util_arbiter_pkg.all;
 
 entity uart_ram_interface is
     port (
@@ -19,18 +20,21 @@ entity uart_ram_interface is
         uart_rx_valid : in std_logic;
         uart_rx_data  : in std_logic_vector(7 downto 0);
         
+        arbiter_in  : out ArbiterUserIn;
+        arbiter_out : in  ArbiterUserOut;
+        
         pair7P:  inout std_logic;
         pair7N:  inout std_logic;
         pair8P:  inout std_logic;
         pair8N:  inout std_logic;
         pair9P:  inout std_logic;
         pair9N:  inout std_logic;
-        pair12P: inout std_logic;
         pair12N: inout std_logic;
-        pair13P: inout std_logic;
         pair13N: inout std_logic;
         pair14P: inout std_logic;
-        pair14N: inout std_logic);
+        pair14N: inout std_logic;
+        
+        SCLK : out std_logic);
 end entity;
 
 architecture arc of uart_ram_interface is
@@ -50,20 +54,22 @@ begin
         end loop;
     end process;
     
+    arbiter_in.clock <= clock;
+    
     pair7P  <= debug_real_out( 0);
     pair7N  <= debug_real_out( 1);
     pair8P  <= debug_real_out( 2);
     pair8N  <= debug_real_out( 3);
     pair9P  <= debug_real_out( 4);
     pair9N  <= debug_real_out( 5);
-    pair12P <= debug_real_out( 6);
     pair12N <= debug_real_out( 7);
-    pair13P <= debug_real_out( 8);
     pair13N <= debug_real_out( 9);
     pair14P <= debug_real_out(10);
     pair14N <= debug_real_out(11);
+    arbiter_in.request <= debug_out(12);
+    SCLK <= debug_real_out(31);
     
-    debug_in <= "00000000000000000000" & pair14N & pair14P & pair13N & pair13P & pair12N & pair12P & pair9N & pair9P & pair8N & pair8P & pair7N & pair7P;
+    debug_in <= "000000000000000000" & arbiter_out.enable & debug_out(12) & pair14N & pair14P & pair13N & '0' & pair12N & '0' & pair9N & pair9P & pair8N & pair8P & pair7N & pair7P;
     
     process(clock, reset, uart_rx_valid, uart_rx_data, debug_in)
         type StateType is (IDLE, READ, EXEC);

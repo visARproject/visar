@@ -3,7 +3,7 @@ use ieee.std_logic_1164.all;
 use ieee.numeric_std.all;
 use ieee.math_real.all;
 
-use work.camera.all;
+use work.camera_pkg.all;
 use work.ram_port.all;
 use work.simple_mac_pkg.all;
 

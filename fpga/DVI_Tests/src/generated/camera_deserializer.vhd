@@ -177,7 +177,7 @@ begin
       DATA_RATE                => "SDR",
       IDELAY_VALUE             => 0,
       IDELAY_TYPE              => "DIFF_PHASE_DETECTOR",
-      COUNTER_WRAPAROUND       => "WRAPAROUND",
+      COUNTER_WRAPAROUND       => "STAY_AT_LIMIT",
       DELAY_SRC                => "IDATAIN",
       SERDES_MODE              => "MASTER",
       SIM_TAPDELAY_VALUE       => 49)
