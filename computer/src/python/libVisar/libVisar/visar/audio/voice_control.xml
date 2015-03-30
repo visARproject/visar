@@ -2,9 +2,18 @@
 <root>
   <command name="Make Call" alias="True">
     <alias name="Call"/>
-    <alias name="Call Now"/>
   </command>
-  <command name="End Call" alias="False">
+  <command name="End Call" alias="False"></command>
+  <command name="Example" alias="False"></command>
+  <command name="Options" alias="False"></command>
+  <command name="Back" alias="False"></command>
+  <command name="Toggle Map" alias="True">
+    <alias name="Map"/>
   </command>
-  <command name="Example" alias="False">  </command>  
+  <command name="Set Target" alias="True">
+    <alias name="Target"/>
+  </command>
+  <command name="List Peers" alias="True">
+    <alias name="Peers"/>
+  </command>
 </root>
