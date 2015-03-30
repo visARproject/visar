@@ -23,7 +23,11 @@ class NetworkState(Interface):
     self.c_sock = socket(AF_INET, SOCK_DGRAM) # client socket, pings peers to see if alive
     self.s_sock = socket(AF_INET, SOCK_DGRAM) # server socket, handles pings/broadcasts
     self.b_sock.setsockopt(SOL_SOCKET, SO_BROADCAST, 1) # enable broadcasting
+    self.c_sock.setsockopt(SOL_SOCKET, SO_REUSEADDR, 1) # allow socket to rebind
+    self.s_sock.setsockopt(SOL_SOCKET, SO_REUSEADDR, 1) # allow socket to rebind
+    self.b_sock.setsockopt(SOL_SOCKET, SO_REUSEADDR, 1) # allow socket to rebind
     self.b_sock.bind((BIND_ADDR,0)) # bind to correct interface with any port
+    
     
     # setup other object details
     self.kill_flag = False

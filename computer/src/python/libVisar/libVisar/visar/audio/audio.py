@@ -38,6 +38,7 @@ class AudioController(Interface):
     # create the socket/pipe objects
     self.c_sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     self.s_sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    self.s_sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1) # allow socket reuse
     self.connected = False
     
     # create the fifo pipe
