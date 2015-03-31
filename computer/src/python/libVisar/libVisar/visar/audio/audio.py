@@ -54,9 +54,15 @@ class AudioController(Interface):
     # vc.start()
     
     
-    #Popen(VC_PROGRAM) # Note, seems like vispy is capturing signals Sphinx needs
-
-    self.vc_pipe = os.open(VC_FIFO_NAME, os.O_RDONLY) # open the pipe
+    program = Popen(VC_PROGRAM)
+    time.sleep(.05)
+    
+    # check if program has crashed
+    if program.poll() is not None:
+      print "VC communication failed"
+      self.vc_pipe = None
+    else: # program didn't die
+      self.vc_pipe = os.open(VC_FIFO_NAME, os.O_RDONLY) # open the pipe
     
     # create the thread objects and start the threads
     self.comms  = threading.Thread(target=self.comms_thread)

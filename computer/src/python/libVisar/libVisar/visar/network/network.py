@@ -17,32 +17,40 @@ class NetworkState(Interface):
        
   def __init__(self, id_code, name, status=''):
     Interface.__init__(self)
-  
-    # setup the sockets
-    self.b_sock = socket(AF_INET, SOCK_DGRAM) # broadcast socket, publishes status info
-    self.c_sock = socket(AF_INET, SOCK_DGRAM) # client socket, pings peers to see if alive
-    self.s_sock = socket(AF_INET, SOCK_DGRAM) # server socket, handles pings/broadcasts
-    self.b_sock.setsockopt(SOL_SOCKET, SO_BROADCAST, 1) # enable broadcasting
-    self.c_sock.setsockopt(SOL_SOCKET, SO_REUSEADDR, 1) # allow socket to rebind
-    self.s_sock.setsockopt(SOL_SOCKET, SO_REUSEADDR, 1) # allow socket to rebind
-    self.b_sock.setsockopt(SOL_SOCKET, SO_REUSEADDR, 1) # allow socket to rebind
-    self.b_sock.bind((BIND_ADDR,0)) # bind to correct interface with any port
     
-    
-    # setup other object details
-    self.kill_flag = False
-    self.id_code = id_code
-    self.name = name
-    self.status = status
-    self.peers = {id_code : ('127.0.0.1', name, '')} # list of peers as dictionary
-    self.lock = threading.RLock() # lock object
-    
-    # setup and start the treads
-    self.blistener = threading.Thread(target=self.broadcast_listener) 
-    self.ulistener = threading.Thread(target=self.update_thread) 
-    self.blistener.start()
-    self.ulistener.start()
-    self.send_update() # send initial update
+    # Fail gracefully, don't start theads if we die
+    try:
+      # setup the sockets
+      self.b_sock = socket(AF_INET, SOCK_DGRAM) # broadcast socket, publishes status info
+      self.c_sock = socket(AF_INET, SOCK_DGRAM) # client socket, pings peers to see if alive
+      self.s_sock = socket(AF_INET, SOCK_DGRAM) # server socket, handles pings/broadcasts
+      self.b_sock.setsockopt(SOL_SOCKET, SO_BROADCAST, 1) # enable broadcasting
+      self.c_sock.setsockopt(SOL_SOCKET, SO_REUSEADDR, 1) # allow socket to rebind
+      self.s_sock.setsockopt(SOL_SOCKET, SO_REUSEADDR, 1) # allow socket to rebind
+      self.b_sock.setsockopt(SOL_SOCKET, SO_REUSEADDR, 1) # allow socket to rebind
+      self.b_sock.bind((BIND_ADDR,0)) # bind to correct interface with any port
+      
+      
+      # setup other object details
+      self.kill_flag = False
+      self.id_code = id_code
+      self.name = name
+      self.status = status
+      self.peers = {id_code : ('127.0.0.1', name, '')} # list of peers as dictionary
+      self.lock = threading.RLock() # lock object
+      
+      # setup and start the treads
+      self.blistener = threading.Thread(target=self.broadcast_listener) 
+      self.ulistener = threading.Thread(target=self.update_thread) 
+      self.blistener.start()
+      self.ulistener.start()
+      self.send_update() # send initial update
+      
+    except: 
+      # clean up and send a warning
+      self.kill_flag = True
+      if(self.b_sock is not None): self.b_sock.close()
+      print "Failed to start networking, check the network configuration"
 
   def destroy(self):
     '''set the kill flag to signal threads to shutdown, clean up socket'''
@@ -55,7 +63,8 @@ class NetworkState(Interface):
     self.lock.acquire()
     self.peers[self.id_code] = ('127.0.0.1', self.name, self.status) # update our status
     self.lock.release()
-    self.b_sock.sendto(self.id_code + '~' + self.name + '~' + self.status, (BROADCAST_ADDR,BROADCAST_PORT))
+    if(not self.kill_flag):
+      self.b_sock.sendto(self.id_code + '~' + self.name + '~' + self.status, (BROADCAST_ADDR,BROADCAST_PORT))
 
   def broadcast_listener(self):
     '''Thread listens for broadcasts/pings and updates peer list as new information is avliable'''
