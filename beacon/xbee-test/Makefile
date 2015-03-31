@@ -51,7 +51,7 @@ STYLECHECKFILES	:= $(shell find . -name '*.[ch]')
 
 OOCD		?= openocd
 OOCD_INTERFACE	?= stlink-v2
-OOCD_BOARD	?= beacon
+OOCD_BOARD	?= openocd-beacon
 
 ################################################################################
 # Black Magic Probe specific variables
@@ -224,7 +224,7 @@ ifeq ($(OOCD_SERIAL),)
 	@printf "  FLASH   $<\n"
 	@# IMPORTANT: Don't use "resume", only "reset" will work correctly!
 	$(Q)$(OOCD) -f interface/$(OOCD_INTERFACE).cfg \
-		    -f board/$(OOCD_BOARD).cfg \
+		    -f $(OOCD_BOARD).cfg \
 		    -c "init" -c "reset init" \
 		    -c "flash write_image erase $(*).hex" \
 		    -c "reset" \
