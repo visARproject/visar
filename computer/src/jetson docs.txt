@@ -29,7 +29,16 @@ sudo apt-mark hold xserver-xorg-core
 --Vsr Driver Dependencies:
 (apt-get) pyqt5-dev 
  
- 
+--setting up autorun.sh:
+# add a password exception:
+sudo visudo
+# the following lines:
+ubuntu ALL = NOPASSWD: /home/src/autorun.sh
+# make sure autorun.sh is executable
+chmod +x /home/src/autorun.sh
+#add it as a startup program (use the 'startup applications' gui)
+
+
 --Setting up the microphone: https://devtalk.nvidia.com/default/topic/772401/audio-input-on-jetson-tk1/
 amixer cset name="Stereo ADC MIXL ADC2 Switch" 0
 amixer cset name="Stereo ADC MIXR ADC2 Switch" 0
