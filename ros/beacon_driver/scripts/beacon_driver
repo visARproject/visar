@@ -1,0 +1,92 @@
+#!/usr/bin/python
+
+from __future__ import division
+
+# requires python-xbee from git@github.com:thom-nic/python-xbee.git
+import serial
+from xbee import DigiMesh
+import struct
+
+import rospy
+from std_msgs.msg import Header
+
+from skytraq_driver import datachunker, protocol as skytraq_protocol
+from skytraq_driver.msg import Packet, PacketSet
+
+import collections
+
+
+rospy.init_node('beacon_driver')
+
+serial_port = serial.Serial(rospy.get_param('~port'), 115200)
+xbee = DigiMesh(serial_port)
+
+class Beacon(object):
+    def __init__(self, mac):
+        self.ephemeral_pub = rospy.Publisher('beacon_'+str(mac)+'/ephemeral', Packet)
+        self.persistent_pub = rospy.Publisher('beacon_'+str(mac)+'/persistent', PacketSet, latch=True)
+        self.persistent_data = {}
+        self.fragment_table = dict()
+        
+    def handle_packet(self, data, stamp):
+        seq_num = struct.unpack('B', data[1])[0]
+        message_part = struct.unpack('B', data[2])[0]
+        message_part_total = struct.unpack('B', data[3])[0]
+        payload = data[4:]
+        
+        ephemeral_messages = set([
+            'meas_time',
+            'raw_meas',
+            'sv_ch_status',
+            'rcv_state',
+        ])
+        persistent_messages = set([
+            'gps_almanac_data',
+            'gps_ephemeris_data',
+            'subframe',
+        ])
+        ignore_messages = set([
+            'ack',
+            'nack',
+        ])
+
+        if message_part_total == 1:
+            packet = Packet(
+                header=Header(
+                    stamp=stamp,
+                ),
+                id=ord(payload[0]),
+                data=payload[1:],
+            )
+            message_name = skytraq_protocol.message_names[ord(payload[0])]
+            if message_name in ephemeral_messages:
+                self.ephemeral_pub.publish(packet)
+            elif message_name in persistent_messages:
+                id_tuple = ord(payload[0]), persistent_messages[message_name](payload[1:])
+                if id_tuple not in self.persistent_data or packet.data != self.persistent_data[id_tuple].data:
+                    self.persistent_data[id_tuple] = packet
+                    self.persistent_pub.publish(PacketSet(self.persistent_data.values()))
+            elif message_name in ignore_messages:
+                pass
+            else:
+                assert False
+#        else: #multipart, handle reassembly and publish
+            # XXX
+
+beacons = dict()
+
+while not rospy.is_shutdown():
+    try:
+        frame = xbee.wait_read_frame()
+        if frame['id'] == 'rx':
+            stamp = rospy.Time.now()
+            beacon_from = frame['source_addr'].encode('hex')
+            data = frame['data']
+            if beacon_from not in beacons:
+                beacons[beacon_from] = Beacon(beacon_from)
+            beacons[beacon_from].handle_packet(data, stamp)
+        
+    except KeyboardInterrupt:
+        break
+
+serial_port.close()
