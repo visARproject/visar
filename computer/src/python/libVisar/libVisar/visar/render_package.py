@@ -23,6 +23,9 @@ parser = argparse.ArgumentParser(description='Display the VisAR augmented realit
 parser.add_argument('-d', '--draw_terrain', dest='draw_terrain', action='store_true',
                    default=False,
                    help='Draw simulated terrain')
+parser.add_argument('-f', '--fullscreen', dest='full', action='store_true',
+                    default=False,
+                    help='Launch visar program in Fullscreen mode')
 parser.add_argument('-n', '--no_distort', dest='no_distort', action='store_true',
                    default=False,
                    help='Skip applying the distortion (For debugging)')
@@ -36,6 +39,7 @@ parser.add_argument('--npbrain', dest='brain', action='store_true',
                     default=False,
                     help='Use a demo brain')
 
+
 args = parser.parse_args()
 
 # Presets
@@ -45,7 +49,10 @@ class Renderer(app.Canvas): # Canvas is a GUI object
     def __init__(self, size=(1980, 1020)):    
 
         # Initialize gloo context
-        app.Canvas.__init__(self, keys='interactive')
+        if(args.full):
+            app.Canvas.__init__(self, keys='interactive', fullscreen=True)
+        else:
+            app.Canvas.__init__(self, keys='interactive')
         self.size = size 
         
         # Create a rendering context (A render list)

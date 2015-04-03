@@ -37,12 +37,14 @@ sudo apt-mark hold xserver-xorg-core
 # add a password exception:
 sudo visudo
 # the following lines:
-ubuntu ALL = NOPASSWD: /home/src/autorun.sh
+ubuntu ALL = NOPASSWD: /<absolute-path-to>/autorun.sh
 # make sure autorun.sh is executable
-chmod +x /home/src/autorun.sh
+chmod +x /<absolute-path-to>/autorun.sh
 # edit the paths in the autorun script
+# select an unused static ip in the autorun script
 # add it as a startup program (use the 'startup applications' gui):
 gnome-terminal -e "sudo /<absolute-path-to>/autorun.sh"
+#enable automatic user login under user accounts gui
 
 amixer cset name="Stereo ADC MIXL ADC2 Switch" 0
 amixer cset name="Stereo ADC MIXR ADC2 Switch" 0

@@ -1,7 +1,16 @@
-# start Voice control program in background
-(/home/ubuntu/src/python/libVisar/libVisar/visar/audio/vc &)
-# start the visar program 
-vsr
-# shtudown the computer when program exits
+# configure the ad-hoc network, will need to be adjusted on each unit
+#ifconfig wlan0 down
+#iwconfig wlan0 mode ad-hoc
+#iwconfig wlan0 essid 'visar'
+#iwconfig wlan0 key 1234567890
+#ifconfig wlan0 192.168.1.1
+
+# start Voice control program in background (should hopefully be bundled)
+#(/home/ubuntu/src/python/libVisar/libVisar/visar/audio/vc &)
+
+# start the visar program in fullscreen mode
+vsr -f
+
+# shtudown the computer when program exits (disabled for testing)
 #shutdown -h now
-echo Inser Shutdown Here
+echo Insert Shutdown Here
