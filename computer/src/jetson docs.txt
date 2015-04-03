@@ -36,7 +36,9 @@ sudo visudo
 ubuntu ALL = NOPASSWD: /home/src/autorun.sh
 # make sure autorun.sh is executable
 chmod +x /home/src/autorun.sh
-#add it as a startup program (use the 'startup applications' gui)
+# edit the paths in the autorun script
+# add it as a startup program (use the 'startup applications' gui):
+gnome-terminal -e "sudo /<absolute-path-to>/autorun.sh"
 
 
 --Setting up the microphone: https://devtalk.nvidia.com/default/topic/772401/audio-input-on-jetson-tk1/
