@@ -7,3 +7,9 @@
 [submodule "beacon/libopencm3"]
 	path = beacon/libopencm3
 	url = git@github.com:libopencm3/libopencm3.git
+[submodule "ros/rawgps-tools"]
+	path = ros/rawgps-tools
+	url = git@github.com:uf-mil/rawgps-tools.git
+[submodule "external/software-common"]
+	path = external/software-common
+	url = git@github.com:uf-mil/software-common.git
