@@ -9,6 +9,7 @@
 
 #include "xbee.h"
 #include "gps.h"
+#include "delay.h"
 #include "Queue.hpp"
 
 xbee_state_t xbee_rx_state = XBEE_START;
@@ -18,7 +19,7 @@ Queue<xbee_packet_t, 30> xbee_tx_queue;
 
 gps_state_t gps_rx_state = GPS_START1;
 gps_state_t gps_tx_state = GPS_START1;
-Queue<gps_packet_t, 10> gps_rx_queue;
+Queue<gps_packet_t, 20> gps_rx_queue;
 Queue<gps_packet_t, 3> gps_tx_queue;
 
 /*
@@ -315,7 +316,7 @@ void usart2_isr(void)
         switch (gps_tx_state) {
             case GPS_START1:
                 if (gps_tx_queue.isEmpty()) {
-                    usart_disable_tx_interrupt(USART1);
+                    usart_disable_tx_interrupt(USART2);
                     break;
                 } else {
                     tx_pkt = gps_tx_queue.dequeue();
@@ -361,6 +362,9 @@ void usart2_isr(void)
     }
 }
 
+gps_packet_t binary_rate = {8, {0x1E, 0x03, 0x01, 0x01, 0x01, 0x00, 0x00, 0x00}};
+
+
 int main(void)
 {
 
@@ -369,9 +373,12 @@ int main(void)
     clock_setup();
     gpio_setup();
     usart_setup();
-
+    
+    gps_tx_queue.enqueue(binary_rate);
+    usart_enable_tx_interrupt(USART2); // enable GPS TX interrupt
+    
     while (1) {
-        __asm__("NOP");
+//        __asm__("NOP");
 
         xbee_packet_t xbee_pkt;
 
