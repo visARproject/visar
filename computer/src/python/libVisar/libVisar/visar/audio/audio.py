@@ -48,22 +48,20 @@ class AudioController(Interface):
       os.unlink(VC_FIFO_NAME) # remove existing fifo
       os.mkfifo(VC_FIFO_NAME) # recreate the fifo
     
-    #open the vc program
-    # target = lambda : os.system(VC_PROGRAM)
-    # vc = threading.Thread(target=target)
-    # vc.start()
-    
-    
-    program = Popen(VC_PROGRAM)
-    time.sleep(.05)
+    #program = Popen(VC_PROGRAM)
+    #time.sleep(.05)
     
     # check if program has crashed
-    if program.poll() is not None:
-      print "VC communication failed"
-      self.vc_pipe = None
-    else: # program didn't die
-      self.vc_pipe = os.open(VC_FIFO_NAME, os.O_RDONLY) # open the pipe
-    
+    #if program.poll() is not None:
+    #  print "VC communication failed"
+    #  self.vc_pipe = None
+    #else: # program didn't die
+    #  self.vc_pipe = os.open(VC_FIFO_NAME, os.O_RDONLY) # open the pipe
+
+    # backup method, less robust, but it seems like val's program wont't work otherwise
+    self.vc_pipe = os.open(VC_FIFO_NAME, os.O_RDONLY) # open the pipe (hope it works)
+
+
     # create the thread objects and start the threads
     self.comms  = threading.Thread(target=self.comms_thread)
     self.parse  = threading.Thread(target=self.parse_thread)

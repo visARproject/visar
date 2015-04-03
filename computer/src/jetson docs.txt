@@ -28,11 +28,22 @@ sudo apt-mark hold xserver-xorg-core
  
 --Vsr Driver Backend Dependencies:
 (apt-get) pyqt5-dev 
-(pip install) pyglet --update
- 
+(pip install) pyglet --update 
  
 --Setting up the microphone, might or might not be needed: 
 # https://devtalk.nvidia.com/default/topic/772401/audio-input-on-jetson-tk1/
+
+--setting up autorun.sh:
+# add a password exception:
+sudo visudo
+# the following lines:
+ubuntu ALL = NOPASSWD: /home/src/autorun.sh
+# make sure autorun.sh is executable
+chmod +x /home/src/autorun.sh
+# edit the paths in the autorun script
+# add it as a startup program (use the 'startup applications' gui):
+gnome-terminal -e "sudo /<absolute-path-to>/autorun.sh"
+
 amixer cset name="Stereo ADC MIXL ADC2 Switch" 0
 amixer cset name="Stereo ADC MIXR ADC2 Switch" 0
 amixer cset name="Int Mic Switch" 0
