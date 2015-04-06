@@ -10,8 +10,6 @@ from ...OpenGL.drawing import Drawable
 from ...OpenGL.utils import Logger
 from ..globals import State
 
-
-
 class Button(Drawable):
     '''Draw a cube'''    
     button_vertex_shader = """
@@ -48,7 +46,8 @@ class Button(Drawable):
 //            }
             
             if (highlighted == 1){
-                gl_FragColor = vec4(color.rg, 0, 1);    
+//                gl_FragColor = vec4(1-color.r, 1-color.g, 1-color.b, 1);    
+                gl_FragColor = vec4(1, .29, 0, 1);
             } else {
                 gl_FragColor = vec4(color.rgb, 1);
             }
@@ -149,7 +148,8 @@ class Button(Drawable):
 
     def make_text(self, _string):
         self.font_size = 150
-        self.color = (.1, .1, .1, 1.0)
+        # self.color = (.1, .1, .1, 1.0)
+        self.color = (1, 1, 1, 1.0)
         self.canvas.text_renderer = visuals.TextVisual('', bold=True, color=self.color)
         self.tr_sys = visuals.transforms.TransformSystem(self.canvas)
         self.canvas.text_renderer.text = _string
@@ -157,14 +157,15 @@ class Button(Drawable):
         self.canvas.text_renderer.font_size = self.font_size
         # self.canvas.text_renderer.pos = 200, 200
         self.size = 500, 1500
-        self.canvas.text_renderer.pos = self.size[0] * 1.75, self.size[1] // 1.9
+        self.canvas.text_renderer.pos = self.size[0] * 1.5, self.size[1] // 1.9
         # Logger.log("Color: %s" % (self.canvas.text_renderer.color,))
 
 
     def make_texture(self):        
         # gloo.clear(color=True, depth=True)
         with self.text_buffer:
-            gloo.clear(color='white')
+            # gloo.clear(color=(0.008, 0.435, 0.71))
+            gloo.clear(color=(0, 0.13, 0.65))
             self.canvas.text_renderer.draw(self.tr_sys)
 
     def draw(self):        
