@@ -134,11 +134,15 @@ class State(object):
     def button_up(self):
         if self.current_button < max(self.buttons):
             self.current_button += 1
+        elif self.current_button == max(self.buttons):
+            self.current_button = min(self.buttons)
 
     @classmethod
     def button_down(self):
         if self.current_button > min(self.buttons):
             self.current_button -= 1
+        elif self.current_button == min(self.buttons):
+            self.current_button = max(self.buttons)
 
     @classmethod
     def press_enter(self):
