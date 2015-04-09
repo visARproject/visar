@@ -17,7 +17,7 @@ KILL_TIME = 10000 # give system 15 seconds to shutdown
 # list of control characters and thier functions
 CONTROL_DICT = {"A":"Example"}
 
-class device_handler(Interface):
+class DeviceHandler(Interface):
   def __init__(self):
     '''setup the serial device handler once this object is created, 
           you must call destroy() before exiting.
