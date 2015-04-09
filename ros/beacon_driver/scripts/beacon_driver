@@ -21,19 +21,26 @@ rospy.init_node('beacon_driver')
 serial_port = serial.Serial(rospy.get_param('~port'), 115200)
 xbee = DigiMesh(serial_port)
 
+def hexify(str):
+    return ':'.join(x.encode('hex') for x in str)
+
 class Beacon(object):
+
     def __init__(self, mac):
         self.ephemeral_pub = rospy.Publisher('beacon_'+str(mac)+'/ephemeral', Packet)
         self.persistent_pub = rospy.Publisher('beacon_'+str(mac)+'/persistent', PacketSet, latch=True)
         self.persistent_data = {}
         self.fragment_table = dict()
+        self.empty_entry = {'total': 0, 'have': 0, 'parts': [], 'stamp': 0}
+        for i in range(0, 256):
+            self.fragment_table[i] = {'total': 0, 'have': 0, 'parts': [], 'stamp': 0}
         
     def handle_packet(self, data, stamp):
         seq_num = struct.unpack('B', data[1])[0]
         message_part = struct.unpack('B', data[2])[0]
         message_part_total = struct.unpack('B', data[3])[0]
         payload = data[4:]
-        
+        if ord(payload[0]) == 220: return
         ephemeral_messages = set([
             'meas_time',
             'raw_meas',
@@ -50,7 +57,9 @@ class Beacon(object):
             'nack',
         ])
 
-        if message_part_total == 1:
+        if message_part_total == 0:
+            assert False
+        elif message_part_total == 1:
             packet = Packet(
                 header=Header(
                     stamp=stamp,
@@ -70,9 +79,54 @@ class Beacon(object):
                 pass
             else:
                 assert False
-#        else: #multipart, handle reassembly and publish
-            # XXX
-
+        else: #multipart, handle reassembly and publish
+            # XXX - handle expiring old fragments from fragment table
+            # insert new packet 
+            self.fragment_table[seq_num]['total'] = message_part_total
+            self.fragment_table[seq_num]['have'] += 1
+            self.fragment_table[seq_num]['parts'].append((message_part, payload))
+            #print seq_num
+            #print self.fragment_table[seq_num]
+            if seq_num == 1:
+                self.fragment_table[seq_num]['stamp'] = stamp # record time that first fragment was received -- XXX: what if 2/2 comes before 1/2?
+            if self.fragment_table[seq_num]['have'] == self.fragment_table[seq_num]['total']:
+                self.fragment_table[seq_num]['parts'].sort(key=lambda tup: tup[0])
+                payload = []
+                for frag in self.fragment_table[seq_num]['parts']:
+                    payload += frag[1]
+                #stamp_ = self.fragment_table[seq_num]['stamp']
+                #print "payload:"
+                #print payload
+                packet = Packet(
+                    header=Header(
+                        stamp=stamp,
+                    ),
+                    id=ord(payload[0]),
+                    data=str(payload[1:]),
+                )
+                try:
+                    message_name = skytraq_protocol.message_names[ord(payload[0])]              
+                    if message_name in ephemeral_messages:
+                        #print 'sending: {seq}, have:{have} total:{total} packet:{packet}'.format(seq=seq_num, have=self.fragment_table[seq_num]['have'], total=self.fragment_table[seq_num]['total'], packet=payload)
+                        #del self.fragment_table[seq_num]
+                        self.fragment_table[seq_num] = {'total': 0, 'have': 0, 'parts': [], 'stamp': 0}
+                        self.ephemeral_pub.publish(packet)
+                    elif message_name in persistent_messages:
+                        id_tuple = ord(payload[0]), persistent_messages[message_name](payload[1:])
+                        if id_tuple not in self.persistent_data or packet.data != self.persistent_data[id_tuple].data:
+                            #del self.fragment_table[seq_num]
+                            self.fragment_table[seq_num] = {'total': 0, 'have': 0, 'parts': [], 'stamp': 0}
+                            self.persistent_data[id_tuple] = packet
+                            self.persistent_pub.publish(PacketSet(self.persistent_data.values()))
+                    elif message_name in ignore_messages:
+                        pass
+                    else:
+                        assert False
+                except:
+                    print ':( bad message type?:', hexify(payload)
+            else:
+                pass
+            
 beacons = dict()
 
 while not rospy.is_shutdown():
@@ -82,6 +136,19 @@ while not rospy.is_shutdown():
             stamp = rospy.Time.now()
             beacon_from = frame['source_addr'].encode('hex')
             data = frame['data']
+            seq_num = struct.unpack('B', data[1])[0]
+            message_part = struct.unpack('B', data[2])[0]
+            message_part_total = struct.unpack('B', data[3])[0]
+            message_data = data[4:]
+            num_sats = 0
+            if len(message_data) > 2 and (message_data[0] == '\xdd'): ##or message_data[0] == '\xde'):
+                num_sats = struct.unpack('B', message_data[2])[0]
+            #print seq_num, message_part, message_part_total, num_sats, len(data[4:]), hexify(message_data)
+
+
+            #print hexify(data)
+            
+            
             if beacon_from not in beacons:
                 beacons[beacon_from] = Beacon(beacon_from)
             beacons[beacon_from].handle_packet(data, stamp)
