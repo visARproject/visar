@@ -11,18 +11,20 @@ CON_NAME = ''
 BAUD = 115200
 
 FREQ = 1/30 # update time
+TIMEOUT = 1 # timeout listen after 1 second
 KILL_TIME = 10000 # give system 15 seconds to shutdown
 
-class device_handler(Interface):
-  
+# list of control characters and thier functions
+CONTROL_DICT = {"A":"Example"}
 
+class device_handler(Interface):
   def __init__(self):
     '''setup the serial device handler once this object is created, 
           you must call destroy() before exiting.
        Updates are one typles in one of three formats:   
          ('BATTERY',  <battery level>)  # system battery level
          ('SHUTDOWN', None)             # system has recieved a shutdown command
-         ('CONTROL', <control state>)   # change in control state
+         ('CONTROL', <control update>)  # button press
     '''
 
     self.kill_flag = False
@@ -41,7 +43,7 @@ class device_handler(Interface):
     
     try:
       # conn port uses a similar structure, timeouts determine how long to block for
-      self.con_port = serial.Serial(CON_NAME, timeout=FREQ, writeTimeout=FREQ)
+      self.con_port = serial.Serial(CON_NAME, timeout=TIMEOUT, writeTimeout=TIMEOUT)
       self.con_port.baudrate = BAUD
       thread = threading.Thread(target=self.con_thread)
       thread.start()
@@ -77,6 +79,9 @@ class device_handler(Interface):
 
   def con_thread(self):
     '''Listen for status updates from controller device'''
-    # TODO: get protocol to decide how best to handle this
-    return None
+    while not self.kill_flag:
+      try: 
+        data = self.cnt_port.read(1) # read in a single character from port
+        self.do_update('CONTROL', CONTROL_DICT[data]) # issue update
+      except: pass # timeout occured, ignore it
     
