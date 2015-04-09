@@ -46,8 +46,11 @@ class Button(Drawable):
 //            }
             
             if (highlighted == 1){
-//                gl_FragColor = vec4(1-color.r, 1-color.g, 1-color.b, 1);    
-                gl_FragColor = vec4(1, .29, 0, 1);
+                if(color.r == 1 && color.g == 1 && color.b == 1) {
+                    gl_FragColor = vec4(color.rgb, 1);
+                } else {
+                    gl_FragColor = vec4(1, .29, 0, 1);
+                }
             } else {
                 gl_FragColor = vec4(color.rgb, 1);
             }
