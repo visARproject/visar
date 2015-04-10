@@ -27,7 +27,8 @@ architecture arc of util_fifo is
     type BackingType is array (0 to DEPTH-1) of std_logic_vector(WIDTH-1 downto 0); 
     signal backing : BackingType;
     
-    signal write_full_s, read_empty_s : std_logic;
+    signal write_full_s : std_logic := '1';
+    signal read_empty_s : std_logic := '1';
     
     signal write_position : unsigned(LOG_2_DEPTH downto 0) := to_unsigned(0, LOG_2_DEPTH+1); -- next position to write to
     signal  read_position : unsigned(LOG_2_DEPTH downto 0) := to_unsigned(0, LOG_2_DEPTH+1); -- next position to read from

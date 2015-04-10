@@ -49,7 +49,8 @@ class Parser(object):
         tup = ()
         command = ""
         args = ""
-        for x in range(1, len(words)):
+        for x in range(1, len(words) + 1):
+            Logger.log('x: %s' % (x,)) #Debug
             test_command = ""
             test_args = ""
 
@@ -58,20 +59,44 @@ class Parser(object):
                     test_command = words[y]
                 else:
                     test_command += " " + words[y]
+
+            Logger.log('command: %s' % (test_command,)) #Debug
           
             for y in range(x, len(words)):
-                if y == len(words) - 1:
+                if y == len(words):
+                    pass
+                elif y == len(words) - 1:
                     test_args += words[y]
                 else:
                     test_args += words[y] + " "
 
-            if test_command.lower() in self.key_words:
-                command = self.key_words[test_command.lower()]
-                args = test_args
-            else:
-                break
+            # if test_command.lower() in self.key_words:
+            #     Logger.log('pre-command: %s' % (command,)) #Debug
+            #     command = self.key_words[test_command.lower()].lower()
+            #     Logger.log('post-command: %s' % (command,)) #Debug
+            #     args = test_args
+            # else:
+            #     break
 
-        # Logger.log('tuple: %s' % (tup,)) #Debug
+            bad_command = True
+
+            for y in self.key_words:
+                Logger.log('y: %s' % (y,)) #Debug
+                Logger.log('test: %s' % (test_command.lower(),)) #Debug
+                if test_command.lower() == y:
+                    command = self.key_words[test_command.lower()]
+                    args = test_args
+                    bad_command = False
+                elif test_command.lower() in y:
+                    Logger.log('Here: %s' % ("here",)) #Debug
+                    bad_command = False
+
+            Logger.log('here: %s' % (bad_command,)) #Debug
+            if bad_command == True:
+                break
+            Logger.log('here: %s' % ("1",)) #Debug
+
+        Logger.log('tuple: %s' % (tup,)) #Debug
 
         args_list = args.split(' ')
 
@@ -88,4 +113,4 @@ class Parser(object):
 
 if __name__ == '__main__':
     print Parser.key_words
-    print Parser.parse("Call Now Alpha Bravo")
+    print Parser.parse("Call Alpha Bravo")

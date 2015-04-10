@@ -123,7 +123,7 @@ class Renderer(app.Canvas): # Canvas is a GUI object
         self._timer = app.Timer('auto', connect=self.on_timer, start=True)
   
     def on_timer(self, event):
-	#if(args.full): self.fullscreen = True
+        if State.shutdown_flag: self.close() # shutdown if signaled
         self.Render_List.set_view(self.view)
         self.Render_List.update()
         self.UI_elements.update()
@@ -182,6 +182,8 @@ class Renderer(app.Canvas): # Canvas is a GUI object
             self.rotate = [0, 0, 1]
         elif(event.text == 'Z'):
             self.rotate = [0, 0, -1]
+        elif(event.text == 'B'):
+            State.shutdown_flag = True
         elif(event.text == ' ' or event.key == 'Space'):
             State.make_call()
             return

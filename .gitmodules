@@ -13,3 +13,6 @@
 [submodule "external/software-common"]
 	path = external/software-common
 	url = git@github.com:uf-mil/software-common.git
+[submodule "ros/txros"]
+	path = ros/txros
+	url = git@github.com:txros/txros.git

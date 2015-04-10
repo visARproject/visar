@@ -43,6 +43,7 @@ class State(object):
     network_state = None
     audio_controller = None
     pose_handler = None
+    device_handler = None
     
     action_dict = None
     
@@ -53,7 +54,11 @@ class State(object):
     network_peers = None # create object reference, but don't init it yet
     id_code = ''.join(random.choice('0123456789ABCDEFGHIJKLMNOPQRSTUVWKYZ') for i in range(3)) # random 3 char id
     hostname = socket.gethostname() # get computer name for id
-        
+  
+    # device information
+    battery = 100 # battery level (0-100ish)
+    shutdown_flag = False # system kill flag
+          
     calling = False # toggle value for call
   
     args = None # arguments for function calls
@@ -77,8 +82,11 @@ class State(object):
         self.network_state = NetworkState(self.id_code, self.hostname, 'default status') # create network state tracker
 
         self.audio_controller = AudioController() # create audio manager
+        
         self.pose_handler = PoseHandler(frequency=1.0/30.0)
         self.pose_count = 0
+        
+        #self.device_handler = DeviceHandler() # TODO: devices        
 
         # setup the pose handler and callback functions
         def pose_callback(event):
@@ -124,6 +132,19 @@ class State(object):
             State.network_peers = event
       
         self.network_state.add_callback(network_callback) # add the callback
+        
+        # callback method for device handler updates
+        def device_callback(event):
+            Logger.log('Device Update %s' % (event,))
+            if event[0] == 'BATTERY': 
+                State.battery = event[1]
+            elif event[0] == 'SHUTDOWN':
+                State.shutdown_flag = True
+            elif event[0] == 'CONTROL':
+                a = None
+                # TODO: issue command
+        
+        #self.device_handler.add_callback(device_callback) # TODO: devices
                   
     @classmethod
     def register_button(self, position, action):
@@ -134,11 +155,15 @@ class State(object):
     def button_up(self):
         if self.current_button < max(self.buttons):
             self.current_button += 1
+        elif self.current_button == max(self.buttons):
+            self.current_button = min(self.buttons)
 
     @classmethod
     def button_down(self):
         if self.current_button > min(self.buttons):
             self.current_button -= 1
+        elif self.current_button == min(self.buttons):
+            self.current_button = max(self.buttons)
 
     @classmethod
     def press_enter(self):
@@ -234,6 +259,7 @@ class State(object):
         self.pose_handler.destroy()
         self.network_state.destroy()
         self.audio_controller.destroy()
+        #self.device_handler.destroy() # TODO: devices
         
     @classmethod
     # Temporary Method, delete later
