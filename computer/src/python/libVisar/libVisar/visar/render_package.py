@@ -48,11 +48,7 @@ FPS = 60 # Maximum FPS (how often needs_update is checked)
 class Renderer(app.Canvas): # Canvas is a GUI object
     def __init__(self, size=(1980, 1020)):    
 
-        # Initialize gloo context
-        if(args.full):
-            app.Canvas.__init__(self, keys='interactive', fullscreen=True)
-        else:
-            app.Canvas.__init__(self, keys='interactive')
+        app.Canvas.__init__(self, keys='interactive')
         self.size = size 
         
         # Create a rendering context (A render list)
@@ -227,6 +223,7 @@ def main():
     State.do_init() # initialize the state objects/threads
     c = Renderer()
     c.show()
+    if(args.full): c.fullscreen = True # fullscreen mode
     c.app.run()
     State.destroy()
 
