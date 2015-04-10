@@ -5,6 +5,9 @@
 #iwconfig wlan0 key 1234567890
 #ifconfig wlan0 192.168.1.1
 
+# rotate the display (todo: confirm that this is needed)
+# DISPLAY=:0.0 xrandr -o left
+
 # start Voice control program in background (should hopefully be bundled)
 #(/home/ubuntu/src/python/libVisar/libVisar/visar/audio/vc &)
 

@@ -27,7 +27,7 @@ sudo cp zImage /boot/zImage
 sudo apt-mark hold xserver-xorg-core
  
 --Vsr Driver Backend Dependencies:
-(apt-get) pyqt5-dev 
+# Depreciated: (apt-get) pyqt5-dev 
 (pip install) pyglet --update 
  
 --Setting up the microphone, might or might not be needed: 
@@ -44,7 +44,9 @@ chmod +x /<absolute-path-to>/autorun.sh
 # select an unused static ip in the autorun script
 # add it as a startup program (use the 'startup applications' gui):
 gnome-terminal -e "sudo /<absolute-path-to>/autorun.sh"
-#enable automatic user login under user accounts gui
+# enable automatic user login under user accounts gui
+# disable suspend mode under power settings (default)
+# set 'turn off screen after...' to never  and disable screen dimming in 'brightness and lock settings'
 
 amixer cset name="Stereo ADC MIXL ADC2 Switch" 0
 amixer cset name="Stereo ADC MIXR ADC2 Switch" 0
