@@ -13,7 +13,7 @@ from vispy import app
 from ..OpenGL.utils import Logger
 from ..OpenGL.shaders import Distorter
 from ..OpenGL.drawing import Drawable, Context
-from .drawables import Example, Target, Map, Button, Brain
+from .drawables import Example, Target, Map, Button, Brain, Toast
 from .environments import Terrain
 from .globals import State
 
@@ -62,6 +62,7 @@ class Renderer(app.Canvas): # Canvas is a GUI object
             map_ob = Map()
             UI_elements = [
                 map_ob,
+                Toast(self),
                 Button('Toggle Map', self, position=1),
                 Button('Make Call', self, position=3),
                 Button('End Call', self, position=2),
@@ -76,6 +77,7 @@ class Renderer(app.Canvas): # Canvas is a GUI object
         except: 
             Logger.warn("Failed to Initialize the map")
             UI_elements = [
+                Toast(self),
                 Button('Toggle Map', self, position=1),
                 Button('Make Call', self, position=3),
                 Button('End Call', self, position=2),

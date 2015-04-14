@@ -46,6 +46,9 @@ class State(object):
     device_handler = None
     
     action_dict = None
+
+    # Visual toast text
+    toast = None
     
     # create pose update listener reference and default pose (default to mil)
     pose = {"position_ecef": {"x":738575.65, "y":-5498374.10, "z":3136355.42}, "orientation_ecef": {"x": 0.50155109,  "y": 0.03353513,  "z": 0.05767266, "w": 0.86255189}, "velocity_ecef": {"x": -0.06585217, "y": 0.49024074, "z": 0.8690958}, "angular_velocity_ecef": {"x": 0.11570315, "y": -0.86135956, "z": 0.4946438}} 
@@ -266,3 +269,6 @@ class State(object):
     def set_target(self):
         '''set the argument register to value from command line'''
         self.args = raw_input("Enter target value: ")
+        self.toast = 'Args: %s' % (self.args,) # pop a toast too
+
+
