@@ -32,6 +32,10 @@ class Beacon(object):
         self.persistent_data = {}
         self.fragment_table = dict()
         self.empty_entry = {'total': 0, 'have': 0, 'parts': [], 'stamp': 0}
+        self.packets_sent = 0
+        self.empty_frag_table()
+
+    def empty_frag_table(self):
         for i in range(0, 256):
             self.fragment_table[i] = {'total': 0, 'have': 0, 'parts': [], 'stamp': 0}
         
@@ -40,18 +44,27 @@ class Beacon(object):
         message_part = struct.unpack('B', data[2])[0]
         message_part_total = struct.unpack('B', data[3])[0]
         payload = data[4:]
-        if ord(payload[0]) == 220: return
+#        if ord(payload[0]) == 220: return # XXX: why on earth would I write this? I don't remember, but I probably want to keep it commented out :(
         ephemeral_messages = set([
             'meas_time',
             'raw_meas',
             'sv_ch_status',
             'rcv_state',
         ])
-        persistent_messages = set([
-            'gps_almanac_data',
-            'gps_ephemeris_data',
-            'subframe',
-        ])
+        def get_subframe_id(body):
+            PRN, SFID, subframe_data = struct.unpack('>BB30s', body)
+            if SFID == 4 or SFID == 5:
+               subframe = gps.subframes[SFID](subframe_data)
+               return PRN, SFID, subframe.data_id, subframe.sv_id
+            else:
+                return PRN, SFID
+        persistent_messages = dict(
+            software_version=lambda body: None,
+            software_crc=lambda body: None,
+            gps_almanac_data=lambda body: struct.unpack('>B', body[:1]),
+            gps_ephemeris_data=lambda body: struct.unpack('>H', body[:2]),
+            subframe=get_subframe_id,
+        )
         ignore_messages = set([
             'ack',
             'nack',
@@ -70,11 +83,20 @@ class Beacon(object):
             message_name = skytraq_protocol.message_names[ord(payload[0])]
             if message_name in ephemeral_messages:
                 self.ephemeral_pub.publish(packet)
+                self.packets_sent += 1
+                if self.packets_sent == 10:
+                    self.empty_frag_table()
+                    self.packets_sent = 0
             elif message_name in persistent_messages:
+                print hexify(payload)
                 id_tuple = ord(payload[0]), persistent_messages[message_name](payload[1:])
                 if id_tuple not in self.persistent_data or packet.data != self.persistent_data[id_tuple].data:
                     self.persistent_data[id_tuple] = packet
                     self.persistent_pub.publish(PacketSet(self.persistent_data.values()))
+                    self.packets_sent += 1
+                    if self.packets_sent == 10:
+                        self.empty_frag_table()
+                        self.packets_sent = 0
             elif message_name in ignore_messages:
                 pass
             else:
@@ -82,6 +104,7 @@ class Beacon(object):
         else: #multipart, handle reassembly and publish
             # XXX - handle expiring old fragments from fragment table
             # insert new packet 
+            #print hexify(payload)
             self.fragment_table[seq_num]['total'] = message_part_total
             self.fragment_table[seq_num]['have'] += 1
             self.fragment_table[seq_num]['parts'].append((message_part, payload))
@@ -94,30 +117,40 @@ class Beacon(object):
                 payload = []
                 for frag in self.fragment_table[seq_num]['parts']:
                     payload += frag[1]
-                #stamp_ = self.fragment_table[seq_num]['stamp']
-                #print "payload:"
-                #print payload
+                
                 packet = Packet(
                     header=Header(
                         stamp=stamp,
                     ),
                     id=ord(payload[0]),
-                    data=str(payload[1:]),
+                    data=[ord(x) for x in payload[1:]],
                 )
+                #print packet.data
                 try:
                     message_name = skytraq_protocol.message_names[ord(payload[0])]              
                     if message_name in ephemeral_messages:
-                        #print 'sending: {seq}, have:{have} total:{total} packet:{packet}'.format(seq=seq_num, have=self.fragment_table[seq_num]['have'], total=self.fragment_table[seq_num]['total'], packet=payload)
+                        #print 'sending: {seq}, have:{have} total:{total} packet:{packet}'.format(seq=seq_num, have=self.fragment_table[seq_num]['have'], total=self.fragment_table[seq_num]['total'], packet=hexify(packet.data))
+                        #print ''
                         #del self.fragment_table[seq_num]
                         self.fragment_table[seq_num] = {'total': 0, 'have': 0, 'parts': [], 'stamp': 0}
                         self.ephemeral_pub.publish(packet)
+                        self.packets_sent += 1
+                        if self.packets_sent == 10:
+                            self.empty_frag_table()
+                            self.packets_sent = 0
                     elif message_name in persistent_messages:
+                        print hexify(payload)
                         id_tuple = ord(payload[0]), persistent_messages[message_name](payload[1:])
                         if id_tuple not in self.persistent_data or packet.data != self.persistent_data[id_tuple].data:
                             #del self.fragment_table[seq_num]
                             self.fragment_table[seq_num] = {'total': 0, 'have': 0, 'parts': [], 'stamp': 0}
+                            
                             self.persistent_data[id_tuple] = packet
                             self.persistent_pub.publish(PacketSet(self.persistent_data.values()))
+                            self.packets_sent += 1
+                            if self.packets_sent == 10:
+                                self.empty_frag_table()
+                                self.packets_sent = 0
                     elif message_name in ignore_messages:
                         pass
                     else:
