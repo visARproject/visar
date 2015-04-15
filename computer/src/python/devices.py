@@ -15,7 +15,8 @@ TIMEOUT = 1 # timeout listen after 1 second
 KILL_TIME = 10000 # give system 15 seconds to shutdown
 
 # list of control characters and thier functions
-CONTROL_DICT = {"A":"Example"}
+CONTROL_DICT = {'M':"Map", 'V':"Voice", 'S':"Select",
+                'U':"Up", 'D':"Down", 'L':"Left", 'R':"Right"}
 
 class DeviceHandler(Interface):
   def __init__(self):
@@ -83,5 +84,5 @@ class DeviceHandler(Interface):
       try: 
         data = self.cnt_port.read(1) # read in a single character from port
         self.do_update('CONTROL', CONTROL_DICT[data]) # issue update
-      except: pass # timeout occured, ignore it
+      except: pass # timeout/key-error occured, ignore it
     

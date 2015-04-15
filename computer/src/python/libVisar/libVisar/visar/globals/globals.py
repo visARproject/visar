@@ -144,8 +144,15 @@ class State(object):
             elif event[0] == 'SHUTDOWN':
                 State.shutdown_flag = True
             elif event[0] == 'CONTROL':
-                a = None
-                # TODO: issue command
+                if   event[1] == "Up"     : State.button_up()
+                elif event[1] == "Down"   : State.button_down()
+                # elif event[1] == "Left"   : State.button_left() #TODO: Jake, add these
+                # elif event[1] == "Right"  : State.button_right() #TODO: Jake, add these
+                elif evnet[1] == "Select" : State.press_enter()
+                elif event[1] == "Voice"  : if not State.start_listening(): State.stop_listening() # Toggle VC
+                elif evnet[1] == "Map"    : State.hide_map()  # TODO: map scroll mode?
+                else: Logger.warn('Bad Update %s' % (event,))
+            else: Logger.warn('Bad Update %s' % (event,))
         
         #self.device_handler.add_callback(device_callback) # TODO: devices
                   
@@ -210,12 +217,12 @@ class State(object):
     @classmethod
     def start_listening(self):
       '''Begin listening for voice commands'''
-      self.audio_controller.start_voice()
+      return self.audio_controller.start_voice()
 
     @classmethod
     def stop_listening(self):
       '''Stop listening to voice commands'''
-      self.audio_controller.stop_voice()
+      return self.audio_controller.stop_voice()
 
     @classmethod
     def update_status(self):
