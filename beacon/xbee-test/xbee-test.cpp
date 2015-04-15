@@ -15,7 +15,7 @@
 xbee_state_t xbee_rx_state = XBEE_START;
 xbee_state_t xbee_tx_state = XBEE_START;
 Queue<xbee_packet_t, 10> xbee_rx_queue;
-Queue<xbee_packet_t, 30> xbee_tx_queue;
+Queue<xbee_packet_t, 10> xbee_tx_queue;
 
 gps_state_t gps_rx_state = GPS_START1;
 gps_state_t gps_tx_state = GPS_START1;
@@ -374,6 +374,7 @@ int main(void)
     gpio_setup();
     usart_setup();
     
+    delay_ms(100);
     gps_tx_queue.enqueue(binary_rate);
     usart_enable_tx_interrupt(USART2); // enable GPS TX interrupt
     
@@ -414,9 +415,9 @@ int main(void)
                         bytes_to_copy);
                 if (current_fragment == fragments_needed) {
                     xbee_pkt.length = INDEX_SKYTRAQ_START
-                            + (gps_pkt.length % MAX_FRAG_LENGTH);
+                            + (gps_pkt.length % MAX_FRAG_LENGTH) + 1;
                 } else {
-                    xbee_pkt.length = INDEX_SKYTRAQ_START + MAX_FRAG_LENGTH;
+                    xbee_pkt.length = INDEX_SKYTRAQ_START + MAX_FRAG_LENGTH + 1;
                 }
                 xbee_tx_queue.enqueue(xbee_pkt);
                 usart_enable_tx_interrupt(USART3); // enable XBEE TX interrupt
