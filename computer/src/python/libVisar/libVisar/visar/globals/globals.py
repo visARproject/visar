@@ -149,7 +149,7 @@ class State(object):
                 # elif event[1] == "Left"   : State.button_left() #TODO: Jake, add these
                 # elif event[1] == "Right"  : State.button_right() #TODO: Jake, add these
                 elif evnet[1] == "Select" : State.press_enter()
-                elif event[1] == "Voice"  : if not State.start_listening(): State.stop_listening() # Toggle VC
+                elif event[1] == "Voice"  : State.toggle_vc() # Toggle VC
                 elif evnet[1] == "Map"    : State.hide_map()  # TODO: map scroll mode?
                 else: Logger.warn('Bad Update %s' % (event,))
             else: Logger.warn('Bad Update %s' % (event,))
@@ -215,14 +215,10 @@ class State(object):
         self.calling = False # set flag appropriatley
 
     @classmethod
-    def start_listening(self):
+    def toggle_vc(self):
       '''Begin listening for voice commands'''
-      return self.audio_controller.start_voice()
+      self.audio_controller.start_voice() or self.audio_controller.stop_voice()
 
-    @classmethod
-    def stop_listening(self):
-      '''Stop listening to voice commands'''
-      return self.audio_controller.stop_voice()
 
     @classmethod
     def update_status(self):
