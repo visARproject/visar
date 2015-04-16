@@ -223,6 +223,7 @@ class Renderer(app.Canvas): # Canvas is a GUI object
     
 def main():
     State.do_init() # initialize the state objects/threads
+    app.use_app(backend_name='PyGlet')
     c = Renderer()
     c.show()
     if(args.full): c.fullscreen = True # fullscreen mode
