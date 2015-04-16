@@ -10,6 +10,7 @@ import struct
 import rospy
 from std_msgs.msg import Header
 
+from rawgps_common import gps
 from skytraq_driver import datachunker, protocol as skytraq_protocol
 from skytraq_driver.msg import Packet, PacketSet
 
