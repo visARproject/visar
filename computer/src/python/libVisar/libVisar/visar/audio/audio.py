@@ -147,7 +147,7 @@ class AudioController(Interface):
   def start_voice(self):
     if self.vc_active: # check if already listening
       self.do_updates(('Error','VC is already active'))
-      return
+      return False
     lock.acquire()
     self.child.stdin.write('voice_start\n')
     lock.release()
@@ -155,11 +155,12 @@ class AudioController(Interface):
     self.do_updates(('started_vc','')) # send start log
     if(self.connection is None):
       self.connection = ('voice', None, 'mic') # connection is in voice mode
+    return True
   
   # stops the voice controller
   def stop_voice(self):
     if not self.vc_active: 
-      return None # exit if not listening
+      return False # exit if not listening
     global lock
     lock.acquire()
     self.child.stdin.write('voice_stop\n')
@@ -168,6 +169,7 @@ class AudioController(Interface):
     self.vc_active = False # stop vc activities
     if(self.connection is not None and self.connection[0] == 'voice'): 
       self.connection = None  # clear the connection state
+    return True
   
   # thread to handle communicating with child process
   def comms_thread(self):    

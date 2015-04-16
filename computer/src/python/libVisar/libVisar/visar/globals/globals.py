@@ -8,9 +8,8 @@ from ..network import NetworkState, PoseHandler
 from ..interface import Interface
 from .actions import Actions
 
-import os
 import numpy as np
-import socket, random
+import os, socket, random, copy
 
 class State(object):
     '''Track the global state of the VisAR unit
@@ -46,9 +45,13 @@ class State(object):
     device_handler = None
     
     action_dict = None
+
+    # Visual toast text
+    toast = None
     
     # create pose update listener reference and default pose (default to mil)
     pose = {"position_ecef": {"x":738575.65, "y":-5498374.10, "z":3136355.42}, "orientation_ecef": {"x": 0.50155109,  "y": 0.03353513,  "z": 0.05767266, "w": 0.86255189}, "velocity_ecef": {"x": -0.06585217, "y": 0.49024074, "z": 0.8690958}, "angular_velocity_ecef": {"x": 0.11570315, "y": -0.86135956, "z": 0.4946438}} 
+    remotes = {}    
         
     # network information    
     network_peers = None # create object reference, but don't init it yet
@@ -91,21 +94,27 @@ class State(object):
         # setup the pose handler and callback functions
         def pose_callback(event):
             # don't issue all updates
-            if(self.pose_count == 60):
-                Logger.log("Pose Update #60: %s" % (event,))
+            if(self.pose_count == 61):
+                Logger.log("61st Pose Update: %s" % (event,))
                 self.pose_count = 0
             self.pose_count += 1
             
             # call the appropriate update methods
-            try:
-                position = (event['position_ecef']['x'], event['position_ecef']['y'], 
-                            event['position_ecef']['z'])
-                State.set_position(position)
-                orientation = (event['orientation_ecef']['x'], event['orientation_ecef']['y'], 
-                            event['orientation_ecef']['z'], event['orientation_ecef']['w'])
-                State.set_orientation(orientation)
-                State.pose = event # store the full value
-            except: Logger.log("Bad Pose Update")
+            if event[0] == 'LOCAL':
+              event = event[1]
+              try:
+                  position = (event['position_ecef']['x'], event['position_ecef']['y'], 
+                              event['position_ecef']['z'])
+                  State.set_position(position)
+                  orientation = (event['orientation_ecef']['x'], event['orientation_ecef']['y'], 
+                              event['orientation_ecef']['z'], event['orientation_ecef']['w'])
+                  State.set_orientation(orientation)
+                  State.pose = event # store the full value
+              except: Logger.log("Bad Pose Update")
+
+            elif event[0] == 'REMOTE': # grab a copy of remote data
+              remotes = copy.deepcopy(event[1])
+              
           
         self.pose_handler.add_callback(pose_callback)
 
@@ -141,8 +150,15 @@ class State(object):
             elif event[0] == 'SHUTDOWN':
                 State.shutdown_flag = True
             elif event[0] == 'CONTROL':
-                a = None
-                # TODO: issue command
+                if   event[1] == "Up"     : State.button_up()
+                elif event[1] == "Down"   : State.button_down()
+                # elif event[1] == "Left"   : State.button_left() #TODO: Jake, add these
+                # elif event[1] == "Right"  : State.button_right() #TODO: Jake, add these
+                elif evnet[1] == "Select" : State.press_enter()
+                elif event[1] == "Voice"  : State.toggle_vc() # Toggle VC
+                elif evnet[1] == "Map"    : State.hide_map()  # TODO: map scroll mode?
+                else: Logger.warn('Bad Update %s' % (event,))
+            else: Logger.warn('Bad Update %s' % (event,))
         
         #self.device_handler.add_callback(device_callback) # TODO: devices
                   
@@ -205,14 +221,9 @@ class State(object):
         self.calling = False # set flag appropriatley
 
     @classmethod
-    def start_listening(self):
+    def toggle_vc(self):
       '''Begin listening for voice commands'''
-      self.audio_controller.start_voice()
-
-    @classmethod
-    def stop_listening(self):
-      '''Stop listening to voice commands'''
-      self.audio_controller.stop_voice()
+      self.audio_controller.stop_voice() or self.audio_controller.start_voice()
 
     @classmethod
     def update_status(self):
@@ -266,3 +277,6 @@ class State(object):
     def set_target(self):
         '''set the argument register to value from command line'''
         self.args = raw_input("Enter target value: ")
+        self.toast = 'Args: %s' % (self.args,) # pop a toast too
+
+

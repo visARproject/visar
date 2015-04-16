@@ -10,7 +10,7 @@ import PIL.Image as Image
 
 from ...OpenGL.drawing import Drawable
 from ...OpenGL.utils import Logger
-from ..globals import State
+from ..globals import State, Paths
 
 
 class Map(Drawable):
@@ -247,7 +247,7 @@ class Map(Drawable):
 
         '''
         imgr = PILImageManager('RGB')
-        osm = OSMManager(image_manager=imgr)
+        osm = OSMManager(image_manager=imgr, cache=os.path.join(Paths.get_path_to_visar(), 'map_cache'))
 
         half_size = region_size / 2.0
         region = (

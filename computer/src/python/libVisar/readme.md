@@ -36,6 +36,8 @@ Do this! You don't have to run this every time you make a change
     sudo python setup.py develop --uninstall
     ./build_vsr clean
 
+## Testing
+
 # Usage
 Type
     vsr
