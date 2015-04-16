@@ -139,7 +139,7 @@ class Battery(Drawable):
         # Example, only updates once ever
         image_to_draw = "Some Texture, IDK how this part works"
         if self.battery_state == None: 
-            self.make_texture() 
+            self.make_texture(image_to_draw) 
 
     def make_texture(self, tex):        
         ''' Draw to the texture buffer'''
