@@ -15,7 +15,7 @@ from ..OpenGL.shaders import Distorter
 from ..OpenGL.drawing import Drawable, Context
 from .drawables import Example, Target, Map, Button, Brain, Toast
 from .environments import Terrain
-from .globals import State
+from .globals import State, Paths
 
 import argparse
 
