@@ -217,8 +217,7 @@ class State(object):
     @classmethod
     def toggle_vc(self):
       '''Begin listening for voice commands'''
-      self.audio_controller.start_voice() or self.audio_controller.stop_voice()
-
+      self.audio_controller.stop_voice() or self.audio_controller.start_voice()
 
     @classmethod
     def update_status(self):
