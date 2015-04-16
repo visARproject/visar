@@ -64,24 +64,23 @@ class Toast(Drawable):
         self.projection = np.eye(4)
         self.view = np.eye(4)
         self.model = np.eye(4)
-        height, width = 5.0, 25.0  # Meters
+        height, width = 5.0, 15.0  # Meters
 
         orientation_vector = (1, 1, 0)
         unit_orientation_angle = np.array(orientation_vector) / np.linalg.norm(orientation_vector)
 
-        scale_factor = 0.2
+        scale_factor = 0.4
         lowest_button = -5.2 
         midset = 0.2
         position = -2
         
         scale(self.model, scale_factor)
-        yrotate(self.model, -60)
+        #yrotate(self.model, -90)
         # rotate(self.model, 30, *unit_orientation_angle)
         offset = (position * ((height + midset) * scale_factor))
-        translate(self.model, -6.4, lowest_button + offset, -10)
+        translate(self.model, -4.4, lowest_button + offset, -10)
 
-        pixel_to_length = 10
-        self.size = map(lambda o: pixel_to_length * o, [width, height])
+        self.size = (int(height*100), int(width*100))
 
         # Add texture coordinates
         # Rectangle of height height
@@ -91,7 +90,7 @@ class Toast(Drawable):
             [ width / 2,  height / 2, 0],
             [-width / 2,  height / 2, 0],
         ], dtype=np.float32)
-
+        
         self.tex_coords = np.array([
             [0, 0],
             [1, 0],
@@ -114,7 +113,6 @@ class Toast(Drawable):
         self.program['projection'] = self.projection
         self.program['background_color'] = (0,0,0,0) # no background yet
         self.program['text_color'] = (0,0,0,0) # no text yet
-        self.size = (int(height*100), int(width*100))
 
         # self.texture = Texture2D(shape=(1000, 1000) + (3,))        
         # self.text_buffer = FrameBuffer(self.texture, RenderBuffer((1000, 1000)))
@@ -164,7 +162,8 @@ class Toast(Drawable):
 
         self.canvas.text_renderer.font_size = self.font_size
         # self.canvas.text_renderer.pos = 200, 200
-        self.canvas.text_renderer.pos = self.size[0] * 1.5, self.size[1] // 1.9
+        self.canvas.text_renderer.pos = 0,0
+        # self.canvas.text_renderer.pos = self.size[0] * 1.5, self.size[1] // 1.9
         # Logger.log("Color: %s" % (self.canvas.text_renderer.color,))
 
 
