@@ -13,7 +13,7 @@ from vispy import app
 from ..OpenGL.utils import Logger
 from ..OpenGL.shaders import Distorter
 from ..OpenGL.drawing import Drawable, Context
-from .drawables import Example, Target, Map, Button, Brain, Toast
+from .drawables import Example, Target, Map, Button, Brain, Toast, Battery
 from .environments import Terrain
 from .globals import State
 
@@ -57,38 +57,26 @@ class Renderer(app.Canvas): # Canvas is a GUI object
             Target((10, 10, -10))
         ]
         
+        UI_elements = [
+            Toast(self),
+            Button('Toggle Map', self, position=1),
+            Button('Make Call', self, position=3),
+            Button('End Call', self, position=2),
+            Button('Example', self, position=4),
+            Button('Start Voice', self, position=5),
+            Button('Stop Voice', self, position=6),
+            Button('List Peers', self, position=7),
+            Button('Set Target', self, position=8),
+            Button('Update Status', self, position=9),
+            Battery(),
+        ]
+
         #fault tolerant map initialization
         try:    
             map_ob = Map()
-            UI_elements = [
-                map_ob,
-                Toast(self),
-                Button('Toggle Map', self, position=1),
-                Button('Make Call', self, position=3),
-                Button('End Call', self, position=2),
-                Button('Example', self, position=4),
-                Button('Start Voice', self, position=5),
-                Button('Stop Voice', self, position=6),
-                Button('List Peers', self, position=7),
-                Button('Set Target', self, position=8),
-                Button('Update Status', self, position=9),
-            ]
-
+            UI_elements.append(map_ob)
         except: 
-            Logger.warn("Failed to Initialize the map")
-            UI_elements = [
-                Toast(self),
-                Button('Toggle Map', self, position=1),
-                Button('Make Call', self, position=3),
-                Button('End Call', self, position=2),
-                Button('Example', self, position=4),
-                Button('Start Voice', self, position=5),
-                Button('Stop Voice', self, position=6),
-                Button('List Peers', self, position=7),
-                Button('Set Target', self, position=8),
-                Button('Update Status', self, position=9),
-            ]
-        
+            Logger.warn("Failed to Initialize the map")        
 
         self.view = np.eye(4)
         self.Render_List = Context(*renders)
