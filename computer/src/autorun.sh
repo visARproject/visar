@@ -8,6 +8,9 @@
 # rotate the display (todo: confirm that this is needed)
 # DISPLAY=:0.0 xrandr -o left
 
+# program the FPGA's distoriton data
+#make -C fpga_scripts/ program
+
 # start Voice control program in background (should hopefully be bundled)
 #(/home/ubuntu/src/python/libVisar/libVisar/visar/audio/vc &)
 
