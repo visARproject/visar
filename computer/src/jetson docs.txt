@@ -35,6 +35,16 @@ sudo apt-mark hold xserver-xorg-core
 # Install ros-indigo-desktop (not full)
 # Instructions: http://wiki.ros.org/indigo/Installation/Ubuntu
 
+--preparing FPGA distortion load
+# copy vizzini.ko to /lib/modules/<grinch kernal>/
+# run the following commands to initialize it
+sudo depmod -a
+sudo rmmod CDC_ACM
+sudo modprope vizzini
+# tell kernel to load it on startup
+sudo nano /etc/modules -w
+# add vizzini to the list
+
 --setting up autorun.sh and load.sh:
 # add a password exception:
 sudo visudo
