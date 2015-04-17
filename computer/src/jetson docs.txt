@@ -35,17 +35,18 @@ sudo apt-mark hold xserver-xorg-core
 # Install ros-indigo-desktop (not full)
 # Instructions: http://wiki.ros.org/indigo/Installation/Ubuntu
 
---setting up autorun.sh:
+--setting up autorun.sh and load.sh:
 # add a password exception:
 sudo visudo
 # the following lines:
 ubuntu ALL = NOPASSWD: /<absolute-path-to>/autorun.sh
-# make sure autorun.sh is executable
+# make sure autorun.sh and load.sh are executables
 chmod +x /<absolute-path-to>/autorun.sh
-# edit the paths in the autorun script
-# select an unused static ip in the autorun script
-# add it as a startup program (use the 'startup applications' gui):
+# edit the paths in the scripts
+# select an unused static ip in autorun.sh
+# add the scripts as startup programs (use the 'startup applications' gui):
 gnome-terminal -e "sudo /<absolute-path-to>/autorun.sh"
+gnome-terminal -e "/<absolute-path-to>/load.sh"
 # enable automatic user login under user accounts gui
 # disable suspend mode under power settings (default)
 # set 'turn off screen after...' to never  and disable screen dimming in 'brightness and lock settings'
@@ -53,7 +54,7 @@ gnome-terminal -e "sudo /<absolute-path-to>/autorun.sh"
 --Rebuilding the distortion data (the 'dump' file):
 #install yaml for python
 sudo apt-get install libyaml python-yaml
-#cd into vsr/computer/src/fpga_scripts
+#cd into vsr/fpga/scripts/distortion/
 # rebuild the file with:
 make out.hex
 
