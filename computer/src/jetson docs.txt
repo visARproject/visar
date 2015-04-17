@@ -32,7 +32,7 @@ sudo apt-mark hold xserver-xorg-core
  
 --Installing Ros:
 # Use ROS-Indigo
-# Only the ROS-base package is required
+# Install ros-indigo-desktop (not full)
 # Instructions: http://wiki.ros.org/indigo/Installation/Ubuntu
 
 --setting up autorun.sh:
