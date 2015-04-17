@@ -50,6 +50,13 @@ gnome-terminal -e "sudo /<absolute-path-to>/autorun.sh"
 # disable suspend mode under power settings (default)
 # set 'turn off screen after...' to never  and disable screen dimming in 'brightness and lock settings'
 
+--Rebuilding the distortion data (the 'dump' file):
+#install yaml for python
+sudo apt-get install libyaml python-yaml
+#cd into vsr/computer/src/fpga_scripts
+# rebuild the file with:
+make out.hex
+
 --Setting up the microphone, might or might not be needed: 
 # https://devtalk.nvidia.com/default/topic/772401/audio-input-on-jetson-tk1/
 amixer cset name="Stereo ADC MIXL ADC2 Switch" 0
