@@ -9,6 +9,9 @@
 # DISPLAY=:0.0 xrandr -o left
 
 # program the FPGA's distoriton data
+#if [-f fpga_scripts/out.hex]; then
+#touch fpga_scripts/out.hex
+#fi
 #make -C fpga_scripts/ program
 
 # start Voice control program in background (should hopefully be bundled)
