@@ -98,31 +98,31 @@ int main(void)
         data_cur = gpio_port_read(GPIOB) & (GPIO4 | GPIO5 | GPIO6 | GPIO7 | GPIO8 | GPIO9 | GPIO12);
         if(data_cur != data_prev) {
             if(!(data_cur & UP)) {
-                sprintf(str, "U\n\r");
+                sprintf(str, "U\r\n");
                 for(int i = 0; i < 6; ++i) 
                     usart_send_blocking(USART2, str[i]);   
             } else if(!(data_cur & DOWN)) {
-                sprintf(str, "D\n\r");
+                sprintf(str, "D\r\n");
                 for(int i = 0; i < 6; ++i) 
                     usart_send_blocking(USART2, str[i]);   
             } else if(!(data_cur & LEFT)) {
-                sprintf(str, "L\n\r");
+                sprintf(str, "L\r\n");
                 for(int i = 0; i < 6; ++i) 
                     usart_send_blocking(USART2, str[i]);   
             } else if(!(data_cur & RIGHT)) {
-                sprintf(str, "R\n\r");
+                sprintf(str, "R\r\n");
                 for(int i = 0; i < 6; ++i) 
                     usart_send_blocking(USART2, str[i]);   
             } else if(!(data_cur & CENTER)) {
-                sprintf(str, "C\n\r");
+                sprintf(str, "C\r\n");
                 for(int i = 0; i < 6; ++i) 
                     usart_send_blocking(USART2, str[i]);   
             } else if(!(data_cur & CTRL)) {
-                sprintf(str, "E\n\r");
+                sprintf(str, "E\r\n");
                 for(int i = 0; i < 6; ++i) 
                     usart_send_blocking(USART2, str[i]);   
             } else if(!(data_cur & HIDE)) {
-                sprintf(str, "H\n\r");
+                sprintf(str, "H\r\n");
                 for(int i = 0; i < 6; ++i) 
                     usart_send_blocking(USART2, str[i]);   
             }
