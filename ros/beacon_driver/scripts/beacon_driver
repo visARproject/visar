@@ -1,0 +1,192 @@
+#!/usr/bin/python
+
+from __future__ import division
+
+# requires python-xbee from git@github.com:thom-nic/python-xbee.git
+import serial
+from xbee import DigiMesh
+import struct
+
+import rospy
+from std_msgs.msg import Header
+
+from skytraq_driver import datachunker, protocol as skytraq_protocol
+from skytraq_driver.msg import Packet, PacketSet
+
+import collections
+
+
+rospy.init_node('beacon_driver')
+
+serial_port = serial.Serial(rospy.get_param('~port'), 115200)
+xbee = DigiMesh(serial_port)
+
+def hexify(str):
+    return ':'.join(x.encode('hex') for x in str)
+
+class Beacon(object):
+
+    def __init__(self, mac):
+        self.ephemeral_pub = rospy.Publisher('beacon_'+str(mac)+'/ephemeral', Packet)
+        self.persistent_pub = rospy.Publisher('beacon_'+str(mac)+'/persistent', PacketSet, latch=True)
+        self.persistent_data = {}
+        self.fragment_table = dict()
+        self.empty_entry = {'total': 0, 'have': 0, 'parts': [], 'stamp': 0}
+        self.packets_sent = 0
+        self.empty_frag_table()
+
+    def empty_frag_table(self):
+        for i in range(0, 256):
+            self.fragment_table[i] = {'total': 0, 'have': 0, 'parts': [], 'stamp': 0}
+        
+    def handle_packet(self, data, stamp):
+        seq_num = struct.unpack('B', data[1])[0]
+        message_part = struct.unpack('B', data[2])[0]
+        message_part_total = struct.unpack('B', data[3])[0]
+        payload = data[4:]
+#        if ord(payload[0]) == 220: return # XXX: why on earth would I write this? I don't remember, but I probably want to keep it commented out :(
+        ephemeral_messages = set([
+            'meas_time',
+            'raw_meas',
+            'sv_ch_status',
+            'rcv_state',
+        ])
+        def get_subframe_id(body):
+            PRN, SFID, subframe_data = struct.unpack('>BB30s', body)
+            if SFID == 4 or SFID == 5:
+               subframe = gps.subframes[SFID](subframe_data)
+               return PRN, SFID, subframe.data_id, subframe.sv_id
+            else:
+                return PRN, SFID
+        persistent_messages = dict(
+            software_version=lambda body: None,
+            software_crc=lambda body: None,
+            gps_almanac_data=lambda body: struct.unpack('>B', body[:1]),
+            gps_ephemeris_data=lambda body: struct.unpack('>H', body[:2]),
+            subframe=get_subframe_id,
+        )
+        ignore_messages = set([
+            'ack',
+            'nack',
+        ])
+
+        if message_part_total == 0:
+            assert False
+        elif message_part_total == 1:
+            packet = Packet(
+                header=Header(
+                    stamp=stamp,
+                ),
+                id=ord(payload[0]),
+                data=payload[1:],
+            )
+            message_name = skytraq_protocol.message_names[ord(payload[0])]
+            if message_name in ephemeral_messages:
+                self.ephemeral_pub.publish(packet)
+                self.packets_sent += 1
+                if self.packets_sent == 10:
+                    self.empty_frag_table()
+                    self.packets_sent = 0
+            elif message_name in persistent_messages:
+                print hexify(payload)
+                id_tuple = ord(payload[0]), persistent_messages[message_name](payload[1:])
+                if id_tuple not in self.persistent_data or packet.data != self.persistent_data[id_tuple].data:
+                    self.persistent_data[id_tuple] = packet
+                    self.persistent_pub.publish(PacketSet(self.persistent_data.values()))
+                    self.packets_sent += 1
+                    if self.packets_sent == 10:
+                        self.empty_frag_table()
+                        self.packets_sent = 0
+            elif message_name in ignore_messages:
+                pass
+            else:
+                assert False
+        else: #multipart, handle reassembly and publish
+            # XXX - handle expiring old fragments from fragment table
+            # insert new packet 
+            #print hexify(payload)
+            self.fragment_table[seq_num]['total'] = message_part_total
+            self.fragment_table[seq_num]['have'] += 1
+            self.fragment_table[seq_num]['parts'].append((message_part, payload))
+            #print seq_num
+            #print self.fragment_table[seq_num]
+            if seq_num == 1:
+                self.fragment_table[seq_num]['stamp'] = stamp # record time that first fragment was received -- XXX: what if 2/2 comes before 1/2?
+            if self.fragment_table[seq_num]['have'] == self.fragment_table[seq_num]['total']:
+                self.fragment_table[seq_num]['parts'].sort(key=lambda tup: tup[0])
+                payload = []
+                for frag in self.fragment_table[seq_num]['parts']:
+                    payload += frag[1]
+                
+                packet = Packet(
+                    header=Header(
+                        stamp=stamp,
+                    ),
+                    id=ord(payload[0]),
+                    data=[ord(x) for x in payload[1:]],
+                )
+                #print packet.data
+                try:
+                    message_name = skytraq_protocol.message_names[ord(payload[0])]              
+                    if message_name in ephemeral_messages:
+                        #print 'sending: {seq}, have:{have} total:{total} packet:{packet}'.format(seq=seq_num, have=self.fragment_table[seq_num]['have'], total=self.fragment_table[seq_num]['total'], packet=hexify(packet.data))
+                        #print ''
+                        #del self.fragment_table[seq_num]
+                        self.fragment_table[seq_num] = {'total': 0, 'have': 0, 'parts': [], 'stamp': 0}
+                        self.ephemeral_pub.publish(packet)
+                        self.packets_sent += 1
+                        if self.packets_sent == 10:
+                            self.empty_frag_table()
+                            self.packets_sent = 0
+                    elif message_name in persistent_messages:
+                        print hexify(payload)
+                        id_tuple = ord(payload[0]), persistent_messages[message_name](payload[1:])
+                        if id_tuple not in self.persistent_data or packet.data != self.persistent_data[id_tuple].data:
+                            #del self.fragment_table[seq_num]
+                            self.fragment_table[seq_num] = {'total': 0, 'have': 0, 'parts': [], 'stamp': 0}
+                            
+                            self.persistent_data[id_tuple] = packet
+                            self.persistent_pub.publish(PacketSet(self.persistent_data.values()))
+                            self.packets_sent += 1
+                            if self.packets_sent == 10:
+                                self.empty_frag_table()
+                                self.packets_sent = 0
+                    elif message_name in ignore_messages:
+                        pass
+                    else:
+                        assert False
+                except:
+                    print ':( bad message type?:', hexify(payload)
+            else:
+                pass
+            
+beacons = dict()
+
+while not rospy.is_shutdown():
+    try:
+        frame = xbee.wait_read_frame()
+        if frame['id'] == 'rx':
+            stamp = rospy.Time.now()
+            beacon_from = frame['source_addr'].encode('hex')
+            data = frame['data']
+            seq_num = struct.unpack('B', data[1])[0]
+            message_part = struct.unpack('B', data[2])[0]
+            message_part_total = struct.unpack('B', data[3])[0]
+            message_data = data[4:]
+            num_sats = 0
+            if len(message_data) > 2 and (message_data[0] == '\xdd'): ##or message_data[0] == '\xde'):
+                num_sats = struct.unpack('B', message_data[2])[0]
+            #print seq_num, message_part, message_part_total, num_sats, len(data[4:]), hexify(message_data)
+
+
+            #print hexify(data)
+            
+            
+            if beacon_from not in beacons:
+                beacons[beacon_from] = Beacon(beacon_from)
+            beacons[beacon_from].handle_packet(data, stamp)
+        
+    except KeyboardInterrupt:
+        break
+
+serial_port.close()

@@ -33,7 +33,7 @@ typedef enum {
 typedef struct {
     uint16_t length;
     //uint8_t  type;
-    char  payload[256];     //XXX: what is the true maximum payload size?
+    char  payload[384];     //XXX: what is the true maximum payload size?
                             // -- This is currently a guess based on some sample packets captured
 } gps_packet_t;
 

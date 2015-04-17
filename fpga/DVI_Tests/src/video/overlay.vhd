@@ -16,7 +16,8 @@ end entity video_overlay;
 -- Architecture assumes that the video data signals are synchronized together.
 
 architecture RTL of video_overlay is
-
+    signal last_frame_rst : std_logic;
+    signal transparent_color : video_data;
 begin
     process (video_sync.pixel_clk) is
     begin
@@ -27,12 +28,16 @@ begin
             video_out.sync.valid <= video_sync.valid;
             
             -- If the overlay is black, then let the under_video through
-            if(video_over.blue = x"00" and video_over.green = x"00" and video_over.red = x"00") then
+            if video_over.blue = transparent_color.blue and video_over.green = transparent_color.green and video_over.red = transparent_color.red then
                 video_out.data <= video_under;
             else
                 video_out.data <= video_over;
             end if;
 
+            last_frame_rst <= video_sync.frame_rst;
+            if last_frame_rst = '1' then
+                transparent_color <= video_over;
+            end if;
 
             -- Later on add options for alpha layering.  For now, this is sufficient.
         end if;

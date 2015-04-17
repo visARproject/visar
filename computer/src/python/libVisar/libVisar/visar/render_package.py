@@ -13,9 +13,9 @@ from vispy import app
 from ..OpenGL.utils import Logger
 from ..OpenGL.shaders import Distorter
 from ..OpenGL.drawing import Drawable, Context
-from .drawables import Example, Target, Map, Button, Brain
+from .drawables import Example, Target, Map, Button, Brain, Toast
 from .environments import Terrain
-from .globals import State
+from .globals import State, Paths
 
 import argparse
 
@@ -23,6 +23,9 @@ parser = argparse.ArgumentParser(description='Display the VisAR augmented realit
 parser.add_argument('-d', '--draw_terrain', dest='draw_terrain', action='store_true',
                    default=False,
                    help='Draw simulated terrain')
+parser.add_argument('-f', '--fullscreen', dest='full', action='store_true',
+                    default=False,
+                    help='Launch visar program in Fullscreen mode')
 parser.add_argument('-n', '--no_distort', dest='no_distort', action='store_true',
                    default=False,
                    help='Skip applying the distortion (For debugging)')
@@ -36,6 +39,7 @@ parser.add_argument('--npbrain', dest='brain', action='store_true',
                     default=False,
                     help='Use a demo brain')
 
+
 args = parser.parse_args()
 
 # Presets
@@ -44,7 +48,6 @@ FPS = 60 # Maximum FPS (how often needs_update is checked)
 class Renderer(app.Canvas): # Canvas is a GUI object
     def __init__(self, size=(1980, 1020)):    
 
-        # Initialize gloo context
         app.Canvas.__init__(self, keys='interactive')
         self.size = size 
         
@@ -53,18 +56,39 @@ class Renderer(app.Canvas): # Canvas is a GUI object
         renders = [
             Target((10, 10, -10))
         ]
-        UI_elements = [
-            Map(),
-            Button('Toggle Map', self, position=1),
-            Button('Make Call', self, position=3),
-            Button('End Call', self, position=2),
-            Button('Example', self, position=4),
-            Button('Start Voice', self, position=5),
-            Button('Stop Voice', self, position=6),
-            Button('List Peers', self, position=7),
-            Button('Set Target', self, position=8),
-            Button('Update Status', self, position=9),
-        ]
+        
+        #fault tolerant map initialization
+        try:    
+            map_ob = Map()
+            UI_elements = [
+                map_ob,
+                Toast(self),
+                Button('Toggle Map', self, position=1),
+                Button('Make Call', self, position=3),
+                Button('End Call', self, position=2),
+                Button('Example', self, position=4),
+                Button('Start Voice', self, position=5),
+                Button('Stop Voice', self, position=6),
+                Button('List Peers', self, position=7),
+                Button('Set Target', self, position=8),
+                Button('Update Status', self, position=9),
+            ]
+
+        except: 
+            Logger.warn("Failed to Initialize the map")
+            UI_elements = [
+                Toast(self),
+                Button('Toggle Map', self, position=1),
+                Button('Make Call', self, position=3),
+                Button('End Call', self, position=2),
+                Button('Example', self, position=4),
+                Button('Start Voice', self, position=5),
+                Button('Stop Voice', self, position=6),
+                Button('List Peers', self, position=7),
+                Button('Set Target', self, position=8),
+                Button('Update Status', self, position=9),
+            ]
+        
 
         self.view = np.eye(4)
         self.Render_List = Context(*renders)
@@ -101,6 +125,7 @@ class Renderer(app.Canvas): # Canvas is a GUI object
         self._timer = app.Timer('auto', connect=self.on_timer, start=True)
   
     def on_timer(self, event):
+        if State.shutdown_flag: self.close() # shutdown if signaled
         self.Render_List.set_view(self.view)
         self.Render_List.update()
         self.UI_elements.update()
@@ -159,6 +184,8 @@ class Renderer(app.Canvas): # Canvas is a GUI object
             self.rotate = [0, 0, 1]
         elif(event.text == 'Z'):
             self.rotate = [0, 0, -1]
+        elif(event.text == 'B'):
+            State.shutdown_flag = True
         elif(event.text == ' ' or event.key == 'Space'):
             State.make_call()
             return
@@ -196,8 +223,10 @@ class Renderer(app.Canvas): # Canvas is a GUI object
     
 def main():
     State.do_init() # initialize the state objects/threads
+    app.use_app(backend_name='PyGlet')
     c = Renderer()
     c.show()
+    if(args.full): c.fullscreen = True # fullscreen mode
     c.app.run()
     State.destroy()
 

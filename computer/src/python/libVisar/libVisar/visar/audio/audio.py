@@ -48,16 +48,21 @@ class AudioController(Interface):
       os.unlink(VC_FIFO_NAME) # remove existing fifo
       os.mkfifo(VC_FIFO_NAME) # recreate the fifo
     
-    #open the vc program
-    # target = lambda : os.system(VC_PROGRAM)
-    # vc = threading.Thread(target=target)
-    # vc.start()
+    # start the voice control program
+    program = Popen(VC_PROGRAM)
+    time.sleep(.05)
     
-    
-    #Popen(VC_PROGRAM) # Note, seems like vispy is capturing signals Sphinx needs
+    # check if program has crashed
+    if program.poll() is not None:
+      print "VC communication failed"
+      self.vc_pipe = None
+      return
+    else: # program didn't die
+      self.vc_pipe = os.open(VC_FIFO_NAME, os.O_RDONLY) # open the pipe
 
-    self.vc_pipe = os.open(VC_FIFO_NAME, os.O_RDONLY) # open the pipe
-    
+    # backup method, less robust, but it seems like val's program wont't work otherwise
+    #self.vc_pipe = os.open(VC_FIFO_NAME, os.O_RDONLY) # open the pipe (will block until read from)
+
     # create the thread objects and start the threads
     self.comms  = threading.Thread(target=self.comms_thread)
     self.parse  = threading.Thread(target=self.parse_thread)
@@ -76,7 +81,7 @@ class AudioController(Interface):
     lock.release()
     
     self.c_sock.close() # close the socket
-    os.close(self.vc_pipe) # close the pipe
+    if self.vc_pipe is not None:  os.close(self.vc_pipe) # close the pipe
     time.sleep(1) # sleep to give process things
     os.unlink(VC_FIFO_NAME) # delete the fifo
   
@@ -142,7 +147,7 @@ class AudioController(Interface):
   def start_voice(self):
     if self.vc_active: # check if already listening
       self.do_updates(('Error','VC is already active'))
-      return
+      return False
     lock.acquire()
     self.child.stdin.write('voice_start\n')
     lock.release()
@@ -150,11 +155,12 @@ class AudioController(Interface):
     self.do_updates(('started_vc','')) # send start log
     if(self.connection is None):
       self.connection = ('voice', None, 'mic') # connection is in voice mode
+    return True
   
   # stops the voice controller
   def stop_voice(self):
     if not self.vc_active: 
-      return None # exit if not listening
+      return False # exit if not listening
     global lock
     lock.acquire()
     self.child.stdin.write('voice_stop\n')
@@ -163,6 +169,7 @@ class AudioController(Interface):
     self.vc_active = False # stop vc activities
     if(self.connection is not None and self.connection[0] == 'voice'): 
       self.connection = None  # clear the connection state
+    return True
   
   # thread to handle communicating with child process
   def comms_thread(self):    

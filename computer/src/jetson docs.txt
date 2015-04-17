@@ -23,14 +23,53 @@ sudo cp zImage /boot/zImage
 #Reboot
  
 --Apt-get Update/Upgrade Warning:
-#xserver-xorg will brick the board, don't update without first doing:
+#new xserver-xorg-ore will brick the board, don't update without first doing:
 sudo apt-mark hold xserver-xorg-core
  
---Vsr Driver Dependencies:
-(apt-get) pyqt5-dev 
+--Vsr Driver Backend Dependencies:
+# Depreciated: (apt-get) pyqt5-dev 
+(pip install) pyglet --update 
  
- 
---Setting up the microphone: https://devtalk.nvidia.com/default/topic/772401/audio-input-on-jetson-tk1/
+--Installing Ros:
+# Use ROS-Indigo
+# Install ros-indigo-desktop (not full)
+# Instructions: http://wiki.ros.org/indigo/Installation/Ubuntu
+
+--preparing FPGA distortion load
+# copy vizzini.ko to /lib/modules/<grinch kernal>/
+# run the following commands to initialize it
+sudo depmod -a
+sudo rmmod CDC_ACM
+sudo modprope vizzini
+# tell kernel to load it on startup
+sudo nano /etc/modules -w
+# add vizzini to the list
+
+--setting up autorun.sh and load.sh:
+# add a password exception:
+sudo visudo
+# the following lines:
+ubuntu ALL = NOPASSWD: /<absolute-path-to>/autorun.sh
+# make sure autorun.sh and load.sh are executables
+chmod +x /<absolute-path-to>/autorun.sh
+# edit the paths in the scripts
+# select an unused static ip in autorun.sh
+# add the scripts as startup programs (use the 'startup applications' gui):
+gnome-terminal -e "sudo /<absolute-path-to>/autorun.sh"
+gnome-terminal -e "/<absolute-path-to>/load.sh"
+# enable automatic user login under user accounts gui
+# disable suspend mode under power settings (default)
+# set 'turn off screen after...' to never  and disable screen dimming in 'brightness and lock settings'
+
+--Rebuilding the distortion data (the 'dump' file):
+#install yaml for python
+sudo apt-get install libyaml python-yaml
+#cd into vsr/fpga/scripts/distortion/
+# rebuild the file with:
+make out.hex
+
+--Setting up the microphone, might or might not be needed: 
+# https://devtalk.nvidia.com/default/topic/772401/audio-input-on-jetson-tk1/
 amixer cset name="Stereo ADC MIXL ADC2 Switch" 0
 amixer cset name="Stereo ADC MIXR ADC2 Switch" 0
 amixer cset name="Int Mic Switch" 0
