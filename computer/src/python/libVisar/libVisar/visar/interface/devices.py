@@ -1,7 +1,5 @@
-import serial
-import threading
-import time
-from ..interface import Interface
+import serial, threading, time
+from interface import Interface
 
 # device names (defined as udev rules)
 PWR_NAME = ''
@@ -62,7 +60,7 @@ class DeviceHandler(Interface):
       while not self.kill_flag:
         self.pwr_port.write('s')
         data = self.read(20) # read an input, use timeout to block for specified frequency
-        datas = data..split('\n')[0].split(' ') # split input across space and ignore newline
+        datas = data.split('\n')[0].split(' ') # split input across space and ignore newline
         battery = int(datas[0]) # get the battery level
         if battery is int and not battery == self.battery:
           self.battery = battery
