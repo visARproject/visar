@@ -10,7 +10,7 @@ import PIL.Image as Image
 
 from ...OpenGL.drawing import Drawable
 from ...OpenGL.utils import Logger
-from ..globals import State, path
+from ..globals import State, Paths
 
 
 class Map(Drawable):

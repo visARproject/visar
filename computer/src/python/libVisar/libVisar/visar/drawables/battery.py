@@ -1,4 +1,5 @@
 import numpy as np
+import os
 from ...OpenGL import utils
 from vispy.geometry import create_cube
 from vispy.util.transforms import perspective, translate, rotate, scale, xrotate, yrotate, zrotate
@@ -8,13 +9,14 @@ from vispy import app, visuals, gloo
 
 from ...OpenGL.drawing import Drawable
 from ...OpenGL.utils import Logger
-from ..globals import State
+from ..globals import State, Paths
 
-import time
+from PIL import Image
+
+import imageio
 
 class Battery(Drawable):
-    '''Draw a cube'''    
-    vertex_shader = """
+    battery_vertex_shader = """
         #version 120
         uniform mat4 model;
         uniform mat4 view;
@@ -30,16 +32,27 @@ class Battery(Drawable):
             gl_Position = projection * view * model * vec4(vertex_position, 1.0);
         }
     """
-    
-    fragment_shader = """
+
+    battery_fragment_shader = """
         #version 120
+
+        uniform int hide;
         uniform sampler2D texture;
         varying vec2 texcoord;
+        uniform vec3 background_color;
+
         void main() {
-            gl_FragColor = texture2D(texture, texcoord);
+            vec4 color = texture2D(texture, texcoord);
+            gl_FragColor = vec4(color.rgb, 1);
+
+//            if(hide == 1) {
+//                gl_FragColor = vec4(0, 0, 0, 1);
+//            } else {
+//                gl_FragColor = vec4(color.rgb, 1);
+//            }
         }
     """
-    
+
     tex_vert_shader = """
         #version 120
         attribute vec3 vertex_position;
@@ -52,29 +65,25 @@ class Battery(Drawable):
             gl_Position = vec4(vertex_position, 1.0);
         }
     """
-    def __init__(self):        
+
+    name = "Battery"
+    def __init__(self):
         self.projection = np.eye(4)
-        self.view = np.eye(4)
-        self.model = np.eye(4)
-        
-        # VAL: ALTER THESE TO GET SIZING/POSITION CORRECT
-        height, width = 5.0, 25.0  
-        scale_factor  = .2
-        x_offset      = 5
-        y_offset      = 5
+        self.view       = np.eye(4)
+        self.model      = np.eye(4)
 
-        orientation_vector = (1, 1, 0)
-        unit_orientation_angle = np.array(orientation_vector) / np.linalg.norm(orientation_vector)
-        
-        scale(self.model, scale_factor) # scale the object
-        yrotate(self.model, 60)         # tilt opposite direction from menu
-        translate(self.model, x_offset, y_offset, -10) # move in space
+        height, width   = 3.0, 6.0
+        scale_factor    = 0.2
+        x_offset        = -7.4
+        y_offset        = 4.5
+        pixel_to_length = 10
+        color           = (1.0, 1.0, 1.0)
 
-        pixel_to_length = 10 # essentially the resolution
-        self.size = map(lambda o: pixel_to_length * o, [width, height])
+        scale(self.model, scale_factor)
+        yrotate(self.model, -60)
+        translate(self.model, x_offset, y_offset, -10)
+        size = (int(height*100), int(width*100))
 
-        # Add texture coordinates
-        # Rectangle of height height
         self.vertices = np.array([
             [-width / 2, -height / 2, 0],
             [ width / 2, -height / 2, 0],
@@ -90,76 +99,95 @@ class Battery(Drawable):
 
         ], dtype=np.float32)
 
-        # Triangle indices from previous coordinates
         self.indices = IndexBuffer([
             0, 1, 2,
             2, 3, 0,
         ])
-        
-        # Render Program
-        self.program = Program(self.vertex_shader, self.fragment_shader)
-        self.program['vertex_position'] = self.vertices
+
+        self.program = Program(self.battery_vertex_shader, self.battery_fragment_shader)
+
+        self.texture = Texture2D(shape=size + (3,))
+        self.text_buffer = FrameBuffer(self.texture, RenderBuffer(size))
+
+        images = []
+        images.append(Image.open(os.path.join(Paths.get_path_to_visar(), 'visar', 'images', 'battery', 'battery_low_color.png')))
+        images.append(Image.open(os.path.join(Paths.get_path_to_visar(), 'visar', 'images', 'battery', 'battery_used_color.png')))
+        images.append(Image.open(os.path.join(Paths.get_path_to_visar(), 'visar', 'images', 'battery', 'battery_full_color.png')))
+
+        self.level_texture = {} # texture for each level
+
+        for x in range(0, len(images)):
+            default_image = images[x]
+            default_image = default_image.rotate(-90)
+            default_image = default_image.resize(size)
+            default_image = default_image.transpose(Image.FLIP_TOP_BOTTOM)
+            default_image_array = np.asarray(default_image)
+            self.level_texture[x + 1] = default_image_array
+
+        #default_image_array = imageio.imread(os.path.join(Paths.get_path_to_visar(), 'visar', 'images', 'battery', 'battery_full_color.png'))
+
+
+        # self.default_tex = Texture2D(data=default_image_array)
+        # self.default_tex = Texture2D(shape=size + (3,))
+        # self.default_tex.set_data(self.level_texture[3])
+
+        self.program['vertex_position']  = self.vertices
         self.program['default_texcoord'] = self.tex_coords
-        self.program['view'] = self.view
-        self.program['model'] = self.model
-        self.program['projection'] = self.projection
-        self.size = (int(height*100), int(width*100))
+        self.program['view']             = self.view
+        self.program['model']            = self.model
+        self.program['projection']       = self.projection
+        self.program['hide']             = 0
 
-        # Create the texture to which we will render
-        self.texture = Texture2D(shape=self.size + (3,))        
-        self.text_buffer = FrameBuffer(self.texture, RenderBuffer(self.size))
-        self.program['texture'] = self.texture
+        # self.tex_program = Program(self.tex_vert_shader, self.battery_fragment_shader)
 
-        # Create program to rendure to texture
-        self.tex_program = Program(self.tex_vert_shader, self.fragment_shader)
-        self.tex_program['vertex_position'] = self.vertices
-        self.tex_program['default_texcoord'] = self.tex_coords
-        
-        # Create a default, empty texture buffer
-        # This is only done since the program needs a texture
-        #    or it will draw garbage. You can replace this with an actual texture later
-        self.default_tex = Texture2D(shape=self.size + (3,))        
-        self.default_buf = FrameBuffer(self.texture, RenderBuffer(self.size))
-        
-        # Set the initialization flag
-        self.first = True
-        
-        # Battery State (selects an image)
-        self.battery_state = None
+        # self.tex_program['vertex_position']  = self.vertices
+        # self.tex_program['default_texcoord'] = self.tex_coords
+        # self.tex_program['hide']             = 0
+        # self.tex_program['texture']          = self.default_tex
+
+        self.flag = True # flag to update the texture
+
+        self.level = 3 # level of the battery 1 - 3
+        full_middle_split = 75 # split between levels 2 and 3
+        middle_low_split = 25 # split between levels 1 and 2
+        fault_tolerance = 5
+        self.full_lower = full_middle_split - fault_tolerance # lower limit for going from 3 to 2
+        self.middle_upper = full_middle_split + fault_tolerance # upper limit for going from 2 to 3
+        self.middle_lower = middle_low_split - fault_tolerance # lower limit for going from 2 to 1
+        self.low_upper = middle_low_split + fault_tolerance # upper limit for going from 1 to 2
 
     def update(self):
-        '''Redraw the texture when battery level changes '''
-        
         battery_level = State.battery # get current battery level
-        
-        # VAL: Implement proper range checking here
-        #     try to build in tolerance around edges
-        #     in order to prevent rapid state changes
-        
-        # Example, only updates once ever
-        image_to_draw = "Some Texture, IDK how this part works"
-        if self.battery_state == None: 
-            self.make_texture(image_to_draw) 
 
-    def make_texture(self, tex):        
-        ''' Draw to the texture buffer'''
+        # Logger.log("Battery Level: %s" % (battery,))
+
+        if self.level == 3:
+            if battery_level < self.full_lower:
+                self.set_new_level(2)
+        elif self.level == 2:
+            if battery_level > self.middle_upper:
+                self.set_new_level(3)
+            elif battery_level < self.middle_lower:
+                self.set_new_level(1)
+        elif self.level == 1:
+            if battery_level > self.low_upper:
+                self.set_new_level(2)
+
+    def set_new_level(self, new_level):
+        self.level = new_level
+        self.flag = 1
+
+    def make_texture(self):
         with self.text_buffer:
-            gloo.clear(color=(0, 0, 0)) # Wipe old data
-            self.text_program['texture'] = tex
-            self.text_program.draw()
+            gloo.clear(color=(1, 1, 1))
+            self.program['texture'] = self.level_texture[self.level]
+            # self.program.draw('triangles', self.indices)
 
     def draw(self):
-        if self.first: # handle initialization
-            # Clear the temp default texture
-            #  (remove this if you use an actual default)
-            with self.default_buff: 
-                gloo.clear(color=(0, 0, 0))
+        if self.flag:
+            self.make_texture()
+            self.flag = False
 
-            # Draw the initial texture (don't remove this)
-            self.make_texture(self.default_tex)
-            self.first = False
-            
-        # draw the entire thing            
         set_state(depth_test=False)
         self.program.draw('triangles', self.indices)
         set_state(depth_test=True)
