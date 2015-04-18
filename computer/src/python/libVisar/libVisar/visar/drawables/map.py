@@ -11,7 +11,7 @@ import PIL.Image as Image
 from ...OpenGL.drawing import Drawable
 from ...OpenGL.utils import Logger
 from ..globals import State, Paths
-
+import os
 
 class Map(Drawable):
     ''' Map
@@ -183,6 +183,7 @@ class Map(Drawable):
         lla = self.ecef2llh((738575.65, -5498374.10, 3136355.42))
         ###### TESTING
 
+        self.map, self.ranges = self.cache_map(lla[:2])
         self.map, self.ranges = self.get_map(lla[:2])
         self.program = Program(self.frame_vertex_shader, self.frame_frag_shader)
 
@@ -227,6 +228,32 @@ class Map(Drawable):
         set_state(depth_test=False)
         self.program.draw('triangles', self.indices)
         set_state(depth_test=True)
+
+    @classmethod 
+    def cache_map(self, (latitude, longitude), zoom=9, region_size=10):
+        '''Prep a map cache'''
+        imgr = PILImageManager('RGB')
+        osm = OSMManager(image_manager=imgr, cache=os.path.join(Paths.get_path_to_visar(), 'map_cache'))
+
+        half_size = region_size / 2.0
+        region = (
+            latitude - half_size, 
+            latitude + half_size,
+            longitude - half_size,
+            longitude + half_size,
+        )
+        image, bounds = osm.createOSMImage(region, zoom)
+        map_image = np.asarray(image)
+
+        # Book-keeping
+        min_lat, max_lat, min_long, max_long = bounds
+        # lat_range = (min_lat, max_lat)
+        # long_range = (min_long, max_long)
+        # corner_left = np.array((min_lat, min_long))
+        # corner_right = np.array((max_lat, max_long))
+
+        # The second return is the 'corners' used in the map shaders
+        return map_image, np.array((min_lat, min_long, max_lat, max_long))
 
     @classmethod
     def get_map(self, (latitude, longitude), zoom=9, region_size=1):
