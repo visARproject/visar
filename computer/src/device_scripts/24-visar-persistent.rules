@@ -8,6 +8,9 @@ SUBSYSTEMS=="usb", KERNELS=="2-1.1.2", SYMLINK+="P_SERIAL"
 # Name the XBEE
 SUBSYSTEMS=="usb", DRIVERS=="ftdi_sio", SYMLINK+="XBEE_SERIAL"
 
+# Name the GPS
+SUBSYSTEMS=="usb", DRIVERS=="cp210x", SYMLINK+="GPS_SERIAL"
+
 # Name any wifi antenna wlan0
 SUBSYSTEM=="net", ACTION=="add", DRIVERS=="?*", ATTR{dev_id}=="0x0", ATTR{type}=="1", KERNEL=="wlan*", NAME="wlan0"
 
