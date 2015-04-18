@@ -5,7 +5,7 @@ from .menu_controller import Menu_Controller
 from ...OpenGL.utils import Logger
 from ..audio import AudioController, Parser
 from ..network import NetworkState, PoseHandler
-from ..interface import Interface
+from ..interface import Interface, DeviceHandler
 from .actions import Actions
 
 import numpy as np
@@ -89,7 +89,7 @@ class State(object):
         self.pose_handler = PoseHandler(frequency=1.0/30.0)
         self.pose_count = 0
         
-        #self.device_handler = DeviceHandler() # TODO: devices        
+        self.device_handler = DeviceHandler() 
 
         # setup the pose handler and callback functions
         def pose_callback(event):
@@ -154,13 +154,13 @@ class State(object):
                 elif event[1] == "Down"   : State.button_down()
                 # elif event[1] == "Left"   : State.button_left() #TODO: Jake, add these
                 # elif event[1] == "Right"  : State.button_right() #TODO: Jake, add these
-                elif evnet[1] == "Select" : State.press_enter()
+                elif event[1] == "Select" : State.press_enter()
                 elif event[1] == "Voice"  : State.toggle_vc() # Toggle VC
-                elif evnet[1] == "Map"    : State.hide_map()  # TODO: map scroll mode?
+                elif event[1] == "Map"    : State.hide_map()  # TODO: map scroll mode?
                 else: Logger.warn('Bad Update %s' % (event,))
             else: Logger.warn('Bad Update %s' % (event,))
         
-        #self.device_handler.add_callback(device_callback) # TODO: devices
+        self.device_handler.add_callback(device_callback) # add the callback
                   
     @classmethod
     def register_button(self, position, action):
@@ -270,7 +270,7 @@ class State(object):
         self.pose_handler.destroy()
         self.network_state.destroy()
         self.audio_controller.destroy()
-        #self.device_handler.destroy() # TODO: devices
+        self.device_handler.destroy() 
         
     @classmethod
     # Temporary Method, delete later

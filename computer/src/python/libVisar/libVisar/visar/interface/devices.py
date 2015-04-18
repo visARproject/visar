@@ -2,8 +2,8 @@ import serial, threading, time
 from interface import Interface
 
 # device names (defined as udev rules)
-PWR_NAME = ''
-CON_NAME = ''
+PWR_NAME = '' 
+CON_NAME = '/dev/ttyUSB0' #TODO: get non-temporary name
 
 # device info
 BAUD = 115200
@@ -13,7 +13,7 @@ TIMEOUT = 1 # timeout listen after 1 second
 KILL_TIME = 10000 # give system 15 seconds to shutdown
 
 # list of control characters and thier functions
-CONTROL_DICT = {'M':"Map", 'V':"Voice", 'S':"Select",
+CONTROL_DICT = {'H':"Map", 'E':"Voice", 'C':"Select",
                 'U':"Up", 'D':"Down", 'L':"Left", 'R':"Right"}
 
 class DeviceHandler(Interface):
@@ -26,19 +26,22 @@ class DeviceHandler(Interface):
          ('CONTROL', <control update>)  # button press
     '''
 
+    Interface.__init__(self)
+
     self.kill_flag = False
     self.battery = 100 # current battery level
     self.controls = None # current control state
     self.do_shutdown = True # flag for shutting down unit on destroy()
 
     # try to open the serial ports and handler threads
-    try:
+    '''try:
       # serial port uses long reads to block and timeouts to wake back up
       self.pwr_port = serial.Serial(PWR_NAME, timeout=FREQ, writeTimeout=FREQ)
       self.pwr_port.baudrate = BAUD
       thread = threading.Thread(target=self.pwr_thread)
       thread.start()
-    except: print 'Could not open power device'
+    except: print 'Could not open power device' 
+    '''
     
     try:
       # conn port uses a similar structure, timeouts determine how long to block for
@@ -64,9 +67,9 @@ class DeviceHandler(Interface):
         battery = int(datas[0]) # get the battery level
         if battery is int and not battery == self.battery:
           self.battery = battery
-          self.do_update(('BATTERY',battery)) # Issue battery update
+          self.do_updates(('BATTERY',battery)) # Issue battery update
         if not datas[1] == '1':
-          self.do_update(('SHUTDOWN','')) # Issue shutdown command
+          self.do_updates(('SHUTDOWN','')) # Issue shutdown command
     except: print 'Error communicating with Power device'
     
     if self.do_shutdown:
@@ -80,7 +83,8 @@ class DeviceHandler(Interface):
     '''Listen for status updates from controller device'''
     while not self.kill_flag:
       try: 
-        data = self.cnt_port.read(1) # read in a single character from port
-        self.do_update('CONTROL', CONTROL_DICT[data]) # issue update
-      except: pass # timeout/key-error occured, ignore it
+        data = self.con_port.read(1) # read in a single character from port
+        self.do_updates(('CONTROL', CONTROL_DICT[data])) # issue update
+      except: 
+        pass # timeout/key-error occured, ignore it
     
