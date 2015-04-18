@@ -222,16 +222,16 @@ class State(object):
 
     @classmethod
     def toggle_vc(self):
-      '''Begin listening for voice commands'''
-      self.audio_controller.stop_voice() or self.audio_controller.start_voice()
+        '''Stop or begin listening to voice commands'''
+        self.audio_controller.stop_voice() or self.audio_controller.start_voice()
 
     @classmethod
     def update_status(self):
-      '''Change our network status to the contents the args register'''
-      status = self.args # get the status from argument register
-      self.args = None   # clear register
-      if status is None: status = 'default status' # ensure correct value
-      self.network_state.update_status(status)     # send update
+        '''Change our network status to the contents the args register'''
+        status = self.args # get the status from argument register
+        self.args = None   # clear register
+        if status is None: status = 'default status' # ensure correct value
+        self.network_state.update_status(status)     # send update
 
     @classmethod
     def set_orientation_matrix(self, orientation_matrix):
@@ -267,6 +267,7 @@ class State(object):
     
     @classmethod
     def destroy(self):  
+        '''Signal modules to die and expire handler threads'''
         self.pose_handler.destroy()
         self.network_state.destroy()
         self.audio_controller.destroy()

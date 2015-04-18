@@ -1,5 +1,0 @@
-# Name the FPGA serial port
-SUBSYSTEMS=="usb", DRIVERS=="vizzini", SYMLINK+="FPGA_SERIAL"
-
-# Name the controller serial (doesn't work for some reason, not uinque enough?)
-SUBSYSTEMS=="usb", DRIVERS=="pl2303", SYMLINK+="C_SERIAL"

@@ -1,0 +1,15 @@
+# Name the FPGA serial port
+SUBSYSTEMS=="usb", DRIVERS=="vizzini", SYMLINK+="FPGA_SERIAL"
+
+# Name the controller and powerboard serial ports based on port location
+SUBSYSTEMS=="usb", KERNELS=="2-1.1.3", SYMLINK+="C_SERIAL"
+SUBSYSTEMS=="usb", KERNELS=="2-1.1.2", SYMLINK+="P_SERIAL"
+
+# Name the XBEE
+SUBSYSTEMS=="usb", DRIVERS=="ftdi_sio", SYMLINK+="XBEE_SERIAL"
+
+# Name any wifi antenna wlan0
+SUBSYSTEM=="net", ACTION=="add", DRIVERS=="?*", ATTR{dev_id}=="0x0", ATTR{type}=="1", KERNEL=="wlan*", NAME="wlan0"
+
+# oculus rift not named
+# GPS not showing up...

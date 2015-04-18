@@ -35,6 +35,9 @@ sudo apt-mark hold xserver-xorg-core
 # Install ros-indigo-desktop (not full)
 # Instructions: http://wiki.ros.org/indigo/Installation/Ubuntu
 
+--Install the XBEE Drivers
+# clone/install from http://github.com/thom-nic/python-xbee.git
+
 --setup the udev rules:
 # copy the .rules file from device_scripts to the rules folder
 cp device_scripts/24_visar-persistent.rules /etc/udev/rules.d/
