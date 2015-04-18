@@ -166,7 +166,13 @@ int main(void) {
             usart_send_blocking(USART_CONSOLE, str[i]);
         }
     }
-    delay_ms(3000);
+    //send shutdown signal
+    char str[100];
+    sprintf(str, "shutdown\r\n");
+    for(unsigned int i = 0; i < strlen(str); i++) {
+        usart_send_blocking(USART_CONSOLE, str[i]);
+    }
+    delay_ms(12000);
     // power off
     gpio_set_mode(GPIOA, GPIO_MODE_INPUT, GPIO_CNF_INPUT_FLOAT, GPIO4);
 while(true);
