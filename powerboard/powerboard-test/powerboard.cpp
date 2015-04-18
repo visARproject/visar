@@ -32,7 +32,8 @@
 static void clock_setup(void)
 {
     // Set STM32 to 72 MHz.
-    rcc_clock_setup_in_hse_8mhz_out_72mhz();
+    rcc_apb1_frequency = 8000000;
+    //rcc_clock_setup_in_hse_8mhz_out_72mhz();
     
     // Enable GPIO clocks for USARTs, USB, Reset signals, and GPS Fix/1PPS. 
     rcc_periph_clock_enable(RCC_GPIOA);
@@ -65,7 +66,7 @@ static void gpio_setup(void)
 
 static void usart_setup(void)
 {
-    gpio_set_mode(GPIOA, GPIO_MODE_OUTPUT_50_MHZ, GPIO_CNF_OUTPUT_ALTFN_PUSHPULL, GPIO_USART2_TX);
+    gpio_set_mode(GPIOA, GPIO_MODE_OUTPUT_10_MHZ, GPIO_CNF_OUTPUT_ALTFN_PUSHPULL, GPIO_USART2_TX);
     gpio_set_mode(GPIOA, GPIO_MODE_INPUT, GPIO_CNF_INPUT_FLOAT, GPIO_USART2_RX);
 
 
@@ -123,7 +124,7 @@ float get_voltage(void) {
     float voltage = 0;
 
     for(int i = 0; i < 20; ++i) {
-        voltage += 5.9381*(read_adc_naiive(0)*(2.992/4095.0)) + 0.1284;
+        voltage += 6*(read_adc_naiive(0)*(3/4095.0));
     }
 
     return voltage/20.0;
@@ -138,23 +139,50 @@ int get_kill_status(void) {
     return 0;
 }
 
-int main(void)
-{
-
-    uint16_t menu_choice = 0;
-    int percentage = 0, kill = 0, shutdown_delay = 0, tmp;
-    char str[20];
+int main(void) {
     clock_setup();
+    
+    delay_ms(200);
+    
+    gpio_clear(GPIOA, GPIO4); // latch power on
+    gpio_set_mode(GPIOA, GPIO_MODE_OUTPUT_2_MHZ, GPIO_CNF_OUTPUT_PUSHPULL, GPIO4);
+    
+    usart_setup();
+    adc_setup();
+    
+    delay_ms(2800);
+    
+    gpio_set(GPIOA, GPIO5); // use pullup
+    gpio_set_mode(GPIOA, GPIO_MODE_INPUT, GPIO_CNF_INPUT_PULL_UPDOWN, GPIO5);
+    
+    while(true) {
+        if(!gpio_get(GPIOA, GPIO5)) break;
+        delay_ms(10);
+        float voltage = get_voltage();
+        if(voltage < 9.5) break;
+        char str[100];
+        sprintf(str, "voltage: %f\r\n", voltage);
+        for(unsigned int i = 0; i < strlen(str); i++) {
+            usart_send_blocking(USART_CONSOLE, str[i]);
+        }
+    }
+    delay_ms(3000);
+    // power off
+    gpio_set_mode(GPIOA, GPIO_MODE_INPUT, GPIO_CNF_INPUT_FLOAT, GPIO4);
+while(true);
+
     gpio_setup();
     usart_setup();
     adc_setup();
-    while(1){
 
-        menu_choice = usart_recv_blocking(USART2);
+    while(true) {
+
+        char menu_choice = usart_recv_blocking(USART2);
         switch(menu_choice) {
             case 's': {
-                percentage = get_percentage();
-                kill = get_kill_status();
+                int percentage = get_percentage();
+                int kill = get_kill_status();
+                char str[100];
                 sprintf(str, "%i %i\n\r", percentage, kill);
                 for(int i = 0; i < 20; ++i) {
                     if(str[i] == 0) break;
@@ -163,12 +191,14 @@ int main(void)
                 break;
             }
             case 'k': {
-                tmp = usart_recv_blocking(USART2);
+                int shutdown_delay = 0;
+                char tmp = usart_recv_blocking(USART2);
                 for(int i = 0; tmp != '^';){
                     shutdown_delay *= 10;
                     shutdown_delay += (tmp - 48);
                     tmp = usart_recv_blocking(USART2);
                 }
+                char str[100];
                 sprintf(str, "Kill in %ims\n\r", shutdown_delay);
                 for(int i = 0; i < 20; ++i) {
                     if(str[i] == 0) break;

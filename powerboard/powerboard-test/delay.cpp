@@ -1,7 +1,7 @@
 #include "delay.h"
 
-constexpr uint32_t count_1us = uint32_t(72000000.0 / 1000000.0);
-constexpr uint32_t count_1ms = uint32_t(72000000.0 / 1000.0);
+constexpr uint32_t count_1us = uint32_t(8000000.0 / 9 / 1000000.0);
+constexpr uint32_t count_1ms = uint32_t(8000000.0 / 9 / 1000.0);
 constexpr uint32_t count_40us = 40 * count_1us;
 constexpr uint32_t count_40ms = 4000 * count_1us;
 
