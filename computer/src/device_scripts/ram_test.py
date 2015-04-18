@@ -8,8 +8,8 @@ wide = False
 
 class RAMPoker(object):
     def __init__(self):
-        self._s = serial.Serial('/dev/ttyUSB0', 4000000)
-        subprocess.check_call(['stty', '-F', '/dev/ttyUSB0', '4000000']) # WHYY
+        self._s = serial.Serial('/dev/FPGA_SERIAL', 4000000)
+        subprocess.check_call(['stty', '-F', '/dev/FPAG_SERIAL', '4000000']) # WHYY
         time.sleep(.2)
         self._s.read(self._s.inWaiting())
     

@@ -35,6 +35,10 @@ sudo apt-mark hold xserver-xorg-core
 # Install ros-indigo-desktop (not full)
 # Instructions: http://wiki.ros.org/indigo/Installation/Ubuntu
 
+--setup the udev rules:
+# copy the .rules file from device_scripts to the rules folder
+cp device_scripts/24_visar-persistent.rules /etc/udev/rules.d/
+
 --preparing FPGA distortion load
 # copy vizzini.ko to /lib/modules/<grinch kernal>/
 # run the following commands to initialize it
@@ -44,6 +48,8 @@ sudo modprope vizzini
 # tell kernel to load it on startup
 sudo nano /etc/modules -w
 # add vizzini to the list
+sudo nano /etc/modprobe.d/blacklist-custom
+# add cdc_acm to the list (will try to capture FPGA otherwise)
 
 --setting up autorun.sh and load.sh:
 # add a password exception:
