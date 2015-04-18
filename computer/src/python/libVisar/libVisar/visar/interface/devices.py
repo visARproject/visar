@@ -10,7 +10,7 @@ BAUD = 115200
 
 TIMEOUT = 1 # timeout listens after 1 second
 
-BATT_LOW   = 9.6  # low (0%) value for battery voltage
+BATT_LOW   = 9.6  # low   (0%)  value for battery voltage
 BATT_HIGH  = 12.6 # high (100%) value for battery voltage
 
 # list of control characters and thier functions
@@ -19,7 +19,7 @@ CONTROL_DICT = {'H':"Map", 'E':"Voice", 'C':"Select",
 
 class DeviceHandler(Interface):
   def __init__(self):
-    '''setup the serial device handler once this object is created, 
+    '''setup the serial device handler. Once this object is created, 
           you must call destroy() before exiting.
        Updates are typles in one of three formats:   
          ('BATTERY',  <battery level>)  # system battery level
@@ -43,7 +43,6 @@ class DeviceHandler(Interface):
       thread.start()
     except: print 'Could not open power device' 
     
-    '''
     try:
       # conn port uses a similar structure, timeouts determine how long to block for
       self.con_port = serial.Serial(CON_NAME, timeout=TIMEOUT, writeTimeout=TIMEOUT)
@@ -51,7 +50,6 @@ class DeviceHandler(Interface):
       thread = threading.Thread(target=self.con_thread)
       thread.start()
     except: print 'Could not open controller device'
-    '''
     
   def destroy(self):
     '''shutdown the module and issue shutdown command if specified'''
