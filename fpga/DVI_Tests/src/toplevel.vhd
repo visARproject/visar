@@ -158,8 +158,10 @@ architecture RTL of toplevel is
     
     signal phy_in  : PHYInInterface;
     signal phy_out : PHYOutInterface;
+    
+    signal internal_reset : std_logic;
 begin
-    reset <= not rst_n;
+    reset <= not rst_n or internal_reset;
 
     IBUFG_inst : IBUFG
         port map(
@@ -611,7 +613,8 @@ begin
             pair13N => pair13N,
             pair14P => pair14P,
             pair14N => pair14N,
-            SCLK => SCLK);
+            SCLK => SCLK,
+            internal_reset => internal_reset);
     
     reset_for_ram_user <= reset or not c3_calib_done or c3_rst0;
     

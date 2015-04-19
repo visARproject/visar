@@ -34,7 +34,9 @@ entity uart_ram_interface is
         pair14P: inout std_logic;
         pair14N: inout std_logic;
         
-        SCLK : out std_logic);
+        SCLK : out std_logic;
+        
+        internal_reset : out std_logic := '0');
 end entity;
 
 architecture arc of uart_ram_interface is
@@ -76,6 +78,7 @@ begin
         variable state, next_state : StateType;
         variable pos, next_pos : integer range 0 to 8;
         variable command, next_command : std_logic_vector(71 downto 0);
+        variable internal_reset_countdown : integer range 0 to 1000 := 0;
     begin
         ram_in.cmd.clk <= clock;
         ram_in.wr.clk <= clock;
@@ -131,6 +134,16 @@ begin
         end if;
         
         if rising_edge(clock) then
+            internal_reset <= '0';
+            if internal_reset_countdown /= 0 then
+                internal_reset <= '1';
+            end if;
+            if internal_reset_countdown /= 0 then
+                internal_reset_countdown := internal_reset_countdown - 1;
+            end if;
+            if state = EXEC and command(39 downto 8) = x"FFFFFFF0" and command(7 downto 0) /= x"00" then
+                internal_reset_countdown := 1000;
+            end if;
             if state = EXEC and command(39 downto 8) = x"FFFFFFF4" and command(7 downto 0) /= x"00" then
                 debug_out <= command(71 downto 40);
             end if;
