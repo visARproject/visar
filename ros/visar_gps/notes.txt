@@ -1,0 +1,13 @@
+all cm
+
+IMU: 5.3+0.5 +x
+    6.7 y
+    -5.1+0.8+1.9
+    
+    (5.8, 6.7, -2.4
+
+IMU uses right, up, towards coordinate system
+
+>>> triad(((0, -1, 0), (0, 0, 1)), ((1, 0, 0), (0, 1, 0)))
+array([ 0.5, -0.5, -0.5,  0.5])
+
