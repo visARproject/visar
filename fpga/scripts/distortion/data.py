@@ -25,6 +25,8 @@ for x in xrange(1920//2, 1920):
             d[x, y][COLOR][1] = constants.CAMERA_ROWS-1 - d[x, y][COLOR][1]
             d[x, y][COLOR][2] = {NONE: NONE, LEFT: RIGHT}[d[x, y][COLOR][2]]
 
+d[1910:,:] = [[0, 0, NONE]]*3
+
 '''
 # swap cameras
 for x in xrange(1920):
@@ -136,7 +138,7 @@ for y in xrange(constants.V_MAX):
 # push events back to ensure minimum spacing
 
 assert READ_LENGTH % 3 == 0
-SPACING = 25
+SPACING = 23
 res2 = list(res)
 last_time = 1e99
 for i in reversed(xrange(len(res2))):
