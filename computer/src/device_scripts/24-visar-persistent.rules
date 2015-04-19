@@ -11,8 +11,5 @@ SUBSYSTEMS=="usb", DRIVERS=="ftdi_sio", SYMLINK+="XBEE_SERIAL"
 # Name the GPS
 SUBSYSTEMS=="usb", DRIVERS=="cp210x", SYMLINK+="GPS_SERIAL"
 
-# Name any wifi antenna wlan0
-SUBSYSTEM=="net", ACTION=="add", DRIVERS=="?*", ATTR{dev_id}=="0x0", ATTR{type}=="1", KERNEL=="wlan*", NAME="wlan0"
-
 # oculus rift not named
-# GPS not showing up...
+# wifi antenna uses the default (wlan0/wlan1)
