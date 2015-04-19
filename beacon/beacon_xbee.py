@@ -11,7 +11,7 @@ def hexify(str):
     return ':'.join(x.encode('hex') for x in str)
 
 
-serial_port = serial.Serial('/dev/ttyUSB0', 115200)
+serial_port = serial.Serial('/dev/XBEE_SERIAL', 115200)
 xbee = DigiMesh(serial_port)
 
 while True:
