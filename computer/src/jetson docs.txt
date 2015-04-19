@@ -1,3 +1,4 @@
+----### Device Setup ###----
 --Reinstall the kernel (network drivers): 
 https://devtalk.nvidia.com/default/topic/795734/embedded-systems/-customkernel-the-grinch-21-2-1-for-jetson-tk1/
 #Install L4T 21.2 (usually unnessecarry)
@@ -70,19 +71,26 @@ gnome-terminal -e "/<absolute-path-to>/load.sh"
 # disable suspend mode under power settings (default)
 # set 'turn off screen after...' to never  and disable screen dimming in 'brightness and lock settings'
 
---Fix Half display bug:
+
+----### Bugfixes ###----
+--Half display bug:
 # Sometimes the default display size is incorrectly configured
 #   un-comment the following line in autorun.sh to fix
 DISPLAY=:0.0 xrandr --output HDMI-0 --mode 1080x1920 --rate 48.0
 
---Rebuilding the distortion data ('out.hex'; not typically needed):
+--Text size bug:
+# Some units don't display text at the correct resolution,
+#   and scale it inappropriateley. Adjust the font_size
+#   attribute in drawables/menu.py to fix this
+
+--Rebuilding the camera distortion data ('out.hex'):
 #install yaml for python
 sudo apt-get install libyaml python-yaml
 #cd into vsr/fpga/scripts/distortion/
 # rebuild the file with:
 make out.hex
 
---Setting up the microphone, might or might not be needed: 
+--Setting up the microphone, if it doesn't appear: 
 # https://devtalk.nvidia.com/default/topic/772401/audio-input-on-jetson-tk1/
 amixer cset name="Stereo ADC MIXL ADC2 Switch" 0
 amixer cset name="Stereo ADC MIXR ADC2 Switch" 0
