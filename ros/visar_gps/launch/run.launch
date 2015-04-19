@@ -1,0 +1,70 @@
+<!-- -->
+<launch>
+  <arg name="host_id" />
+  
+  <node pkg="nodelet" type="nodelet" name="imu_driver" args="standalone rift_dk2_imu_driver/rift_dk2_imu_driver_nodelet">
+    <param name="frame_id" type="string" value="/imu"/>
+  </node>
+  <node pkg="tf" type="static_transform_publisher" name="imu_broadcaster" args="0.058 0.067 -0.024  0.5 -0.5 -0.5 0.5  /base_link /imu 100"/>
+  <node pkg="nodelet" type="nodelet" name="magnetic_hardsoft_compensation" args="standalone magnetic_hardsoft_compensation/nodelet">
+    <param name="frame_id" type="string" value="/imu"/>
+    <rosparam>
+scale:
+- [1.0148766267343725, -0.020572186851755367, -0.004696343358890654]
+- [-0.020572186851755415, 0.9941836773528939, -0.004766663809245696]
+- [-0.004696343358890605, -0.004766663809245598, 0.9915674486072981]
+shift: [3.1164167707875855e-05, -2.2565650071980636e-05, -7.185130519779203e-05]
+    </rosparam>
+  </node>
+
+  <node pkg="skytraq_driver" type="skytraq_driver" name="gps_driver">
+    <param name="port" value="/dev/serial/by-id/usb-Prolific_Technology_Inc._USB-Serial_Controller_D-if00-port0"/>
+  </node>
+  <node pkg="skytraq_driver" type="parser" name="gps_parser">
+    <param name="frame_id" value="/gps"/>
+  </node>
+  <node pkg="tf" type="static_transform_publisher" name="gps_broadcaster"
+    args="0.036 -0.0425 0.06  0 0 0 1  /base_link /gps 100" />
+
+  <node pkg="nodelet" type="nodelet" args="standalone odom_estimator/nodelet" name="odom_estimator" respawn="false">
+    <remap from="absodom" to="imu_absodom"/>
+  </node>
+
+  <node pkg="nodelet" type="nodelet" name="transform_odometry" args="standalone odometry_utils/transform_odometry"><rosparam>
+      frame_id: /ecef
+      child_frame_id: /base_link
+    </rosparam>
+    <remap from="orig_odom" to="imu_absodom"/>
+    <remap from="odom" to="absodom"/>
+  </node>
+  
+  <node pkg="visar_gps" type="visar_gps" name="visar_gps">
+    <param name="host_id" value="$(arg host_id)"/>
+  </node>
+  
+  <node pkg="skytraq_driver" type="parser" name="beacon1_gps_parser">
+    <param name="frame_id" value="/beacon1"/>
+    <remap from="/skytraq_serial/persistent" to="/ext_gps/beacon1/persistent"/>
+    <remap from="/skytraq_serial/ephemeral" to="/ext_gps/beacon1/ephemeral"/>
+    <remap from="/gps" to="/ext_gps/beacon1/gps"/>
+  </node>
+  <node pkg="skytraq_driver" type="parser" name="beacon2_gps_parser">
+    <param name="frame_id" value="/beacon2"/>
+    <remap from="/skytraq_serial/persistent" to="/ext_gps/beacon2/persistent"/>
+    <remap from="/skytraq_serial/ephemeral" to="/ext_gps/beacon2/ephemeral"/>
+    <remap from="/gps" to="/ext_gps/beacon2/gps"/>
+  </node>
+  <node pkg="skytraq_driver" type="parser" name="visar1_gps_parser">
+    <param name="frame_id" value="/visar1"/>
+    <remap from="/skytraq_serial/persistent" to="/ext_gps/visar1/persistent"/>
+    <remap from="/skytraq_serial/ephemeral" to="/ext_gps/visar1/ephemeral"/>
+    <remap from="/gps" to="/ext_gps/visar1/gps"/>
+  </node>
+  <node pkg="skytraq_driver" type="parser" name="visar2_gps_parser">
+    <param name="frame_id" value="/visar2"/>
+    <remap from="/skytraq_serial/persistent" to="/ext_gps/visar2/persistent"/>
+    <remap from="/skytraq_serial/ephemeral" to="/ext_gps/visar2/ephemeral"/>
+    <remap from="/gps" to="/ext_gps/visar2/gps"/>
+  </node>
+</launch>
+

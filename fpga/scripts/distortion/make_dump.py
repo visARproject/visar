@@ -36,7 +36,7 @@ with open(sys.argv[2], 'rb') as f:
 
 model = PinholeCameraModel()
 model.K = mkmat(3, 3, calibration['camera_matrix']['data'])
-model.D = mkmat(len(calibration['distortion_coefficients']['data']), 1, calibration['distortion_coefficients']['data'])
+model.D = mkmat(5, 1, calibration['distortion_coefficients']['data'])
 model.R = mkmat(3, 3, calibration['rectification_matrix']['data'])
 model.P = mkmat(3, 4, calibration['projection_matrix']['data'])
 

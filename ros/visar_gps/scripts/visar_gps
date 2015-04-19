@@ -1,0 +1,153 @@
+#!/usr/bin/python
+
+import socket
+import struct
+import json
+
+import numpy
+
+from twisted.internet import reactor
+from twisted.internet.protocol import DatagramProtocol, Protocol
+
+import txros
+from txros import util
+
+from rawgps_common.msg import Measurements
+from rawgps_common import gps
+from skytraq_driver.msg import Packet, PacketSet
+from nav_msgs.msg import Odometry
+from tf import transformations
+
+from uf_common.orientation_helpers import xyz_array, xyzw_array
+
+def xyz_dict (o): return dict(zip('xyz' , o))
+def xyzw_dict(o): return dict(zip('xyzw', o))
+
+
+
+class OtherEntity(object):
+    def __init__(self, nh, host_id, pose_listeners):
+        self.host_id = host_id
+        self.total = numpy.zeros(3)
+        self.pose_listeners = pose_listeners
+    
+    def got_message(self, local_gps, remote_gps, local_pos):
+        hist = {'a': remote_gps, 'b': local_gps}
+        
+        common_prns = reduce(set.intersection,
+            [set(sat.prn for sat in x.satellites if not math.isnan(sat.time)) for x in hist.itervalues()])
+        
+        new = [Measurements(satellites=[sat for sat in x.satellites if sat.prn in common_prns], sync=x.sync, position=x.position, position_valid=x.position_valid)
+            for _, x in sorted(hist.iteritems())]
+        
+        for x in new:
+            x.satellites.sort(key=lambda sat: sat.prn)
+        
+        pos = [gps.estimate_pos(x.satellites, use_corrections=True, quiet=True) for x in new]
+        dpos = pos[0] - pos[1]
+        
+        self.total = .99 * self.total + .01 * dpos
+        
+        dpos_filtered = self.total
+        print new[0].sync - new[1].sync, len(common_prns), gps.enu_from_ecef(dpos_filtered, pos[0])
+        
+        for pl in self.pose_listeners:
+            pl.transport.write(json.dumps(dict(
+                id=self.h,
+                data=dict(
+                    position_ecef=xyz_dict(dpos_filtered + local_pos),
+                ),
+            )) + '\r\n')
+
+@util.cancellableInlineCallbacks
+def main():
+    nh = txros.NodeHandle.from_argv('visar_gps')
+
+    yield nh._get_ready()
+
+    host_id = yield nh.get_param('~host_id')
+    assert len(host_id) <= 16
+    
+    allowed_host_ids = {'visar1', 'visar2', 'beacon1', 'beacon2'}
+    assert host_id in allowed_host_ids
+    
+    pose_listeners = set()
+    class PoseProtocol(Protocol):
+        def connectionMade(self):
+            pose_listeners.add(self)
+        def connectionLost(self, reason):
+            pose_listeners.remove(self)
+    reactor.listenTCP(22156, util.AutoServerFactory(lambda addr: PoseProtocol()))
+
+    def cb(msg):
+        p2p_gps_protocol.send(struct.pack('16sB', host_id, msg.id) + msg.data)
+    sub = nh.subscribe('/skytraq_serial/ephemeral', Packet, cb)
+    def persistent_cb(msg):
+        for v in persistent_pubs.itervalues():
+            v.publish(msg)
+    persistent_sub = nh.subscribe('/skytraq_serial/persistent', PacketSet, persistent_cb)
+    
+    
+    def odom_cb(msg):
+        q = xyzw_array(msg.pose.pose.orientation)
+        R = transformations.quaternion_matrix(q)[:3, :3]
+        for pl in pose_listeners:
+            pl.transport.write(json.dumps(dict(
+                id='self',
+                data=dict(
+                    position_ecef=xyz_dict(xyz_array(msg.pose.pose.position)),
+                    orientation_ecef=xyzw_dict(q),
+                    velocity_ecef=xyz_dict(R.dot(xyz_array(msg.twist.twist.linear))),
+                    angular_velocity_ecef=xyz_dict(R.dot(xyz_array(msg.twist.twist.angular))),
+                ),
+            )) + '\r\n')
+    odom_sub = nh.subscribe('/absodom', Odometry, odom_cb)
+
+
+    pubs = {h: nh.advertise('/ext_gps/%s/ephemeral' % (h,), Packet) for h in allowed_host_ids}
+    persistent_pubs = {h: nh.advertise('/ext_gps/%s/persistent' % (h,), PacketSet) for h in allowed_host_ids}
+    
+    other_entities = {h: OtherEntity(nh, h, pose_listeners) for h in allowed_host_ids if h != host_id}
+    
+    my_gps_sub = nh.subscribe('/gps', Measurements)
+    def got_other_gps(other_host_id, msg):
+        if my_gps_sub.get_last_message() is not None and odom_sub.get_last_message() is not None:
+            other_entities[other_host_id].got_message(my_gps_sub.get_last_message(), msg, xyz_array(odom_sub.get_last_message().pose.pose.position))
+    gps_subs = {h: nh.subscribe('/ext_gps/%s/gps' % (h,), Measurements, lambda msg, _h=h: got_other_gps(h, msg))
+        for h in allowed_host_ids if h != host_id}
+
+    P2P_GPS_PORT = 9895
+    class P2PGPSProtocol(DatagramProtocol):
+        def startProtocol(self):
+            self.transport.socket.setsockopt(socket.SOL_SOCKET, socket.SO_BROADCAST, True)
+        
+        def send(self, data):
+            self.transport.write(data, ('<broadcast>', P2P_GPS_PORT))
+        
+        def datagramReceived(self, data, addr):
+            try:
+                (remote_host_id, msg_id), msg_data = struct.unpack('16sB', data[:17]), data[17:]
+                remote_host_id = remote_host_id.rstrip('\0')
+            except:
+                print 'error decoding P2PGPS packet'
+                return
+            print 'remote_host_id', remote_host_id
+            if remote_host_id == host_id: return
+            if remote_host_id not in allowed_host_ids: return
+            pubs[remote_host_id].publish(Packet(
+                id=msg_id,
+                data=msg_data,
+            ))
+    p2p_gps_protocol = P2PGPSProtocol()
+    reactor.listenUDP(P2P_GPS_PORT, p2p_gps_protocol)
+
+@util.cancellableInlineCallbacks
+def main_runner():
+    try:
+        yield main()
+    except:
+        import traceback
+        traceback.print_exc()
+        reactor.stop()
+reactor.callWhenRunning(main_runner)
+reactor.run()
