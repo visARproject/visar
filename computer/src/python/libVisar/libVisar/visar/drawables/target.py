@@ -1,7 +1,7 @@
 from __future__ import division
 import numpy as np
 from vispy.gloo import (Program, VertexBuffer, IndexBuffer, Texture2D, clear,
-                        FrameBuffer)
+                        FrameBuffer, set_state)
 from vispy.util.transforms import perspective, translate, rotate
 from vispy.geometry import create_sphere
 from ...OpenGL.drawing import Drawable

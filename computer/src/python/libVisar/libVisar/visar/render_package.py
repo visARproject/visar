@@ -121,10 +121,17 @@ class Renderer(app.Canvas): # Canvas is a GUI object
   
     def on_timer(self, event):
         if State.shutdown_flag: self.close() # shutdown if signaled
+        
+        # Rotate the view matrix
+        view = translate(np.eye(4), *(-1.0*State.position_ecef))
+        view = xrotate(view, State.roll)
+        view = yrotate(view, State.pitch)
+        view = zrotate(view, State.yaw)
+        State.set_orientation_matrix(view)
+        self.view = view
+        
+        # Update and draw
         Target.do_update(State.targets, self.Render_List, self.projection) # update the targets
-        self.view = State.orientation_matrix
-        self.view = translate(self.view, *(-1.0*State.position_ecef))
-        self.Render_List.set_view(self.view)
         self.Render_List.update()
         self.UI_elements.update()
         self.update()

@@ -35,6 +35,7 @@ sudo apt-mark hold xserver-xorg-core
 # Use ROS-Indigo
 # Install ros-indigo-desktop (not full)
 # Instructions: http://wiki.ros.org/indigo/Installation/Ubuntu
+# Install the git submodules
 
 --Install the XBEE Drivers
 # clone/install from http://github.com/thom-nic/python-xbee.git

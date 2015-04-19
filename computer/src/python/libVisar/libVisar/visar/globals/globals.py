@@ -232,7 +232,7 @@ class State(object):
     @classmethod
     def set_orientation_matrix(self, orientation_matrix):
         gl_orientation_matrix = orientation_matrix
-        self.roll, self.yaw, self.pitch = euler_from_matrix(gl_orientation_matrix)
+        self.roll, self.pitch, self.yaw = euler_from_matrix(gl_orientation_matrix)
 
     @classmethod
     def set_orientation(self, quaternion):
