@@ -28,7 +28,7 @@ sudo apt-mark hold xserver-xorg-core
  
 --Vsr Driver Backend Dependencies:
 # Depreciated: (apt-get) pyqt5-dev 
-(pip install) pyglet --update 
+(pip install) pyglet
  
 --Installing Ros:
 # Use ROS-Indigo
@@ -69,6 +69,11 @@ gnome-terminal -e "/<absolute-path-to>/load.sh"
 # enable automatic user login under user accounts gui
 # disable suspend mode under power settings (default)
 # set 'turn off screen after...' to never  and disable screen dimming in 'brightness and lock settings'
+
+--Fix Half display bug:
+# Sometimes the default display size is incorrectly configured
+#   un-comment the following line in autorun.sh to fix
+DISPLAY=:0.0 xrandr --output HDMI-0 --mode 1080x1920 --rate 48.0
 
 --Rebuilding the distortion data ('out.hex'; not typically needed):
 #install yaml for python
