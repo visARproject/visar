@@ -53,9 +53,7 @@ class Renderer(app.Canvas): # Canvas is a GUI object
         
         # Create a rendering context (A render list)
         Logger.set_verbosity('log')
-        renders = [
-            Target((10, 10, -10))
-        ]
+        renders = []
         
         #fault tolerant map initialization
         try:    
@@ -92,8 +90,6 @@ class Renderer(app.Canvas): # Canvas is a GUI object
 
         self.view = np.eye(4)
         self.Render_List = Context(*renders)
-        for target in State.targets:
-            self.Render_List.append(Target(target))
         if args.brain:
             self.Render_List.append(Brain())
         if args.draw_terrain:
@@ -109,13 +105,12 @@ class Renderer(app.Canvas): # Canvas is a GUI object
         if args.debug:
             set_log_level('debug')
 
-        self.Render_List.translate(0, 0, -7)
-        projection = perspective(30.0, 1920 / float(1080), 2.0, 10.0)
-        self.Render_List.set_projection(projection)
+        self.projection = perspective(30.0, 1920 / float(1080), 2.0, 10.0)
+        self.Render_List.set_projection(self.projection)
         self.Render_List.set_view(self.view)
 
         self.UI_elements = Context(*UI_elements)
-        self.UI_elements.set_projection(projection)
+        self.UI_elements.set_projection(self.projection)
 
         # Create the distorter
         self.Distorter = Distorter(self.size, no_distort=args.no_distort)
@@ -126,6 +121,9 @@ class Renderer(app.Canvas): # Canvas is a GUI object
   
     def on_timer(self, event):
         if State.shutdown_flag: self.close() # shutdown if signaled
+        Target.do_update(State.targets, self.Render_List, self.projection) # update the targets
+        self.view = State.orientation_matrix
+        self.view = translate(self.view, *(-1.0*State.position_ecef))
         self.Render_List.set_view(self.view)
         self.Render_List.update()
         self.UI_elements.update()
@@ -155,40 +153,43 @@ class Renderer(app.Canvas): # Canvas is a GUI object
         i(I) - zoom in
         o(O) - zoom out
         """
-        self.translate = [0, 0, 0]
-        self.rotate = [0, 0, 0]
+        #self.translate = [0, 0, 0]
+        #self.rotate = [0, 0, 0]
 
         if(event.text == 'p' or event.text == 'P'):
             print(self.view)
-        elif(event.text == 'd' or event.text == 'D'):
-            self.translate[0] = 0.3
-        elif(event.text == 'a' or event.text == 'A'):
-            self.translate[0] = -0.3
-        elif(event.text == 'w' or event.text == 'W'):
-            self.translate[1] = 0.3
-        elif(event.text == 's' or event.text == 'S'):
-            self.translate[1] = -0.3
-        elif(event.text == 'o' or event.text == 'O'):
-            self.translate[2] = 0.3
-        elif(event.text == 'i' or event.text == 'I'):
-            self.translate[2] = -0.3
-        elif(event.text == 'x'):
-            self.rotate = [1, 0, 0]
-        elif(event.text == 'X'):
-            self.rotate = [-1, 0, 0]
-        elif(event.text == 'y'):
-            self.rotate = [0, 1, 0]
-        elif(event.text == 'Y'):
-            self.rotate = [0, -1, 0]
-        elif(event.text == 'z'):
-            self.rotate = [0, 0, 1]
-        elif(event.text == 'Z'):
-            self.rotate = [0, 0, -1]
+            '''
+            elif(event.text == 'd' or event.text == 'D'):
+                self.translate[0] = 0.3
+            elif(event.text == 'a' or event.text == 'A'):
+                self.translate[0] = -0.3
+            elif(event.text == 'w' or event.text == 'W'):
+                self.translate[1] = 0.3
+            elif(event.text == 's' or event.text == 'S'):
+                self.translate[1] = -0.3
+            elif(event.text == 'o' or event.text == 'O'):
+                self.translate[2] = 0.3
+            elif(event.text == 'i' or event.text == 'I'):
+                self.translate[2] = -0.3
+            elif(event.text == 'x'):
+                self.rotate = [1, 0, 0]
+            elif(event.text == 'X'):
+                self.rotate = [-1, 0, 0]
+            elif(event.text == 'y'):
+                self.rotate = [0, 1, 0]
+            elif(event.text == 'Y'):
+                self.rotate = [0, -1, 0]
+            elif(event.text == 'z'):
+                self.rotate = [0, 0, 1]
+            elif(event.text == 'Z'):
+                self.rotate = [0, 0, -1]
+            '''
         elif(event.text == 'B'):
             State.shutdown_flag = True
         elif(event.text == ' ' or event.key == 'Space'):
             State.make_call()
             return
+            '''
             default_view = np.array(
                 [[0.8, 0.2, -0.48, 0],
                  [-0.5, 0.3, -0.78, 0],
@@ -198,7 +199,7 @@ class Renderer(app.Canvas): # Canvas is a GUI object
             )
 
             self.view = default_view
-
+            '''
         elif(event.text == '['):
             State.button_up()
         elif(event.text == ']'):
@@ -212,14 +213,15 @@ class Renderer(app.Canvas): # Canvas is a GUI object
         elif event.key is not None and event.text is not None:
             Logger.warn('Unrecognized key', event.text)
             Logger.warn(event.key)
+        '''
         translate(self.view, -self.translate[0], -self.translate[1],
                   -self.translate[2])
         xrotate(self.view, self.rotate[0])
         yrotate(self.view, self.rotate[1])
         zrotate(self.view, self.rotate[2])
-
+        
         State.set_orientation_matrix(self.view)
-
+        '''
     
 def main():
     State.do_init() # initialize the state objects/threads

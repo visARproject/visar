@@ -26,10 +26,6 @@ class State(object):
 
     absolute_file_path = os.path.dirname(os.path.realpath(__file__))
 
-    targets = [
-        (10, 10, 10),
-    ]
-
     orientation_quaternion = (0.50155109, 0.03353513, 0.05767266, 0.86255189)
     orientation_matrix = quaternion_matrix(orientation_quaternion)
     roll, pitch, yaw = euler_from_matrix(orientation_matrix)
@@ -50,8 +46,9 @@ class State(object):
     toast = None
     
     # create pose update listener reference and default pose (default to mil)
-    pose = {"position_ecef": {"x":738575.65, "y":-5498374.10, "z":3136355.42}, "orientation_ecef": {"x": 0.50155109,  "y": 0.03353513,  "z": 0.05767266, "w": 0.86255189}, "velocity_ecef": {"x": -0.06585217, "y": 0.49024074, "z": 0.8690958}, "angular_velocity_ecef": {"x": 0.11570315, "y": -0.86135956, "z": 0.4946438}} 
-    remotes = {}    
+    pose = {"position_ecef": {"x":738575.65, "y":-5498374.10, "z":3136355.42}, "orientation_ecef": {"x": 0.50155109,  "y": 0.03353513,  "z": 0.05767266, "w": 0.86255189}, "velocity_ecef": {"x": -0.06585217, "y": 0.49024074, "z": 0.8690958}, "angular_velocity_ecef": {"x": 0.11570315, "y": -0.86135956, "z": 0.4946438}}  
+    targets = {}
+    
         
     # network information    
     network_peers = None # create object reference, but don't init it yet
@@ -94,10 +91,10 @@ class State(object):
         # setup the pose handler and callback functions
         def pose_callback(event):
             # don't issue all updates
-            if(self.pose_count == 61):
-                Logger.log("61st Pose Update: %s" % (event,))
-                self.pose_count = 0
-            self.pose_count += 1
+            if(self.pose_count == 0):
+                Logger.log("Periodic Pose Update: %s" % (event,))
+                self.pose_count = 511
+            self.pose_count -= 1
             
             # call the appropriate update methods
             if event[0] == 'LOCAL':
@@ -113,8 +110,7 @@ class State(object):
               except: Logger.log("Bad Pose Update")
 
             elif event[0] == 'REMOTE': # grab a copy of remote data
-              remotes = copy.deepcopy(event[1])
-              
+              self.targets = copy.deepcopy(event[1])              
           
         self.pose_handler.add_callback(pose_callback)
 
