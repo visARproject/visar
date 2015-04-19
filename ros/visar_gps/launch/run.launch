@@ -1,5 +1,7 @@
 <!-- -->
 <launch>
+  <arg name="host_id" />
+  
   <node pkg="nodelet" type="nodelet" name="imu_driver" args="standalone rift_dk2_imu_driver/rift_dk2_imu_driver_nodelet">
     <param name="frame_id" type="string" value="/imu"/>
   </node>
@@ -16,7 +18,7 @@ shift: [3.1164167707875855e-05, -2.2565650071980636e-05, -7.185130519779203e-05]
   </node>
 
   <node pkg="skytraq_driver" type="skytraq_driver" name="gps_driver">
-    <param name="port" value="/dev/serial/by-id/usb-Silicon_Labs_CP2102_USB_to_UART_Bridge_Controller_0001-if00-port0"/>
+    <param name="port" value="/dev/serial/by-id/usb-Prolific_Technology_Inc._USB-Serial_Controller_D-if00-port0"/>
   </node>
   <node pkg="skytraq_driver" type="parser" name="gps_parser">
     <param name="frame_id" value="/gps"/>
@@ -36,19 +38,33 @@ shift: [3.1164167707875855e-05, -2.2565650071980636e-05, -7.185130519779203e-05]
     <remap from="odom" to="absodom"/>
   </node>
   
-  <node pkg="visar_gps" type="visar_gps" name="visar_gps"/>
+  <node pkg="visar_gps" type="visar_gps" name="visar_gps">
+    <param name="host_id" value="$(arg host_id)"/>
+  </node>
   
-  <node pkg="skytraq_driver" type="parser" name="gps_parser" ns="/ext_gps/beacon1">
+  <node pkg="skytraq_driver" type="parser" name="beacon1_gps_parser">
     <param name="frame_id" value="/beacon1"/>
+    <remap from="/skytraq_serial/persistent" to="/ext_gps/beacon1/persistent"/>
+    <remap from="/skytraq_serial/ephemeral" to="/ext_gps/beacon1/ephemeral"/>
+    <remap from="/gps" to="/ext_gps/beacon1/gps"/>
   </node>
-  <node pkg="skytraq_driver" type="parser" name="gps_parser" ns="/ext_gps/beacon2">
-    <param name="frame_id" value="/beacon1"/>
+  <node pkg="skytraq_driver" type="parser" name="beacon2_gps_parser">
+    <param name="frame_id" value="/beacon2"/>
+    <remap from="/skytraq_serial/persistent" to="/ext_gps/beacon2/persistent"/>
+    <remap from="/skytraq_serial/ephemeral" to="/ext_gps/beacon2/ephemeral"/>
+    <remap from="/gps" to="/ext_gps/beacon2/gps"/>
   </node>
-  <node pkg="skytraq_driver" type="parser" name="gps_parser" ns="/ext_gps/visar1">
-    <param name="frame_id" value="/beacon1"/>
+  <node pkg="skytraq_driver" type="parser" name="visar1_gps_parser">
+    <param name="frame_id" value="/visar1"/>
+    <remap from="/skytraq_serial/persistent" to="/ext_gps/visar1/persistent"/>
+    <remap from="/skytraq_serial/ephemeral" to="/ext_gps/visar1/ephemeral"/>
+    <remap from="/gps" to="/ext_gps/visar1/gps"/>
   </node>
-  <node pkg="skytraq_driver" type="parser" name="gps_parser" ns="/ext_gps/visar2">
-    <param name="frame_id" value="/beacon1"/>
+  <node pkg="skytraq_driver" type="parser" name="visar2_gps_parser">
+    <param name="frame_id" value="/visar2"/>
+    <remap from="/skytraq_serial/persistent" to="/ext_gps/visar2/persistent"/>
+    <remap from="/skytraq_serial/ephemeral" to="/ext_gps/visar2/ephemeral"/>
+    <remap from="/gps" to="/ext_gps/visar2/gps"/>
   </node>
 </launch>
 
