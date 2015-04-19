@@ -10,11 +10,13 @@
 
 int main(int argc, char** argv){
   printf("Entered Test function\n");
-  int fd[2];
+  int fd[2] = {-1, -1};
   do{
     usleep(50000);
-    fd[0] = open(AUDIO_FIFO, O_RDONLY);
-    fd[1] = open(VC_FIFO, O_WRONLY);
+    if(fd[0] < 0)
+      fd[0] = open(AUDIO_FIFO, O_RDONLY);
+    if(fd[1] < 0)  
+      fd[1] = open(VC_FIFO, O_WRONLY);
   } while(fd[0]<0 || fd[1]<0);
   
   char buffer[80]; //buffer for reading data

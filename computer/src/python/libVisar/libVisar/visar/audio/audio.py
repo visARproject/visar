@@ -75,12 +75,14 @@ class AudioController(Interface):
   def destroy(self):
     self.kill_flag = True # kill the process
     
+    self.stop() # stop active calls
+    self.stop_voice() # stop VC
+    
     # send shutdown to child process
     lock.acquire()
     self.child.stdin.write('shutdown\n') # shutdown thread when the module dies
     lock.release()
     
-    self.c_sock.close() # close the socket
     if self.vc_pipe is not None:  os.close(self.vc_pipe) # close the pipe
     time.sleep(1) # sleep to give process things
     os.unlink(VC_FIFO_NAME) # delete the fifo
@@ -114,7 +116,7 @@ class AudioController(Interface):
   @thread_lock
   def stop(self):
     if(self.connection is None or self.connection[0] == 'voice'): 
-      self.do_updates('Warn', 'Stop function called with no active call')
+      # self.do_updates('Warn', 'Stop function called with no active call')
       return  # not actually connected
     
     # disconnect from the peer
@@ -251,6 +253,7 @@ class AudioController(Interface):
 
   def client_thread(self):  
     # run until server shuts us down
+    self.c_sock.settimeout(SERVER_TIMEOUT)   # timeout after 1 second
     while self.c_sock is not None:
       try:
         if(self.c_sock.recv(10) == 'shutdown\n'): # wait for shutdown

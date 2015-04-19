@@ -239,7 +239,7 @@ void destroy_voice_control(){
   vc_flag = 0;          //signal thread to stop writing data
   while(vc_hold_flag);  //wait for pending writes to finish
   close(vc_pipe);       //close the pipe, signaling that child should close
-  sleep(TIMEOUT);       //wait for child to respond
+  //sleep(TIMEOUT);     //wait for child to respond
   unlink(FIFO_NAME);    //destroy the pipe
   
   printf("Audio Controller: Voice Controller Shutdown\n");
@@ -254,7 +254,7 @@ void shutdown_prog(){
   sleep(TIMEOUT);         //wait for data to finish processing
   speaker_kill_flag = 1;  //assert speaker kill flag
   global_kill = 1;        //assert global kill flag (just in case)
-  sleep(TIMEOUT);         //wait for data to finish processing
+  //sleep(TIMEOUT);       //wait for data to finish processing
   printf("Audio Controller: Devices shutdown\n");
 }
 

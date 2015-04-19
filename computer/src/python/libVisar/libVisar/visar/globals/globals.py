@@ -204,7 +204,7 @@ class State(object):
         call_target = self.args
         self.args = None # clear the argument register
         try:
-            if call_target is None: call_target = self.id_code # default value
+            if call_target is None: return # dont do it, seriously
             if not '.' in call_target: call_ip = self.network_peers[call_target][0] # get the ip address if not one already
             else: call_ip = call_target # call target is already an ip address
             Logger.log("Attempting to call " + call_target + " at ip " + call_ip + ".")
