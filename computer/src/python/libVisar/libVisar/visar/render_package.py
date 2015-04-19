@@ -62,7 +62,7 @@ class Renderer(app.Canvas): # Canvas is a GUI object
             map_ob = Map()
             UI_elements = [
                 map_ob,
-                Toast(self),
+                #Toast(self),
                 Button('Toggle Map', self, position=1),
                 Button('Make Call', self, position=3),
                 Button('End Call', self, position=2),
@@ -77,7 +77,7 @@ class Renderer(app.Canvas): # Canvas is a GUI object
         except: 
             Logger.warn("Failed to Initialize the map")
             UI_elements = [
-                Toast(self),
+                #Toast(self),
                 Button('Toggle Map', self, position=1),
                 Button('Make Call', self, position=3),
                 Button('End Call', self, position=2),
