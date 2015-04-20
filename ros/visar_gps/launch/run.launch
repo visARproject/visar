@@ -1,6 +1,8 @@
 <!-- -->
 <launch>
   <arg name="host_id" />
+  <arg name="interface" />
+  <arg name="fake_gps" default="false" />
   
   <node pkg="nodelet" type="nodelet" name="imu_driver" args="standalone rift_dk2_imu_driver/rift_dk2_imu_driver_nodelet">
     <param name="frame_id" type="string" value="/imu"/>
@@ -9,16 +11,17 @@
   <node pkg="nodelet" type="nodelet" name="magnetic_hardsoft_compensation" args="standalone magnetic_hardsoft_compensation/nodelet">
     <param name="frame_id" type="string" value="/imu"/>
     <rosparam>
+below_is_for_rift_with_copper_shielding: 1
 scale:
-- [1.0148766267343725, -0.020572186851755367, -0.004696343358890654]
-- [-0.020572186851755415, 0.9941836773528939, -0.004766663809245696]
-- [-0.004696343358890605, -0.004766663809245598, 0.9915674486072981]
-shift: [3.1164167707875855e-05, -2.2565650071980636e-05, -7.185130519779203e-05]
+- [1.021774234140897, -0.02397443982363336, 0.008736285406123588]
+- [-0.02397443982363336, 0.9866076934276453, 0.003702280514875784]
+- [0.008736285406123612, 0.003702280514875833, 0.9926306945248387]
+shift: [1.3460794505167499e-05, -1.4408544523243849e-05, 9.485698083642524e-06]
     </rosparam>
   </node>
 
   <node pkg="skytraq_driver" type="skytraq_driver" name="gps_driver">
-    <param name="port" value="/dev/serial/by-id/usb-Prolific_Technology_Inc._USB-Serial_Controller_D-if00-port0"/>
+    <param name="port" value="/dev/serial/by-id/usb-Silicon_Labs_CP2102_USB_to_UART_Bridge_Controller_0001-if00-port0"/>
   </node>
   <node pkg="skytraq_driver" type="parser" name="gps_parser">
     <param name="frame_id" value="/gps"/>
@@ -26,10 +29,27 @@ shift: [3.1164167707875855e-05, -2.2565650071980636e-05, -7.185130519779203e-05]
   <node pkg="tf" type="static_transform_publisher" name="gps_broadcaster"
     args="0.036 -0.0425 0.06  0 0 0 1  /base_link /gps 100" />
 
+  <group if="$(arg fake_gps)">
+    <node pkg="rdi_explorer_dvl" type="fake_dvl" name="dvl_faker"/>
+    <node pkg="tf" type="static_transform_publisher" name="dvl_broadcaster" args="-0.09 0 0  0 0 0 1  /base_link /dvl 100"/>
+  </group>
+
   <node pkg="nodelet" type="nodelet" args="standalone odom_estimator/nodelet" name="odom_estimator" respawn="false">
+    <remap from="odom" to="imu_odom"/>
     <remap from="absodom" to="imu_absodom"/>
+    <param name="have_gps" value="false" if="$(arg fake_gps)"/>
+    <param name="start_x_ecef" value="740883" if="$(arg fake_gps)"/>
+    <param name="start_y_ecef" value="-5497747" if="$(arg fake_gps)"/>
+    <param name="start_z_ecef" value="3136908" if="$(arg fake_gps)"/>
   </node>
 
+  <node pkg="nodelet" type="nodelet" name="transform_odometry2" args="standalone odometry_utils/transform_odometry"><rosparam>
+      frame_id: /enu
+      child_frame_id: /base_link
+    </rosparam>
+    <remap from="orig_odom" to="imu_odom"/>
+    <remap from="odom" to="odom"/>
+  </node>
   <node pkg="nodelet" type="nodelet" name="transform_odometry" args="standalone odometry_utils/transform_odometry"><rosparam>
       frame_id: /ecef
       child_frame_id: /base_link
@@ -40,6 +60,8 @@ shift: [3.1164167707875855e-05, -2.2565650071980636e-05, -7.185130519779203e-05]
   
   <node pkg="visar_gps" type="visar_gps" name="visar_gps">
     <param name="host_id" value="$(arg host_id)"/>
+    <param name="interface" value="$(arg interface)"/>
+    <param name="fake_gps" value="$(arg fake_gps)"/>
   </node>
   
   <node pkg="skytraq_driver" type="parser" name="beacon1_gps_parser">

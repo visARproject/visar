@@ -127,7 +127,7 @@ class Map(Drawable):
         {
             vec4 color = texture2D(map_texture, texcoord);
             if (hide == 1){
-                gl_FragColor = vec4(color.rgb, 0.1);
+                gl_FragColor = vec4(color.rgb, 0.0);
             } else {
                 gl_FragColor = vec4(color.rgb, 1);
             }
@@ -180,11 +180,11 @@ class Map(Drawable):
         ])
 
         ###### TESTING
-        lla = self.ecef2llh((738575.65, -5498374.10, 3136355.42))
+        self.position_lla = self.ecef2llh((738575.65, -5498374.10, 3136355.42))
         ###### TESTING
 
-        self.map, self.ranges = self.cache_map(lla[:2])
-        self.map, self.ranges = self.get_map(lla[:2])
+        self.map, self.ranges = self.cache_map(self.position_lla[:2])
+        self.map, self.ranges = self.get_map(self.position_lla[:2])
         self.program = Program(self.frame_vertex_shader, self.frame_frag_shader)
 
         default_map_transform = np.eye(4)
@@ -197,11 +197,15 @@ class Map(Drawable):
         self.program['projection'] = self.projection
 
         self.program['map_transform'] = default_map_transform
-        self.program['map_center'] = lla[:2]
+        self.program['map_center'] = self.position_lla[:2]
         self.program['map_texture'] = self.map
         self.program['corners'] = self.ranges
-        self.program['user_position'] = lla[:2]
+        self.program['user_position'] = self.position_lla[:2]
         self.program['hide'] = 0
+
+    def set_map(self, position_lla):
+        self.map, self.ranges = self.get_map(position_lla[:2])
+        self.program['map_texture'] = self.map
 
     def update(self):
         yaw = State.yaw
@@ -209,14 +213,22 @@ class Map(Drawable):
         counter_yaw = 360 - (np.degrees(yaw) % 360)
         # Could use optimization by subtracting current yaw from previous yaw
         map_transform = np.eye(4)
-        map_transform = zrotate(map_transform, counter_yaw)
-        scale(map_transform, 0.8)
+        # map_transform = zrotate(map_transform, counter_yaw)
+        scale(map_transform, 0.2)
         
         self.program['map_transform'] = map_transform
 
         # Convert Forrest's ecef position to lla
-        position_lla = self.ecef2llh(State.position_ecef)[:2]
-        self.program['user_position'] = position_lla
+        new_position = State.position_ecef
+        abs_changes = np.fabs(self.position_lla - new_position)
+
+        # if max(abs_changes) > 100:  # (m)
+            # self.set_map(new_position)
+            # pass
+
+        new_position_lla = self.ecef2llh(State.position_ecef)[:2]
+        self.program['user_position'] = self.position_lla[:2]
+
 
         if State.hide_map:
             self.program['hide'] = 1
@@ -230,14 +242,14 @@ class Map(Drawable):
         set_state(depth_test=True)
 
     @classmethod 
-    def cache_map(self, (latitude, longitude), zoom=9, region_size=10):
+    def cache_map(self, (latitude, longitude), zoom=9, region_size=6):
         '''Prep a map cache'''
         imgr = PILImageManager('RGB')
         osm = OSMManager(image_manager=imgr, cache=os.path.join(Paths.get_path_to_visar(), 'map_cache'))
 
         half_size = region_size / 2.0
         region = (
-            latitude - half_size, 
+            latitude - half_size,
             latitude + half_size,
             longitude - half_size,
             longitude + half_size,
@@ -247,10 +259,6 @@ class Map(Drawable):
 
         # Book-keeping
         min_lat, max_lat, min_long, max_long = bounds
-        # lat_range = (min_lat, max_lat)
-        # long_range = (min_long, max_long)
-        # corner_left = np.array((min_lat, min_long))
-        # corner_right = np.array((max_lat, max_long))
 
         # The second return is the 'corners' used in the map shaders
         return map_image, np.array((min_lat, min_long, max_lat, max_long))
@@ -261,12 +269,12 @@ class Map(Drawable):
 
         latitude and longitude define the center position of the user
         zoom: Lower -> closer to ground
-        region_size: size in degrees of region 
+        region_size: size in degrees of region
 
         Snippet for region size determination:
         >>> half_size = region_size / 2
         >>> region = (
-        ...     latitude - half_size, 
+        ...     latitude - half_size,
         ...     latitude + half_size,
         ...     longitude - half_size,
         ...     longitude + half_size,

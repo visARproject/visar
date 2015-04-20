@@ -3,7 +3,7 @@ from socket import *
 import time
 import json
 
-POSE_PORT = 19107 # netowrk port to listen on
+POSE_PORT = 22156 # netowrk port to listen on
 FREQUENCY = 1000  # update frequency, in Hz
 
 def generate_pose():

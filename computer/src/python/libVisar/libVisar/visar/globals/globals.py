@@ -68,23 +68,25 @@ class State(object):
     current_button = 3
 
     hide_map = False
+    audio = True
 
     @classmethod
-    def do_init(self):
+    def do_init(self, audio=True):
         '''Function will initialize all status listeners and controllers
            Once this function is called, you must call State.destroy() before 
               exiting or hanging threads will prevent program from closing.
         '''
-
+        self.audio = audio
         self.action_dict = Actions.get_actions(self) # bind the avaliable actions
         
         # initialize state listeners and controllers
         self.network_state = NetworkState(self.id_code, self.hostname, 'default status') # create network state tracker
 
-        self.audio_controller = AudioController() # create audio manager
+        if(audio): self.audio_controller = AudioController() # create audio manager
         
         self.pose_handler = PoseHandler(frequency=1.0/30.0)
         self.pose_count = 0
+
         
         self.device_handler = DeviceHandler() 
 
@@ -103,15 +105,14 @@ class State(object):
                   position = (event['position_ecef']['x'], event['position_ecef']['y'], 
                               event['position_ecef']['z'])
                   State.set_position(position)
-                  orientation = (event['orientation_ecef']['x'], event['orientation_ecef']['y'], 
-                              event['orientation_ecef']['z'], event['orientation_ecef']['w'])
+                  orientation = (event['orientation_ecef']['w'], event['orientation_ecef']['x'], event['orientation_ecef']['y'], 
+                              event['orientation_ecef']['z'],)
                   State.set_orientation(orientation)
                   State.pose = event # store the full value
               except: Logger.log("Bad Pose Update")
 
             elif event[0] == 'REMOTE': # grab a copy of remote data
               self.targets = copy.deepcopy(event[1])              
-          
         self.pose_handler.add_callback(pose_callback)
 
 
@@ -127,7 +128,7 @@ class State(object):
                     State.action_dict[command[0]]() # call the command
                 except: Logger.log('Bad Command, expected: (func, args), got: %s' % (command,))
             
-        self.audio_controller.add_callback(audio_callback) # add the callback
+        if(audio): self.audio_controller.add_callback(audio_callback) # add the callback
         
         self.network_peers = self.network_state.peers # get the initial peers
     
@@ -192,13 +193,16 @@ class State(object):
         '''Funciton will make a voice call to target specified in argumets
            It will interrupt the current call if one already exists before starting another
         '''
+        if not self.audio: return
+        
         # end call first        
         if self.calling:
             self.end_call()
             
         # call the target specified in the args register
-        call_target = self.args
-        self.args = None # clear the argument register
+        #call_target = self.args
+        #self.args = None # clear the argument register
+        call_target = 'CAT' # Default call target device
         try:
             if call_target is None: return # dont do it, seriously
             if not '.' in call_target: call_ip = self.network_peers[call_target][0] # get the ip address if not one already
@@ -212,6 +216,8 @@ class State(object):
     @classmethod
     def end_call(self):
         '''End the call'''
+        if not self.audio: return
+        
         Logger.warn('Ending Call')
         self.audio_controller.stop() # hang up
         self.calling = False # set flag appropriatley
@@ -231,8 +237,11 @@ class State(object):
 
     @classmethod
     def set_orientation_matrix(self, orientation_matrix):
-        gl_orientation_matrix = orientation_matrix
-        self.roll, self.pitch, self.yaw = euler_from_matrix(gl_orientation_matrix)
+        # gl_orientation_matrix = orientation_matrix
+        self.orientation_matrix = orientation_matrix
+        # self.orientation_matrix = orientation_matrix
+
+        # self.roll, self.pitch, self.yaw = euler_from_matrix(gl_orientation_matrix)
 
     @classmethod
     def set_orientation(self, quaternion):
@@ -266,7 +275,7 @@ class State(object):
         '''Signal modules to die and expire handler threads'''
         self.pose_handler.destroy()
         self.network_state.destroy()
-        self.audio_controller.destroy()
+        if(self.audio): self.audio_controller.destroy()
         self.device_handler.destroy() 
         
     @classmethod
