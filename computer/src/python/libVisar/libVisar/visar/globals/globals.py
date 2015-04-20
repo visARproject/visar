@@ -193,6 +193,8 @@ class State(object):
         '''Funciton will make a voice call to target specified in argumets
            It will interrupt the current call if one already exists before starting another
         '''
+        if not self.audio: return
+        
         # end call first        
         if self.calling:
             self.end_call()
@@ -213,6 +215,8 @@ class State(object):
     @classmethod
     def end_call(self):
         '''End the call'''
+        if not self.audio: return
+        
         Logger.warn('Ending Call')
         self.audio_controller.stop() # hang up
         self.calling = False # set flag appropriatley

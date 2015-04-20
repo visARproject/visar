@@ -13,7 +13,7 @@ from vispy import app
 from ..OpenGL.utils import Logger
 from ..OpenGL.shaders import Distorter
 from ..OpenGL.drawing import Drawable, Context
-from .drawables import Example, Target, Map, Button, Brain, Toast, Menu, Battery
+from .drawables import Example, Target, Map, Button, Brain, Toast, Battery
 from .environments import Terrain
 from .globals import State, Paths
 
@@ -64,25 +64,26 @@ class Renderer(app.Canvas): # Canvas is a GUI object
         ]
 
         # fault tolerant map initialization
-        map_ob = Map()
+        self.map_ob = Map()
         UI_elements = [
-            map_ob,
-            Toast(self),
-            # Target(738575.65, -5498374.10, 3136355.42)  # ECEF
-            # Menu(self),
+            self.map_ob,
+            #Toast(self),
             Button('Toggle Map', self, position=1),
             Button('Make Call', self, position=3),
             Button('End Call', self, position=2),
-            Button('Example', self, position=4),
-            Button('Start Voice', self, position=5),
-            Button('Stop Voice', self, position=6),
-            Button('List Peers', self, position=7),
-            Button('Set Target', self, position=8),
-            Button('Update Status', self, position=9),
+            Button('Start Voice', self, position=4),
+            Button('Stop Voice', self, position=5),
+            Battery(),
         ]
 
-        # except: 
-            # Logger.warn("Failed to Initialize the map")        
+        #fault tolerant map initialization
+        #try:    
+        #    self.map_ob = Map()
+        #    UI_elements.append(map_ob)
+        #except: 
+        #    self.map_ob = None
+        #    Logger.warn("Failed to Initialize the map")        
+        self.hide_map = False
 
         self.view = np.eye(4)
         self.Render_List = Context(*renders)
@@ -117,6 +118,16 @@ class Renderer(app.Canvas): # Canvas is a GUI object
   
     def on_timer(self, event):
         if State.shutdown_flag: self.close() # shutdown if signaled
+       
+        '''
+        if not State.hide_map == self.hide_map:
+            if State.hide_map and self.map_ob is not None:
+                self.Render_List.remove(map_ob)
+            elif not State.hide_map and self.map_ob is not None:
+                self.Render_List.remove(map_ob)
+            
+            self.hide_map = State.hide_map
+        '''
         
         # Update and draw
         self.Render_List.set_view(State.orientation_matrix)

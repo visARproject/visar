@@ -150,7 +150,7 @@ class Button(Drawable):
             self.program['highlighted'] = 0
 
     def make_text(self, _string):
-        self.font_size = 500
+        self.font_size = 150
         # self.color = (.1, .1, .1, 1.0)
         self.color = (1, 1, 1, 1.0)
         self.canvas.text_renderer = visuals.TextVisual('', bold=True, color=self.color)
