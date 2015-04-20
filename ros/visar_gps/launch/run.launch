@@ -2,6 +2,7 @@
 <launch>
   <arg name="host_id" />
   <arg name="interface" />
+  <arg name="fake_gps" default="false" />
   
   <node pkg="nodelet" type="nodelet" name="imu_driver" args="standalone rift_dk2_imu_driver/rift_dk2_imu_driver_nodelet">
     <param name="frame_id" type="string" value="/imu"/>
@@ -10,11 +11,17 @@
   <node pkg="nodelet" type="nodelet" name="magnetic_hardsoft_compensation" args="standalone magnetic_hardsoft_compensation/nodelet">
     <param name="frame_id" type="string" value="/imu"/>
     <rosparam>
-scale:
+ascale:
 - [1.0148766267343725, -0.020572186851755367, -0.004696343358890654]
 - [-0.020572186851755415, 0.9941836773528939, -0.004766663809245696]
 - [-0.004696343358890605, -0.004766663809245598, 0.9915674486072981]
-shift: [3.1164167707875855e-05, -2.2565650071980636e-05, -7.185130519779203e-05]
+ashift: [3.1164167707875855e-05, -2.2565650071980636e-05, -7.185130519779203e-05]
+
+scale:
+- [1.0221734027770684, -0.020309165108094676, 0.0025963675102911744]
+- [-0.02030916510809465, 0.9962521121061172, 0.006708069476137336]
+- [0.0025963675102912, 0.006708069476137336, 0.9824383494870514]
+shift: [1.5026140041055891e-05, -1.531111950159047e-05, 4.1056412328484905e-06]
     </rosparam>
   </node>
 
@@ -27,10 +34,27 @@ shift: [3.1164167707875855e-05, -2.2565650071980636e-05, -7.185130519779203e-05]
   <node pkg="tf" type="static_transform_publisher" name="gps_broadcaster"
     args="0.036 -0.0425 0.06  0 0 0 1  /base_link /gps 100" />
 
+  <group if="$(arg fake_gps)">
+    <node pkg="rdi_explorer_dvl" type="fake_dvl" name="dvl_faker"/>
+    <node pkg="tf" type="static_transform_publisher" name="dvl_broadcaster" args="-0.09 0 0  0 0 0 1  /base_link /dvl 100"/>
+  </group>
+
   <node pkg="nodelet" type="nodelet" args="standalone odom_estimator/nodelet" name="odom_estimator" respawn="false">
+    <remap from="odom" to="imu_odom"/>
     <remap from="absodom" to="imu_absodom"/>
+    <param name="have_gps" value="false" if="$(arg fake_gps)"/>
+    <param name="start_x_ecef" value="740883" if="$(arg fake_gps)"/>
+    <param name="start_y_ecef" value="-5497747" if="$(arg fake_gps)"/>
+    <param name="start_z_ecef" value="3136908" if="$(arg fake_gps)"/>
   </node>
 
+  <node pkg="nodelet" type="nodelet" name="transform_odometry2" args="standalone odometry_utils/transform_odometry"><rosparam>
+      frame_id: /enu
+      child_frame_id: /base_link
+    </rosparam>
+    <remap from="orig_odom" to="imu_odom"/>
+    <remap from="odom" to="odom"/>
+  </node>
   <node pkg="nodelet" type="nodelet" name="transform_odometry" args="standalone odometry_utils/transform_odometry"><rosparam>
       frame_id: /ecef
       child_frame_id: /base_link
@@ -42,6 +66,7 @@ shift: [3.1164167707875855e-05, -2.2565650071980636e-05, -7.185130519779203e-05]
   <node pkg="visar_gps" type="visar_gps" name="visar_gps">
     <param name="host_id" value="$(arg host_id)"/>
     <param name="interface" value="$(arg interface)"/>
+    <param name="fake_gps" value="$(arg fake_gps)"/>
   </node>
   
   <node pkg="skytraq_driver" type="parser" name="beacon1_gps_parser">

@@ -1,4 +1,4 @@
-# wait for a shotr time
+# wait until fullscreen app launches
 sleep 10
 
 # program the FPGA's distoriton data
