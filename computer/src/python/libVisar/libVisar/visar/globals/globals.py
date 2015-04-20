@@ -52,7 +52,7 @@ class State(object):
         
     # network information    
     network_peers = None # create object reference, but don't init it yet
-    id_code = ''.join(random.choice('0123456789ABCDEFGHIJKLMNOPQRSTUVWKYZ') for i in range(3)) # random 3 char id
+    #id_code = ''.join(random.choice('0123456789ABCDEFGHIJKLMNOPQRSTUVWKYZ') for i in range(3)) # random 3 char id
     hostname = socket.gethostname() # get computer name for id
   
     # device information
@@ -202,7 +202,7 @@ class State(object):
         # call the target specified in the args register
         #call_target = self.args
         #self.args = None # clear the argument register
-        call_target = CAT # Default call target device
+        call_target = 'CAT' # Default call target device
         try:
             if call_target is None: return # dont do it, seriously
             if not '.' in call_target: call_ip = self.network_peers[call_target][0] # get the ip address if not one already
