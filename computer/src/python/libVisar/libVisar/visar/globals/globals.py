@@ -200,8 +200,9 @@ class State(object):
             self.end_call()
             
         # call the target specified in the args register
-        call_target = self.args
-        self.args = None # clear the argument register
+        #call_target = self.args
+        #self.args = None # clear the argument register
+        call_target = CAT # Default call target device
         try:
             if call_target is None: return # dont do it, seriously
             if not '.' in call_target: call_ip = self.network_peers[call_target][0] # get the ip address if not one already
