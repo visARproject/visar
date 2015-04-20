@@ -14,6 +14,7 @@
 
 #define IN_NAME "/tmp/vsr_audio_pipe"
 #define OUT_NAME "/tmp/vsr_vc_pipe"
+#define DEBUG_FIFO "/tmp/vsr_debug"
 
 void *write_vc(void *fd);
 
@@ -36,6 +37,14 @@ int main(int argc, char **argv) {
     usleep(50000);
   } while((fd[0] = open(IN_NAME, O_RDONLY)) < 0);
   fd[1] = open(OUT_NAME, O_WRONLY);
+
+  int debug_out = 0;
+  debug_out = open(DEBUG_FIFO, O_WRONLY);
+
+  if(debug_out > 0) {
+    char *debug_output = "Debug Pipe Created";
+    write(debug_out, debug_output, strlen(debug_output));
+  }
 
   int32 k; //number of frames read
   int16 buffer[buffer_size]; //buffer used to store input
@@ -71,6 +80,13 @@ int main(int argc, char **argv) {
   }
 
   thread_kill = 1;
+
+  close(fd[0]);
+  close(fd[1]);
+
+  if(debug_out > 0) {
+    close(debug_out);
+  }
 
   return 0;
 }

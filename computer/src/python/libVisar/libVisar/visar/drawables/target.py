@@ -1,7 +1,7 @@
 from __future__ import division
 import numpy as np
 from vispy.gloo import (Program, VertexBuffer, IndexBuffer, Texture2D, clear,
-                        FrameBuffer)
+                        FrameBuffer, set_state)
 from vispy.util.transforms import perspective, translate, rotate
 from vispy.geometry import create_sphere
 from ...OpenGL.drawing import Drawable
@@ -58,6 +58,34 @@ class Target(Drawable):
         }
     """
 
+    targets = {} # list of targets
+    
+    @classmethod
+    def do_update(self, target_dict, context, projection):
+        '''method to create/delete/update targets within the world'''
+        pending_updates = [x for x in self.targets] # get list of all updates to be done
+        
+        for key in target_dict:
+            pos = target_dict[key]['position_ecef'] # get the position
+            try:    # assume target is in list
+                self.targets[key].move((pos['x'],pos['y'],pos['z'])) # issue the update
+                pending_updates.remove(key) # mark target as updated
+            except: # target is not already in list, add it
+                target = Target((pos['x'],pos['y'],pos['z'])) # create object
+                
+                # setup projection matrix
+                target.projection = projection
+                target.program['projection'] = projection    
+                
+                context.append(target) # add to list of renders
+                self.targets[key] = target # add to dictionary
+
+        # remove old targets                
+        for key in pending_updates:         
+            context.remove(self.targets[key]) # remove from render list
+            del self.targets[key]             # remove from dictionary
+                    
+
     def __init__(self, world_pos, color=(1.0, 0.0, 0.5)):
         '''Target(world_pos, color) -> Target
         Arguments:
@@ -92,6 +120,11 @@ class Target(Drawable):
         self.program['projection'] = self.projection
         self.program['color'] = np.array(color)
 
+    def move(self, world_pos):
+        '''Move this target to a new position'''
+        self.model = translate(np.eye(4), *world_pos)
+        self.program['model'] = self.model
+    
     def draw(self):
         self.program.draw('triangle_strip')
-        # utils.Logger.log("Drawing my stuff")
+        #utils.Logger.log("Drawing my stuff")

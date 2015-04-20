@@ -4,7 +4,7 @@ import threading
 from ..interface import Interface
 import time
 
-POSE_PORT    = 19107 # port to communicate with pose server
+POSE_PORT    = 22156 # port to communicate with pose server
 TIMEOUT      = 1     # timeout for socket read (in seconds)
 
 class PoseHandler(Interface):
@@ -60,7 +60,7 @@ class PoseHandler(Interface):
             if beacon['id'] == 'self': # update this units pose
               self.pose = beacon['data'] 
             else: # update the remote units pose
-              self.remotes['id'] = beacon['data'] 
+              self.remotes[beacon['id']] = beacon['data'] 
           except: pass # ignore bad updates
         
         line_buffer = lines[len(lines) - 1] # put unfinished line into buffer

@@ -234,12 +234,12 @@ int setup_voice_control(){
 
 //kill the output pipe, stop 
 void destroy_voice_control(){
-  if(!vc_flag) return;  //nothing to do
+  if(!vc_pipe) return;  //nothing to do
   
   vc_flag = 0;          //signal thread to stop writing data
   while(vc_hold_flag);  //wait for pending writes to finish
   close(vc_pipe);       //close the pipe, signaling that child should close
-  //sleep(TIMEOUT);     //wait for child to respond
+  sleep(TIMEOUT);       //wait for child to respond
   unlink(FIFO_NAME);    //destroy the pipe
   
   printf("Audio Controller: Voice Controller Shutdown\n");

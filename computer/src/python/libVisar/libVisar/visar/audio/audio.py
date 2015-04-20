@@ -12,6 +12,7 @@ AUDIO_PORT     = 19103        # UDP port for audio data
 VC_FIFO_NAME   = '/tmp/vsr_vc_pipe' # pipe for voice commands
 AUDIO_WAIT_TM  = .05          # wait 50ms between operations
 SERVER_TIMEOUT = 1            # timeout for server socket (in seconds)
+VC_HOLD_TIME   = 1            # wait at least 1 second between vc presses
 
 # thread locking
 lock = threading.RLock()
@@ -34,6 +35,7 @@ class AudioController(Interface):
     self.child = Popen(AUDIO_PROGRAM, bufsize=0, stdin=PIPE, stdout=PIPE, stderr=STDOUT, universal_newlines=True) # open subprocess
     self.kill_flag = False
     self.input_buffer = ''
+    self.vc_timer = 0
     
     # create the socket/pipe objects
     self.c_sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -49,19 +51,19 @@ class AudioController(Interface):
       os.mkfifo(VC_FIFO_NAME) # recreate the fifo
     
     # start the voice control program
-    program = Popen(VC_PROGRAM)
-    time.sleep(.05)
+    #program = Popen(VC_PROGRAM)
+    #time.sleep(.05)
     
     # check if program has crashed
-    if program.poll() is not None:
-      print "VC communication failed"
-      self.vc_pipe = None
-      return
-    else: # program didn't die
-      self.vc_pipe = os.open(VC_FIFO_NAME, os.O_RDONLY) # open the pipe
+    #if program.poll() is not None:
+    #  print "VC communication failed"
+    #  self.vc_pipe = None
+    #  return
+    #else: # program didn't die
+    #  self.vc_pipe = os.open(VC_FIFO_NAME, os.O_RDONLY) # open the pipe
 
     # backup method, less robust, but it seems like val's program wont't work otherwise
-    #self.vc_pipe = os.open(VC_FIFO_NAME, os.O_RDONLY) # open the pipe (will block until read from)
+    self.vc_pipe = os.open(VC_FIFO_NAME, os.O_RDONLY) # open the pipe (will block until read from)
 
     # create the thread objects and start the threads
     self.comms  = threading.Thread(target=self.comms_thread)
@@ -72,11 +74,12 @@ class AudioController(Interface):
     self.server.start()
     
   
-  def destroy(self):
-    self.kill_flag = True # kill the process
-    
+  def destroy(self):    
     self.stop() # stop active calls
+    self.vc_timer = 0
     self.stop_voice() # stop VC
+    
+    self.kill_flag = True # kill the process
     
     # send shutdown to child process
     lock.acquire()
@@ -147,13 +150,14 @@ class AudioController(Interface):
     
   # start the voice controller
   def start_voice(self):
-    if self.vc_active: # check if already listening
+    if self.vc_active  or time.clock() < self.vc_timer + VC_HOLD_TIME: # check if already listening
       self.do_updates(('Error','VC is already active'))
       return False
     lock.acquire()
     self.child.stdin.write('voice_start\n')
     lock.release()
     self.vc_active = True
+    self.vc_timer = time.clock()
     self.do_updates(('started_vc','')) # send start log
     if(self.connection is None):
       self.connection = ('voice', None, 'mic') # connection is in voice mode
@@ -161,7 +165,7 @@ class AudioController(Interface):
   
   # stops the voice controller
   def stop_voice(self):
-    if not self.vc_active: 
+    if not self.vc_active or time.clock() < self.vc_timer + VC_HOLD_TIME: 
       return False # exit if not listening
     global lock
     lock.acquire()
@@ -169,6 +173,7 @@ class AudioController(Interface):
     lock.release()
     self.do_updates(('stopped_vc','')) # send shutdown update
     self.vc_active = False # stop vc activities
+    self.vc_timer = time.clock()
     if(self.connection is not None and self.connection[0] == 'voice'): 
       self.connection = None  # clear the connection state
     return True
@@ -210,7 +215,13 @@ class AudioController(Interface):
   
   # server handler thread
   def server_thread(self):
-    self.s_sock.bind(('',CONTROL_SERVER))
+    try: 
+      self.s_sock.bind(('',CONTROL_SERVER))
+    except:
+      print 'Failed to start audio program, check network settings'
+      self.kill_flag = True
+      return
+    
     self.s_sock.listen(1)
     self.s_sock.settimeout(SERVER_TIMEOUT) # timeout after 1 second
     global lock # use the global lock object
