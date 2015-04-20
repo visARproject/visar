@@ -81,11 +81,11 @@ int main(int argc, char **argv) {
 
   thread_kill = 1;
 
-  fd[0].close();
-  fd[1].close();
+  close(fd[0]);
+  close(fd[1]);
 
   if(debug_out > 0) {
-    debug_out.close();
+    close(debug_out);
   }
 
   return 0;
