@@ -76,6 +76,7 @@ class AudioController(Interface):
   
   def destroy(self):    
     self.stop() # stop active calls
+    self.vc_timer = 0
     self.stop_voice() # stop VC
     
     self.kill_flag = True # kill the process
@@ -156,6 +157,7 @@ class AudioController(Interface):
     self.child.stdin.write('voice_start\n')
     lock.release()
     self.vc_active = True
+    self.vc_timer = time.clock()
     self.do_updates(('started_vc','')) # send start log
     if(self.connection is None):
       self.connection = ('voice', None, 'mic') # connection is in voice mode
@@ -163,7 +165,7 @@ class AudioController(Interface):
   
   # stops the voice controller
   def stop_voice(self):
-    if not self.vc_active: 
+    if not self.vc_active time.clock() < self.vc_timer + VC_HOLD_TIME: 
       return False # exit if not listening
     global lock
     lock.acquire()
