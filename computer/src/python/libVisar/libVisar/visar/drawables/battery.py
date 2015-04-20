@@ -13,8 +13,6 @@ from ..globals import State, Paths
 
 from PIL import Image
 
-import imageio
-
 class Battery(Drawable):
     battery_vertex_shader = """
         #version 120

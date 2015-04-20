@@ -165,7 +165,7 @@ class AudioController(Interface):
   
   # stops the voice controller
   def stop_voice(self):
-    if not self.vc_active time.clock() < self.vc_timer + VC_HOLD_TIME: 
+    if not self.vc_active or time.clock() < self.vc_timer + VC_HOLD_TIME: 
       return False # exit if not listening
     global lock
     lock.acquire()
