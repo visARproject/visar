@@ -74,14 +74,22 @@ class Mesh(object):
         int test = 0;
         float tex_scale = 0.1;
 
-        float r = texture2D(texture, (oRed_xy * tex_scale)).r;
-        float g = texture2D(texture, (oGreen_xy * tex_scale)).g;
-        float b = texture2D(texture, (oBlue_xy * tex_scale)).b;
-        if (test == 1) {
+        float r = 0.0;
+        float g = 0.0;
+        float b = 0.0;
 
-            r = 0.0;
-            g = 0.0;
-            b = 0.0;
+
+        // (This is because the FPGA uses the top right pixel to calibrate for true black)
+        if (((oRed_xy.x * tex_scale) > 0.22) || ((oRed_xy.y * tex_scale) > 0.24)) {
+            gl_FragColor = vec4(0.0, 0.0, 0.0, 1.0);
+        } else {
+            r = texture2D(texture, (oRed_xy * tex_scale)).r;
+            g = texture2D(texture, (oGreen_xy * tex_scale)).g;
+            b = texture2D(texture, (oBlue_xy * tex_scale)).b;
+            gl_FragColor = vec4(r, g, b, 1);
+        }
+
+        if (test == 1) {
             if ((tex_scale * oBlue_xy.x) < 0.0) {
                 b = 0.9;
             }
@@ -94,12 +102,13 @@ class Mesh(object):
             if ((tex_scale * oBlue_xy.y) < 0.0) {
                 r = 0.2;
             }
+            gl_FragColor = vec4(r, g, b, 1);
         }
-        gl_FragColor = vec4(r, g, b, 1);
 
         if (test == 2) {
             gl_FragColor = vec4(oRed_xy.x * tex_scale, oRed_xy.y * tex_scale, 1, 1);
         }
+
     }
     '''
 

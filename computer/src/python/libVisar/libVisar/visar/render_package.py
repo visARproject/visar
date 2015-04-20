@@ -13,7 +13,7 @@ from vispy import app
 from ..OpenGL.utils import Logger
 from ..OpenGL.shaders import Distorter
 from ..OpenGL.drawing import Drawable, Context
-from .drawables import Example, Target, Map, Button, Brain, Toast, Battery
+from .drawables import Example, Target, Map, Button, Brain, Toast, Menu, Battery
 from .environments import Terrain
 from .globals import State, Paths
 
@@ -56,10 +56,20 @@ class Renderer(app.Canvas): # Canvas is a GUI object
         
         # Create a rendering context (A render list)
         Logger.set_verbosity('log')
-        renders = []
-        
+        renders = [
+            # Target((738585.65, -5498364.10, 3136365.42), color=(0.2, 0.8, 0.4)),
+            # Target((0.0, 10.0, 0.0), color=(0.2, 0.8, 0.4)),
+            # Target((10.0, 10.0, 0.0), color=(0.2, 0.8, 0.4)),
+
+        ]
+
+        # fault tolerant map initialization
+        map_ob = Map()
         UI_elements = [
+            map_ob,
             Toast(self),
+            # Target(738575.65, -5498374.10, 3136355.42)  # ECEF
+            # Menu(self),
             Button('Toggle Map', self, position=1),
             Button('Make Call', self, position=3),
             Button('End Call', self, position=2),
@@ -69,15 +79,10 @@ class Renderer(app.Canvas): # Canvas is a GUI object
             Button('List Peers', self, position=7),
             Button('Set Target', self, position=8),
             Button('Update Status', self, position=9),
-            Battery(),
         ]
 
-        #fault tolerant map initialization
-        try:    
-            map_ob = Map()
-            UI_elements.append(map_ob)
-        except: 
-            Logger.warn("Failed to Initialize the map")        
+        # except: 
+            # Logger.warn("Failed to Initialize the map")        
 
         self.view = np.eye(4)
         self.Render_List = Context(*renders)
@@ -113,15 +118,9 @@ class Renderer(app.Canvas): # Canvas is a GUI object
     def on_timer(self, event):
         if State.shutdown_flag: self.close() # shutdown if signaled
         
-        # Rotate the view matrix
-        view = translate(np.eye(4), *(-1.0*State.position_ecef))
-        view = xrotate(view, State.roll)
-        view = yrotate(view, State.pitch)
-        view = zrotate(view, State.yaw)
-        State.set_orientation_matrix(view)
-        self.view = view
-        
         # Update and draw
+        self.Render_List.set_view(State.orientation_matrix)
+
         Target.do_update(State.targets, self.Render_List, self.projection) # update the targets
         self.Render_List.update()
         self.UI_elements.update()
@@ -151,53 +150,54 @@ class Renderer(app.Canvas): # Canvas is a GUI object
         i(I) - zoom in
         o(O) - zoom out
         """
-        #self.translate = [0, 0, 0]
-        #self.rotate = [0, 0, 0]
+        self.translate = [0, 0, 0]
+        self.rotate = [0, 0, 0]
 
+        # print event.text
         if(event.text == 'p' or event.text == 'P'):
             print(self.view)
-            '''
-            elif(event.text == 'd' or event.text == 'D'):
-                self.translate[0] = 0.3
-            elif(event.text == 'a' or event.text == 'A'):
-                self.translate[0] = -0.3
-            elif(event.text == 'w' or event.text == 'W'):
-                self.translate[1] = 0.3
-            elif(event.text == 's' or event.text == 'S'):
-                self.translate[1] = -0.3
-            elif(event.text == 'o' or event.text == 'O'):
-                self.translate[2] = 0.3
-            elif(event.text == 'i' or event.text == 'I'):
-                self.translate[2] = -0.3
-            elif(event.text == 'x'):
-                self.rotate = [1, 0, 0]
-            elif(event.text == 'X'):
-                self.rotate = [-1, 0, 0]
-            elif(event.text == 'y'):
-                self.rotate = [0, 1, 0]
-            elif(event.text == 'Y'):
-                self.rotate = [0, -1, 0]
-            elif(event.text == 'z'):
-                self.rotate = [0, 0, 1]
-            elif(event.text == 'Z'):
-                self.rotate = [0, 0, -1]
-            '''
+        # '''
+        elif(event.text == 'd' or event.text == 'D'):
+            self.translate[0] = 0.3
+        elif(event.text == 'a' or event.text == 'A'):
+            self.translate[0] = -0.3
+        elif(event.text == 'w' or event.text == 'W'):
+            self.translate[1] = 0.3
+        elif(event.text == 's' or event.text == 'S'):
+            self.translate[1] = -0.3
+        elif(event.text == 'o' or event.text == 'O'):
+            self.translate[2] = 0.3
+        elif(event.text == 'i' or event.text == 'I'):
+            self.translate[2] = -0.3
+        elif(event.text == 'x'):
+            self.rotate = [1, 0, 0]
+        elif(event.text == 'X'):
+            self.rotate = [-1, 0, 0]
+        elif(event.text == 'y'):
+            self.rotate = [0, 1, 0]
+        elif(event.text == 'Y'):
+            self.rotate = [0, -1, 0]
+        elif(event.text == 'z'):
+            self.rotate = [0, 0, 1]
+        elif(event.text == 'Z'):
+            self.rotate = [0, 0, -1]
+        # '''
         elif(event.text == 'B'):
             State.shutdown_flag = True
         elif(event.text == ' ' or event.key == 'Space'):
             State.make_call()
             return
-            '''
+            # '''
             default_view = np.array(
-                [[0.8, 0.2, -0.48, 0],
-                 [-0.5, 0.3, -0.78, 0],
-                 [-0.01, 0.9, -0.3, 0],
-                 [-4.5, -21.5, -7.4, 1]],
-                 dtype=np.float32
+            [[0.8, 0.2, -0.48, 0],
+             [-0.5, 0.3, -0.78, 0],
+             [-0.01, 0.9, -0.3, 0],
+             [-4.5, -21.5, -7.4, 1]],
+             dtype=np.float32
             )
 
             self.view = default_view
-            '''
+            # '''
         elif(event.text == '['):
             State.button_up()
         elif(event.text == ']'):
@@ -208,18 +208,19 @@ class Renderer(app.Canvas): # Canvas is a GUI object
             State.button_down()
         elif event.key == 'Enter':
             State.press_enter()
-        elif event.key is not None and event.text is not None:
-            Logger.warn('Unrecognized key', event.text)
-            Logger.warn(event.key)
-        '''
-        translate(self.view, -self.translate[0], -self.translate[1],
-                  -self.translate[2])
-        xrotate(self.view, self.rotate[0])
-        yrotate(self.view, self.rotate[1])
-        zrotate(self.view, self.rotate[2])
+        # elif event.key is not None and event.text is not None:
+        #     Logger.warn('Unrecognized key', event.text, event.key)
+
+        # '''
+        # translate(self.view, -self.translate[0], -self.translate[1],
+        #           -self.translate[2])
+        # xrotate(self.view, self.rotate[0])
+        # yrotate(self.view, self.rotate[1])
+        # zrotate(self.view, self.rotate[2])
         
-        State.set_orientation_matrix(self.view)
-        '''
+        # self.Render_List.translate(-self.translate[0], -self.translate[1], -self.translate[2])
+        # State.set_orientation_matrix(self.view)
+        # '''
     
 def main():
     if(args.no_audio): 

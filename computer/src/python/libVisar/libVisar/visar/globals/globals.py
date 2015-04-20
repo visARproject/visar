@@ -86,6 +86,7 @@ class State(object):
         
         self.pose_handler = PoseHandler(frequency=1.0/30.0)
         self.pose_count = 0
+
         
         self.device_handler = DeviceHandler() 
 
@@ -104,15 +105,14 @@ class State(object):
                   position = (event['position_ecef']['x'], event['position_ecef']['y'], 
                               event['position_ecef']['z'])
                   State.set_position(position)
-                  orientation = (event['orientation_ecef']['x'], event['orientation_ecef']['y'], 
-                              event['orientation_ecef']['z'], event['orientation_ecef']['w'])
+                  orientation = (event['orientation_ecef']['w'], event['orientation_ecef']['x'], event['orientation_ecef']['y'], 
+                              event['orientation_ecef']['z'],)
                   State.set_orientation(orientation)
                   State.pose = event # store the full value
               except: Logger.log("Bad Pose Update")
 
             elif event[0] == 'REMOTE': # grab a copy of remote data
               self.targets = copy.deepcopy(event[1])              
-          
         self.pose_handler.add_callback(pose_callback)
 
 
@@ -232,8 +232,11 @@ class State(object):
 
     @classmethod
     def set_orientation_matrix(self, orientation_matrix):
-        gl_orientation_matrix = orientation_matrix
-        self.roll, self.pitch, self.yaw = euler_from_matrix(gl_orientation_matrix)
+        # gl_orientation_matrix = orientation_matrix
+        self.orientation_matrix = orientation_matrix
+        # self.orientation_matrix = orientation_matrix
+
+        # self.roll, self.pitch, self.yaw = euler_from_matrix(gl_orientation_matrix)
 
     @classmethod
     def set_orientation(self, quaternion):

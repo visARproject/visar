@@ -23,6 +23,10 @@ MAP:
     - Come up with a better cacheing scheme
     - Add the ability to move (at all)
     - Rotate to look cooler (Facing in toward the user's eyes?)
+    
+    - Targets on map
+    - Map cacheing
+    - Add a circle background to the map with a north-indicator
 
 MENU:
     - Text has weird white outline
@@ -45,3 +49,22 @@ Val; Add capability for drawing menu title in menu`
 
 Jacob; Try different target shapes
 --> Use a picture of Mike's face as the object indicator
+
+
+Good try-sar
+Sighsar
+Goodbyesar
+Liesar
+Falsifysar
+Crysar
+Whysar
+Flysar
+Prysar
+burger frysar
+
+Connect to port: 22156
+
+
+Need pose knowledge:
+- Map,
+- Targets

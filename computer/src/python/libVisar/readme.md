@@ -7,7 +7,7 @@ Contains everything you've ever wanted in a Python augmented reality package.
 
 ## Requirements
 * vispy (Install from source, ```git clone git@github.com:vispy/vispy.git```, must be commit b64489b)
-* OSMViz (Now included in vsr)(For mapping, install from source, ```git clone https://github.com/cbick/osmviz.git```)
+* OSMViz (Now included in vsr)
 * numpy
 * PyOpenGL
 * QT4
@@ -28,6 +28,8 @@ Contains everything you've ever wanted in a Python augmented reality package.
 Install all of these for things to work!
 
 ## Install
+Get the requirements using install.sh
+
 Do this! You don't have to run this every time you make a change
     sudo python setup.py develop
     ./build_vsr [opus]
@@ -62,3 +64,26 @@ To add words to be recognized navigate to the file "libVisar/visar/audio/corpus.
 - Should be able to bench-test with a simulator (i.e. change pose source, change view source)
 - Should be able to bench-test with AND without oculus rift distortion
 - It should be easy to add simulated input
+
+
+# Running stuff with Forrest's Kalman Filter
+
+## Installing
+To install, go to visar, pull
+git submodule update --init
+mkdir -p ~/repos/visar_ws/src
+cd ~/repos/visar_ws/src
+catkin_init_workspace
+ln -s (path to visar/ros) visar_ros
+cd ..
+catkin_make
+source ./devel/setup.bash
+catkin_make
+
+## Running
+roslaunch visar_gps run.launch host_id:=visar2 interface:=192.168.1.142 fake_gps:=true --screen
+(Make interface your ip)
+Then run vsr your preferred way
+
+You should see a beacon near you.
+
