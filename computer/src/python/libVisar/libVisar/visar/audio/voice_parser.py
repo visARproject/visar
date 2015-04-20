@@ -50,7 +50,7 @@ class Parser(object):
         command = ""
         args = ""
         for x in range(1, len(words) + 1):
-            Logger.log('x: %s' % (x,)) #Debug
+            # Logger.log('x: %s' % (x,)) #Debug
             test_command = ""
             test_args = ""
 
@@ -60,7 +60,7 @@ class Parser(object):
                 else:
                     test_command += " " + words[y]
 
-            Logger.log('command: %s' % (test_command,)) #Debug
+            # Logger.log('command: %s' % (test_command,)) #Debug
           
             for y in range(x, len(words)):
                 if y == len(words):
@@ -81,22 +81,22 @@ class Parser(object):
             bad_command = True
 
             for y in self.key_words:
-                Logger.log('y: %s' % (y,)) #Debug
-                Logger.log('test: %s' % (test_command.lower(),)) #Debug
+                # Logger.log('y: %s' % (y,)) #Debug
+                # Logger.log('test: %s' % (test_command.lower(),)) #Debug
                 if test_command.lower() == y:
                     command = self.key_words[test_command.lower()]
                     args = test_args
                     bad_command = False
                 elif test_command.lower() in y:
-                    Logger.log('Here: %s' % ("here",)) #Debug
+                    # Logger.log('Here: %s' % ("here",)) #Debug
                     bad_command = False
 
-            Logger.log('here: %s' % (bad_command,)) #Debug
+            # Logger.log('here: %s' % (bad_command,)) #Debug
             if bad_command == True:
                 break
-            Logger.log('here: %s' % ("1",)) #Debug
+            # Logger.log('here: %s' % ("1",)) #Debug
 
-        Logger.log('tuple: %s' % (tup,)) #Debug
+        # Logger.log('tuple: %s' % (tup,)) #Debug
 
         args_list = args.split(' ')
 

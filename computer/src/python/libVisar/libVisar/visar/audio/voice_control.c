@@ -28,6 +28,8 @@ static ps_decoder_t *ps;
 
 static int buffer_size;
 
+static int utt_flag = 0;
+
 int main(int argc, char **argv) {
   buffer_size = 640;
 
@@ -36,7 +38,10 @@ int main(int argc, char **argv) {
   do {
     usleep(50000);
   } while((fd[0] = open(IN_NAME, O_RDONLY)) < 0);
-  fd[1] = open(OUT_NAME, O_WRONLY);
+
+  do {
+    usleep(50000);
+  } while((fd[1] = open(OUT_NAME, O_WRONLY)) < 0);
 
   int debug_out = 0;
   debug_out = open(DEBUG_FIFO, O_WRONLY);
@@ -59,9 +64,21 @@ int main(int argc, char **argv) {
   //setup decoder
   ps = ps_init(config);
 
+  if(debug_out > 0) {
+    char *debug_output = "init success";
+    write(debug_out, debug_output, strlen(debug_output));
+  }
+
   //tell thread error 1
   if(ps_start_utt(ps) < 0) {
     thread_err = 1;
+  }
+
+  utt_flag = 1;
+
+  if(debug_out > 0) {
+    char *debug_output = "Utt success";
+    write(debug_out, debug_output, strlen(debug_output));
   }
 
   pthread_t thread;
@@ -74,18 +91,28 @@ int main(int argc, char **argv) {
 
   //go as long as there's a pipe
   while((k = read(fd[0], buffer, buffer_size)) > 0) {
+    if(debug_out > 0) {
+      char *debug_output = "inside while";
+      write(debug_out, debug_output, strlen(debug_output));
+    }
     write_available = (write_available + 1) % 16; // go between 0 - 15
-    ps_process_raw(ps, buffer, k/2, 0, 0); //begins decoding using the number of frames it could read
+    if(utt_flag) {
+      if(debug_out > 0) {
+        char *debug_output = "inside flag";
+        write(debug_out, debug_output, strlen(debug_output));
+      }
+      ps_process_raw(ps, buffer, k/2, 0, 0); //begins decoding using the number of frames it could read
+    }
     write_available = (write_available + 1) % 16; // go between 0 - 15
   }
 
   thread_kill = 1;
 
-  fd[0].close();
-  fd[1].close();
+  close(fd[0]);
+  close(fd[1]);
 
   if(debug_out > 0) {
-    debug_out.close();
+    close(debug_out);
   }
 
   return 0;
@@ -116,6 +143,7 @@ void *write_vc(void *fd) {
   while(!thread_kill) {
     if(c == write_available) {
       if(!write_check) {
+        utt_flag = 0;
         ps_end_utt(ps); //end the utterance
         hyp = ps_get_hyp(ps, NULL); //get the hypothesis
         memcpy(new_hyp, hyp, buffer_size/2); //transfer hyp to prevent corruption
@@ -132,6 +160,8 @@ void *write_vc(void *fd) {
           strcat(sentence, new_hyp);
           strcat(sentence, "\n");
         }
+
+        utt_flag = 1;
 
         write(pipe, sentence, strlen(sentence)); //send results to output pipe
         
