@@ -23,6 +23,9 @@ parser = argparse.ArgumentParser(description='Display the VisAR augmented realit
 parser.add_argument('-d', '--draw_terrain', dest='draw_terrain', action='store_true',
                    default=False,
                    help='Draw simulated terrain')
+parser.add_argument('-na', '--no_audio', dest='no_audio', action='store_true',
+                   default=False,
+                   help='Disable audio')
 parser.add_argument('-f', '--fullscreen', dest='full', action='store_true',
                     default=False,
                     help='Launch visar program in Fullscreen mode')
@@ -219,7 +222,10 @@ class Renderer(app.Canvas): # Canvas is a GUI object
         '''
     
 def main():
-    State.do_init() # initialize the state objects/threads
+    if(args.no_audio): 
+        State.do_init(audio=False) # initialize the state objects/threads
+    else:
+        State.do_init(audio=True) # initialize the state objects/threads
     app.use_app(backend_name='PyGlet')
     c = Renderer()
     c.show()

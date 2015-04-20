@@ -68,20 +68,21 @@ class State(object):
     current_button = 3
 
     hide_map = False
+    audio = True
 
     @classmethod
-    def do_init(self):
+    def do_init(self, audio=True):
         '''Function will initialize all status listeners and controllers
            Once this function is called, you must call State.destroy() before 
               exiting or hanging threads will prevent program from closing.
         '''
-
+        self.audio = audio
         self.action_dict = Actions.get_actions(self) # bind the avaliable actions
         
         # initialize state listeners and controllers
         self.network_state = NetworkState(self.id_code, self.hostname, 'default status') # create network state tracker
 
-        self.audio_controller = AudioController() # create audio manager
+        if(audio): self.audio_controller = AudioController() # create audio manager
         
         self.pose_handler = PoseHandler(frequency=1.0/30.0)
         self.pose_count = 0
@@ -127,7 +128,7 @@ class State(object):
                     State.action_dict[command[0]]() # call the command
                 except: Logger.log('Bad Command, expected: (func, args), got: %s' % (command,))
             
-        self.audio_controller.add_callback(audio_callback) # add the callback
+        if(audio): self.audio_controller.add_callback(audio_callback) # add the callback
         
         self.network_peers = self.network_state.peers # get the initial peers
     
@@ -266,7 +267,7 @@ class State(object):
         '''Signal modules to die and expire handler threads'''
         self.pose_handler.destroy()
         self.network_state.destroy()
-        self.audio_controller.destroy()
+        if(self.audio): self.audio_controller.destroy()
         self.device_handler.destroy() 
         
     @classmethod
