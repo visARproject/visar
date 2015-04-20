@@ -55,7 +55,7 @@ class OtherEntity(object):
             pl.transport.write(json.dumps(dict(
                 id=self.h,
                 data=dict(
-                    position_ecef=xyz_dict(dpos_filtered + local_pos),
+                    position_ecef=xyz_dict(dpos_filtered),
                 ),
             )) + '\r\n')
 
@@ -96,7 +96,7 @@ def main():
                 ),
             )) + '\r\n')
             if fake_gps:
-                fake_pos = gps.ecef_from_enu([3, 0, 0], xyz_array(msg.pose.pose.position)) + xyz_array(msg.pose.pose.position)
+                fake_pos = gps.ecef_from_enu([3, 0, 0], xyz_array(msg.pose.pose.position)) #+ xyz_array(msg.pose.pose.position)
                 pl.transport.write(json.dumps(dict(
                     id='beacon1',
                     data=dict(
