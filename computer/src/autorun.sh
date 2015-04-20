@@ -9,10 +9,13 @@ ifconfig wlan1 192.168.1.2
 DISPLAY=:0.0 xrandr -o left
 
 # Uncomment if program displays on half of the screen, fixes resolution
-DISPLAY=:0.0 xrandr --output HDMI-0 --mode 1080x1920 --rate 48.0
+#DISPLAY=:0.0 xrandr --output HDMI-0 --mode 1080x1920 --rate 48.0
 
 # start Voice control program in background (should hopefully be bundled)
 (/home/ubuntu/src/python/libVisar/libVisar/visar/audio/vc &)
+
+# start the rosnode
+roslaunch visar_gps run.launch host_id:=visar2 interface:=192.168.1.14 fake_gps:=true --screen
 
 # start the visar program in fullscreen mode
 vsr -f
