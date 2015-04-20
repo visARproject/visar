@@ -210,7 +210,13 @@ class AudioController(Interface):
   
   # server handler thread
   def server_thread(self):
-    self.s_sock.bind(('',CONTROL_SERVER))
+    try: 
+      self.s_sock.bind(('',CONTROL_SERVER))
+    except:
+      print 'Failed to start audio program, check network settings'
+      self.kill_flag = True
+      return
+    
     self.s_sock.listen(1)
     self.s_sock.settimeout(SERVER_TIMEOUT) # timeout after 1 second
     global lock # use the global lock object
