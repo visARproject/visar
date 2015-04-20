@@ -4,7 +4,7 @@ import threading
 from ..interface import Interface
 import time
 
-POSE_PORT    = 19107 # port to communicate with pose server
+POSE_PORT    = 22156 # port to communicate with pose server
 TIMEOUT      = 1     # timeout for socket read (in seconds)
 
 class PoseHandler(Interface):
