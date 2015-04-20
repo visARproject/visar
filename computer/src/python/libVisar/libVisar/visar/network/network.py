@@ -7,7 +7,7 @@ from ..interface import Interface
 BROADCAST_PORT = 19105  # UDP port for status broadcast
 UPDATE_PORT    = 19106  # UDP port for status update
 TIMEOUT        = 1      # socket timeout (seconds)    
-UPDATE_TIMER   = 30     # how often to send updates/ping dead clients
+UPDATE_TIMER   = 10     # how often to send updates/ping dead clients
 BIND_ADDR      = '' 
 BROADCAST_ADDR = '192.168.1.255' # TODO: find this dynamically
 
