@@ -52,7 +52,7 @@ class State(object):
         
     # network information    
     network_peers = None # create object reference, but don't init it yet
-    #id_code = ''.join(random.choice('0123456789ABCDEFGHIJKLMNOPQRSTUVWKYZ') for i in range(3)) # random 3 char id
+    id_code = ''.join(random.choice('0123456789ABCDEFGHIJKLMNOPQRSTUVWKYZ') for i in range(3)) # random 3 char id
     hostname = socket.gethostname() # get computer name for id
   
     # device information
