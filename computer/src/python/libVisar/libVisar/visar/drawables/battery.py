@@ -72,7 +72,7 @@ class Battery(Drawable):
 
         height, width   = 3.0, 6.0
         scale_factor    = 0.2
-        x_offset        = 0
+        x_offset        = -1.35
         y_offset        = 4.5
         pixel_to_length = 10
         color           = (1.0, 1.0, 1.0)
