@@ -1,11 +1,12 @@
 #include <stdlib.h>
 #include <string.h>
 #include <stdint.h>
+#include <stdio.h>
 #include <libopencm3/stm32/rcc.h>
 #include <libopencm3/stm32/gpio.h>
 #include <libopencm3/stm32/usart.h>
 #include <libopencm3/cm3/nvic.h>
-
+#include <libopencm3/stm32/adc.h>
 
 #include "xbee.h"
 #include "gps.h"
@@ -21,6 +22,55 @@ gps_state_t gps_rx_state = GPS_START1;
 gps_state_t gps_tx_state = GPS_START1;
 Queue<gps_packet_t, 20> gps_rx_queue;
 Queue<gps_packet_t, 3> gps_tx_queue;
+
+
+
+static void adc_setup(void)
+{
+    gpio_set_mode(GPIOA, GPIO_MODE_INPUT, GPIO_CNF_INPUT_ANALOG, GPIO0);
+    //gpio_set_mode(GPIOA, GPIO_MODE_INPUT, GPIO_CNF_INPUT_ANALOG, GPIO1);
+
+    /* Make sure the ADC doesn't run during config. */
+    adc_off(ADC1);
+
+    /* We configure everything for one single conversion. */
+    adc_disable_scan_mode(ADC1);
+    adc_set_single_conversion_mode(ADC1);
+    adc_disable_external_trigger_regular(ADC1);
+    adc_set_right_aligned(ADC1);
+    adc_set_sample_time_on_all_channels(ADC1, ADC_SMPR_SMP_28DOT5CYC);
+
+    adc_power_on(ADC1);
+
+    /* Wait for ADC starting up. */
+    int i;
+    for (i = 0; i < 800000; i++) /* Wait a bit. */
+        __asm__("nop");
+
+    adc_reset_calibration(ADC1);
+    adc_calibration(ADC1);
+}
+
+static uint16_t read_adc_naiive(uint8_t channel)
+{
+    uint8_t channel_array[16];
+    channel_array[0] = channel;
+    adc_set_regular_sequence(ADC1, 1, channel_array);
+    adc_start_conversion_direct(ADC1);
+    while (!adc_eoc(ADC1));
+    uint16_t reg16 = adc_read_regular(ADC1);
+    return reg16;
+}
+
+float get_voltage(void) {
+    float voltage = 0;
+
+    for(int i = 0; i < 20; ++i) {
+        voltage += 11*(read_adc_naiive(0)*(3.3/4095.0));
+    }
+
+    return voltage/20.0;
+}
 
 /*
  New USART mapping:
@@ -46,6 +96,9 @@ static void clock_setup(void)
     
     // Enable clocks for USART3 (XBEE).
     rcc_periph_clock_enable(RCC_USART3);
+
+    rcc_periph_clock_enable(RCC_ADC1);
+
 }
 
 static void gpio_setup(void)
@@ -257,7 +310,7 @@ void usart2_isr(void)
         volatile uint8_t data = usart_recv(USART2);
         static uint16_t rx_index = 0;
 
-        usart_send(USART1, data);
+        //usart_send(USART1, data);
 
         switch (gps_rx_state) {
             case GPS_START1:
@@ -367,20 +420,33 @@ gps_packet_t binary_rate = {8, {0x1E, 0x03, 0x01, 0x01, 0x01, 0x01, 0x01, 0x00}}
 
 int main(void)
 {
-
+    float voltage;
     uint8_t skytraq_packet_id = 0;
 
     clock_setup();
     gpio_setup();
     usart_setup();
+    adc_setup();
     
     delay_ms(100);
     gps_tx_queue.enqueue(binary_rate);
     usart_enable_tx_interrupt(USART2); // enable GPS TX interrupt
     
     while (1) {
-//        __asm__("NOP");
-
+        voltage = get_voltage();
+        if (voltage < 6.2) {
+        //    char buf[100];
+        //    sprintf(buf, "%f\r\n", voltage);
+        //    for(int i = 0; i < strlen(buf); ++i){
+        //        usart_send_blocking(USART1, buf[i]);
+        //    }
+            usart_disable_tx_interrupt(USART2);
+            usart_disable_rx_interrupt(USART2);
+            gpio_clear(GPIOB, GPIO2 | GPIO12); // hold both GPS and XBEE in reset
+            usart_disable_tx_interrupt(USART3);
+            usart_disable_rx_interrupt(USART3);
+            while(1); // and spin
+        } 
         xbee_packet_t xbee_pkt;
 
         if (!gps_rx_queue.isEmpty()) {
