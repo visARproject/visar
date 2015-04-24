@@ -80,7 +80,18 @@ audiobuffer* create_speaker_thread(snd_pcm_t* pcm_handle, size_t period, size_t 
   //create thread and send it the package
   pthread_t thread; //thread handler
   int rc = pthread_create(&thread, NULL, speaker_thread, (void*)pkg);
-  if (rc) printf("ERROR: Could not create device thread, rc=%d\n", rc); //print errors
+  if (rc){ 
+    printf("ERROR: Could not create device thread, rc=%d\n", rc); //print errors
+  }
+  struct sched_param param;
+  int mode;
+  pthread_getschedparam(thread, &mode, &param);
+  param.sched_priority = 70;
+  //pthread_setschedpolicy(thread, SCHED_RR);
+  if(rc = pthread_setschedparam(thread, SCHED_RR, &param))
+  //if(rc = pthread_setschedprio(thread, 70)) //try to give the thread priority
+    printf("Could not increase thread priority, %d\n",rc); 
+  printf("Max: %d, Min: %d\n", sched_get_priority_max(SCHED_RR),  sched_get_priority_min(SCHED_OTHER));
   
   return buffer; //return the device's audio buffer
 }
@@ -124,7 +135,7 @@ void *speaker_thread(void* ptr){
     //wait until adequate buffer is achieved
     if((!started && BUFFER_SIZE(*buf) < (MIN_BUFFER)) || BUFFER_EMPTY(*buf)){
       //printf("Speaker Waiting\n");
-      usleep(PERIOD_UTIME/2); //wait to reduce CPU usage
+      usleep(PERIOD_UTIME); //wait to reduce CPU usage
       continue;     //don't start yet
     } else {
       if(!started) snd_pcm_prepare(speaker_handle); //reset speaker

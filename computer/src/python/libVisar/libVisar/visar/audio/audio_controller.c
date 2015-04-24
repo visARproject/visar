@@ -10,7 +10,6 @@
 #include <stdio.h>
 #include <string.h>
 #include <unistd.h>
-#include <pthread.h>
 #include <alsa/asoundlib.h>
 #include <signal.h>
 #include <fcntl.h>
