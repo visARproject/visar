@@ -16,6 +16,8 @@
 #include "comms.h"
 #include "encode.h"
 
+int seq_num;
+
 //function for recieving audio
 void *reciever_thread(void *ptr){
   audiobuffer* buf = ((comms_package*)ptr)->buf; //extract the buffer
@@ -39,7 +41,7 @@ void *reciever_thread(void *ptr){
   int true = 1;
   setsockopt(sock,SOL_SOCKET,SO_REUSEADDR,&true,sizeof(int)); //allow socket reuse
   
-  
+  int last_seq = 0;  
   char ack = 0; //define an ack message (have to give pointer)
   int len = sizeof(client);  //recieve needs struct length to get client info
   char decode_buf[buf->per_size]; //allocate buffer for recieving data pre decode
@@ -50,7 +52,18 @@ void *reciever_thread(void *ptr){
       int bytes = recvfrom(sock, decode_buf, buf->per_size, 0, (struct sockaddr *)&client, &len); //get an input packet
       //int bytes = recvfrom(sock, GET_QUEUE_TAIL(*buf), buf->per_size, 0, (struct sockaddr *)&client, &len); //get an input packet
       //printf("%d\n",bytes); 
+            
       if(bytes > 0){ //ack successful packets, report error otherwise
+
+#ifdef DEBUG_MODE
+        //get and print the sequence number
+        int seq = (int)decode_buf[--bytes];
+        printf("Got #%d\n", seq);
+        if(seq != (last_seq+1)%128)
+          printf("ERROR: SEQUENCE OUT OF ORDER: %d, %d\n",last_seq, seq);
+        last_seq = seq;
+#endif /* DEBUG_MODE */
+
         decode(decode_buf, GET_QUEUE_TAIL(*buf), bytes); //decode the input
         //write(stdout, GET_QUEUE_TAIL(*buf), buf->per_size); //DEBUG
         INC_QUEUE_TAIL(*buf); //increment if successful
@@ -92,7 +105,14 @@ int start_reciever(int port, audiobuffer* buf, int* flag){
 int send_packet(sender_handle* snd){
   char encode_buf[snd->len]; //allocate buffer for encoded data
   int bytes = encode(snd->buf, encode_buf, snd->len); //encode the data
-  bytes = sendto(snd->sock, encode_buf, bytes, 0, (struct sockaddr *)&(snd->dest), sizeof(snd->dest)); //send the packet
+    
+#ifdef DEBUG_MODE
+  //include sequence num after data packet
+  encode_buf[bytes++] = (char) seq_num;
+  seq_num = (seq_num+1)%128;
+#endif 
+  
+  bytes = sendto(snd->sock, encode_buf, bytes, 0, (struct sockaddr *)&(snd->dest), sizeof(snd->dest)); //send the packet  
   //int bytes = sendto(snd->sock, snd->buf, snd->len, 0, (struct sockaddr *)&(snd->dest), sizeof(snd->dest)); //send the packet
   if(bytes <= 0) printf("Error, bad socket write: %s\n", strerror(errno)); //report the error
   return bytes;
@@ -114,6 +134,9 @@ sender_handle* start_sender(const char* host, int port, char* buf, size_t len){
   inet_aton(host, &dest.sin_addr); //set the target address
   int true = 1;
   setsockopt(sock,SOL_SOCKET,SO_REUSEADDR,&true,sizeof(int)); //allow socket reuse
+  
+  //initialize the sequence num
+  seq_num = 0;
   
   //create handler and store attributes
   sender_handle* snd = (sender_handle*)malloc(sizeof(sender_handle));

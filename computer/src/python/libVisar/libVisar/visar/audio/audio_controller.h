@@ -4,6 +4,9 @@
 #define TIMEOUT      1       //socket timeout is 1 second
 #define PERIOD_UTIME 20000   //codec needs frame time of 20ms
 
+//uncomment this line to enable debug mode (will print lots of things)
+//define DEBUG_MODE
+
 extern int global_kill;  //define the global kill flag
 extern int vc_pipe;      //define the voice controller's output pipe fd
 extern int vc_flag;      //tell mic thread if voice control is active

@@ -9,7 +9,7 @@ COMP_PSPHINX=-DMODELDIR=\"`pkg-config --variable=modeldir pocketsphinx`\"
 
 all:   voice_control voice_comms
 opus:  voice_control voice_opus
-debug: voice_comms test
+fake:  voice_comms test
 
 test: test.o
 	$(CC) test.c -o vc

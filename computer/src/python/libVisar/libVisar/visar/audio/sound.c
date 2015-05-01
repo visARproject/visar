@@ -144,6 +144,9 @@ void *speaker_thread(void* ptr){
     
     //write data to speaker buffer, check responses
     int rc = snd_pcm_writei(speaker_handle, GET_QUEUE_HEAD(*buf), buf->period);
+#ifdef DEBUG_MODE
+    printf("Wrote Data to Speaker: %d\n", rc);
+#endif      
     INC_QUEUE_HEAD(*buf);
     if (rc == -EPIPE){ //Catch underruns (not enough data)
       fprintf(stderr, "underrun occurred\n");
@@ -173,7 +176,6 @@ void *mic_thread(void* ptr){
   while(!global_kill && (!mic_kill_flag || vc_flag)) { //loop until program stops us
     //write data to speaker buffer, check response codes
     int rc = snd_pcm_readi(mic_handle, buf, period);
-    //printf("Mic Data Read\n");
     if (rc == -EPIPE) { //catch overruns (too much data for buffer)
       fprintf(stderr, "overrun occurred\n");
       snd_pcm_prepare(mic_handle); //reset handler
@@ -181,6 +183,9 @@ void *mic_thread(void* ptr){
     } else if (rc < 0) fprintf(stderr, "error from read: %s\n", snd_strerror(rc));
     else if (rc != (int)period) fprintf(stderr, "short read, read %d frames\n", rc);
     else{ //read was good, send the data
+#ifdef DEBUG_MODE
+      printf("Mic Data Read\n");
+#endif
       if(!mic_kill_flag && snd_handle != NULL) send_packet(snd_handle); //send the packet over network
       if(vc_flag){ //write to voice control pipe if flag set
         vc_hold_flag = 1; //start of write

@@ -38,8 +38,10 @@ static int period;    //period (samples/frame) required by the codecs
 int main(int argc, char** argv){  
   char input[80];   //buffer for commands
     
-  //start the voice process before doing anything significant
+  //start the voice process before doing anything significant (skip in debug mode)
+#ifndef DEBUG_MODE
   setup_voice_control();
+#endif  
   
   //default the flags to not started
   mic_kill_flag = 1;
