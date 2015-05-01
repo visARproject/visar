@@ -2,9 +2,6 @@
  * File handles the the speaker/mic control interface
  *  Program expects control inputs from stdin (done via redirects) 
  * TODO: multiple streams?
- * BUGS: Starting comms while in vc mode breaks program
- *       Errors when stopping and resuming vc_mode (^likely related)
- *       Segfault on ARM stop command
  */
  
 #include <stdio.h>

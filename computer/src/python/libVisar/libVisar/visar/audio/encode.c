@@ -1,6 +1,6 @@
 /* 
  * File handles sound codec management, encoding and decoding
- * TODO: Test with mic, consider preprocessing, flexibility
+ * TODO: consider preprocessing, flexibility
  */
 
 

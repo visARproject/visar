@@ -1,10 +1,9 @@
 /* 
- * File handles sound processing (start/stop/buffer structure)
- * TODO: multiplexing, volume
+ * File handles sound processing (start/stop of threads)
+ * TODO: multiplexing?
  * BUGS: speaker underruns on ARM, can't recover
  *         -seems to destabalize with time
- *         -time to failure is shorter with usleep in spin loop
- *       
+ *         -time to failure is shorter with usleep in spin loop?
  */
 
 //library includes 
