@@ -20,6 +20,9 @@ void change_volume(long volume); //change the system volume
 //int main(); --program's main funciton is defined in .c file
 
 /* Audio Control Protocol Documentation */
+/* The program accepts the following flags:
+ *  -p: use input pipe instead of command line ('/tmp/vsr_control_pipe')
+ *  -v: start with voice control functionaluty (will mirror audio to '/tmp/vsr_audio_pipe')
 /* Command messages use the following format:
  *  TYPE <Option1> <Option2>... <Option n>\n
  * Supported Commands include:

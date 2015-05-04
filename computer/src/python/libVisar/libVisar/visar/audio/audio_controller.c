@@ -22,7 +22,9 @@
 #define DEFAULT_PORT 19101
 #define DEFAULT_ADDR "127.0.0.1"
 
-#define FIFO_NAME "/tmp/vsr_audio_pipe"
+//names of program FIFO's
+#define AUD_FIFO_NAME "/tmp/vsr_audio_pipe"
+#define CON_FIFO_NAME "/tmp/vsr_control_pipe"
 
 int global_kill = 0;  //global program kill flag, will stop all threads if set
 int vc_pipe;          //voice control pipe
@@ -37,7 +39,8 @@ int main(int argc, char** argv){
     
   //start the voice process before doing anything significant (skip in debug mode)
 #ifndef DEBUG_MODE
-  setup_voice_control();
+  if((argc >= 2 && (0 == strcmp(argv[1],"-v"))) || (argc >= 3 && (0 == strcmp(argv[2],"-v"))))
+    setup_voice_control();
 #endif  
   
   //default the flags to not started
@@ -46,11 +49,18 @@ int main(int argc, char** argv){
      
   period = setup_codecs(); //setup the codecs and get the period size  
   
-  //FILE* debug_fd = fopen("debug.log", "w"); //DEBUG
+  FILE* input_fp; //input file pointer
+  
+  //attempt to open pipe if option is specified
+  if((argc >= 2 && (0 == strcmp(argv[1],"-p"))) || (argc >= 3 && (0 == strcmp(argv[2],"-p"))))
+    while(NULL == (input_fp = fopen(CON_FIFO_NAME,"r")))
+      usleep(100000); //wait .1s before retrying
+    
+  else input_fp = stdin;  //use stdin instead
   
   //handler loop, runs until program is killed
   while(!global_kill){
-    if(fgets(input, 80, stdin)){ //get a command from stdin
+    if(fgets(input, 80, input_fp)){ //get a command from input
       //printf("Echo: %s",input);
       //fprintf(debug_fd, "%s", input); //DEBUG
       
@@ -142,6 +152,8 @@ int main(int argc, char** argv){
         
       //Start voice_control
       } else if(0 == strcmp(token, "voice_start")){
+        if(!vc_pipe) continue;  //vc not enabled, nothing to do
+          
         vc_flag = 1; //signal that threads should send data to controller
         if(mic_kill_flag){
           snd_pcm_t* handle = start_snd_device(period, DEFAULT_RATE, DEFAULT_CHNS==2, CAPTURE_DIR); //start the device
@@ -223,8 +235,8 @@ int setup_voice_control(){
   vc_hold_flag = 0; //nor is the voice control pipe
 
   //create fifo and get fd
-  mkfifo(FIFO_NAME, 0666);
-  vc_pipe = open(FIFO_NAME, O_WRONLY);
+  mkfifo(AUD_FIFO_NAME, 0666);
+  vc_pipe = open(AUD_FIFO_NAME, O_WRONLY);
 
   printf("Audio Controller: Voice Controller Started\n");
   return 0;
@@ -238,7 +250,7 @@ void destroy_voice_control(){
   while(vc_hold_flag);  //wait for pending writes to finish
   close(vc_pipe);       //close the pipe, signaling that child should close
   sleep(TIMEOUT);       //wait for child to respond
-  unlink(FIFO_NAME);    //destroy the pipe
+  unlink(AUD_FIFO_NAME);    //destroy the pipe
   
   printf("Audio Controller: Voice Controller Shutdown\n");
 }
