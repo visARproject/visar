@@ -61,7 +61,7 @@ int main(int argc, char** argv){
   //handler loop, runs until program is killed
   while(!global_kill){
     if(fgets(input, 80, input_fp)){ //get a command from input
-      //printf("Echo: %s",input);
+      printf("Echo: %s",input);
       //fprintf(debug_fd, "%s", input); //DEBUG
       
       char* token = strtok(input, "\n"); //split string to ignore newline
@@ -185,10 +185,14 @@ int main(int argc, char** argv){
         printf("Audio Controller: Unrecognized command: \"%s\" \n", token);  
       }
     } else {  //could not read from stdin
-      if(!global_kill){ //if global kill is 0, it was an actual error
+      if(input_fp != stdin && feof(input_fp)){ //check if error is due to EOF on pipe
+        usleep(100000); //ignore the error, wait .1 seconds
+        continue;
+      }else if(!global_kill){ //if global kill is 0, it was an actual error
         printf("Audio Controller: Error when reading input, terminating\n");
         shutdown_prog();
       }
+      printf("Exiting...\n");
       break; //break so program can exit
     }
   }

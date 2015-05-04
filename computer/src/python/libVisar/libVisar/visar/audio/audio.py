@@ -10,9 +10,11 @@ VC_PROGRAM     = os.path.join(fpath, 'vc')    # path to vc module
 CONTROL_SERVER = 19102        # TCP comms port for handshaking (server)
 AUDIO_PORT     = 19103        # UDP port for audio data
 VC_FIFO_NAME   = '/tmp/vsr_vc_pipe' # pipe for voice commands
+AUD_FIFO_NAME  = '/tmp/vsr_control_pipe' # pipe for program control
 AUDIO_WAIT_TM  = .05          # wait 50ms between operations
 SERVER_TIMEOUT = 1            # timeout for server socket (in seconds)
 VC_HOLD_TIME   = 1            # wait at least 1 second between vc presses
+AUDIO_INT_MODE = False        # Audio subprogram mode (F=External, T=Internal)
 
 # thread locking
 lock = threading.RLock()
@@ -32,7 +34,6 @@ class AudioController(Interface):
     Interface.__init__(self)
     self.connection = None    # connection state (host, port, mode)
     self.vc_active  = False   # Boolean to track when vc is active
-    self.child = Popen(AUDIO_PROGRAM, bufsize=0, stdin=PIPE, stdout=PIPE, stderr=STDOUT, universal_newlines=True) # open subprocess
     self.kill_flag = False
     self.input_buffer = ''
     self.vc_timer = 0
@@ -43,7 +44,18 @@ class AudioController(Interface):
     self.s_sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1) # allow socket reuse
     self.connected = False
     
-    # create the fifo pipe
+    # open subprocess or fifo depending on mode
+    if AUDIO_INT_MODE:
+      self.child = Popen(AUDIO_PROGRAM, bufsize=0, stdin=PIPE, stdout=PIPE, stderr=STDOUT, universal_newlines=True)
+    else: 
+      # create the audio fifo
+      try:    
+        os.mkfifo(AUD_FIFO_NAME) # create the fifo
+      except: 
+        os.unlink(AUD_FIFO_NAME) # remove existing fifo
+        os.mkfifo(AUD_FIFO_NAME) # recreate the fifo
+    
+    # create the vc fifo
     try:    
       os.mkfifo(VC_FIFO_NAME) # create the fifo
     except: 
@@ -62,9 +74,10 @@ class AudioController(Interface):
     #else: # program didn't die
     #  self.vc_pipe = os.open(VC_FIFO_NAME, os.O_RDONLY) # open the pipe
 
-    # backup method, less robust, but it seems like val's program wont't work otherwise
-    self.vc_pipe = os.open(VC_FIFO_NAME, os.O_RDONLY) # open the pipe (will block until read from)
-
+    self.vc_pipe = os.open(VC_FIFO_NAME, os.O_RDONLY) # open the pipe (will block until opened)
+    if not AUDIO_INT_MODE:
+      self.fd = os.open(AUD_FIFO_NAME, os.O_WRONLY) # open the pipe (will block unitl opened)
+    
     # create the thread objects and start the threads
     self.comms  = threading.Thread(target=self.comms_thread)
     self.parse  = threading.Thread(target=self.parse_thread)
@@ -83,12 +96,15 @@ class AudioController(Interface):
     
     # send shutdown to child process
     lock.acquire()
-    self.child.stdin.write('shutdown\n') # shutdown thread when the module dies
+    self.write_fd('shutdown\n') # shutdown thread when the module dies
     lock.release()
     
     if self.vc_pipe is not None:  os.close(self.vc_pipe) # close the pipe
     time.sleep(1) # sleep to give process things
     os.unlink(VC_FIFO_NAME) # delete the fifo
+    if not AUDIO_INT_MODE: 
+      os.close(self.fd)        # close the fifo
+      os.unlink(AUD_FIFO_NAME) # delete the file
   
   # start audio communication with network device
   @thread_lock
@@ -103,7 +119,7 @@ class AudioController(Interface):
 
       self.connection = (host, port, mode) # store connection information
       command = 'start ' + mode + ' -host ' + host + ' -port ' + str(AUDIO_PORT) + '\n'
-      self.child.stdin.write(command) # send start command
+      self.write_fd(command) # send start command
     
       # spawn thread to listen for shutdown
       self.client = threading.Thread(target=self.client_thread)
@@ -127,7 +143,7 @@ class AudioController(Interface):
       self.c_sock.send('shutdown\n') # send shutdown command
       self.c_sock.close() # close the socket conneciton
       self.c_sock = None # nulify the socket
-      self.child.stdin.write('stop both\n')    # send stop command
+      self.write_fd('stop both\n')    # send stop command
       if self.vc_active: self.connection = ('voice', None, 'mic') # check if voice was active (prevents shutdown)
       else: self.connection = None              # connection is no longer active
     except: pass
@@ -145,7 +161,7 @@ class AudioController(Interface):
       self.do_updates(('Warn','Ignored Invalid Volume: ' + str(volume)))
       return
     
-    self.child.stdin.write('set -volume ' + str(volume) + ' \n')
+    self.write_fd('set -volume ' + str(volume) + ' \n')
     
     
   # start the voice controller
@@ -154,7 +170,7 @@ class AudioController(Interface):
       self.do_updates(('Error','VC is already active'))
       return False
     lock.acquire()
-    self.child.stdin.write('voice_start\n')
+    self.write_fd('voice_start\n')
     lock.release()
     self.vc_active = True
     self.vc_timer = time.clock()
@@ -169,7 +185,7 @@ class AudioController(Interface):
       return False # exit if not listening
     global lock
     lock.acquire()
-    self.child.stdin.write('voice_stop\n')
+    self.write_fd('voice_stop\n')
     lock.release()
     self.do_updates(('stopped_vc','')) # send shutdown update
     self.vc_active = False # stop vc activities
@@ -236,7 +252,7 @@ class AudioController(Interface):
       lock.acquire()
       self.connection = (addr[0], AUDIO_PORT, datas[0]) # setup connection
       command = 'start ' + datas[0] + ' -host ' + addr[0] + ' -port ' + str(AUDIO_PORT) + '\n'
-      self.child.stdin.write(command) # send start command
+      self.write_fd(command) # send start command
       lock.release()
       self.do_updates(('Conncted',addr[0])) # notify connection termination
       while ((conn is not None) and self.connected):
@@ -256,7 +272,7 @@ class AudioController(Interface):
       
       # shutdown the module
       lock.acquire()
-      self.child.stdin.write('stop both\n')    # send stop command
+      self.write_fd('stop both\n')    # send stop command
       if self.vc_active: self.connection = ('voice', None, 'mic') # check if voice was active (prevents shutdown)
       else: self.connection = None              # connection is no longer active
       lock.release()
@@ -274,7 +290,7 @@ class AudioController(Interface):
             
     global lock        
     lock.acquire()            
-    self.child.stdin.write('stop both\n')    # send stop command
+    self.write_fd('stop both\n')    # send stop command
     if self.vc_active: self.connection = ('voice', None, 'mic') # check if voice was active (prevents shutdown)
     else: self.connection = None              # connection is no longer active
     lock.release()
@@ -282,4 +298,12 @@ class AudioController(Interface):
     self.c_sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM) # get a new socket
 
     self.do_updates(('Disconnected',None)) # notify connection termination
+
+  # alias the audio program's input write command to a common function call
+  def write_fd(self, text):
+    if AUDIO_INT_MODE: # write to subrpocess input stream
+      self.child.stdin.write(text)         
+    else: # write to FIFO
+      os.write(self.fd, text)
+    
 
