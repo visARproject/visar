@@ -82,6 +82,9 @@ audiobuffer* create_speaker_thread(snd_pcm_t* pcm_handle, size_t period, size_t 
   if (rc){ 
     printf("ERROR: Could not create device thread, rc=%d\n", rc); //print errors
   }
+  
+  /* 
+  //Attempt to increase thread priority
   struct sched_param param;
   int mode;
   pthread_getschedparam(thread, &mode, &param);
@@ -91,6 +94,7 @@ audiobuffer* create_speaker_thread(snd_pcm_t* pcm_handle, size_t period, size_t 
   //if(rc = pthread_setschedprio(thread, 70)) //try to give the thread priority
     printf("Could not increase thread priority, %d\n",rc); 
   printf("Max: %d, Min: %d\n", sched_get_priority_max(SCHED_RR),  sched_get_priority_min(SCHED_OTHER));
+  */
   
   return buffer; //return the device's audio buffer
 }
@@ -129,12 +133,16 @@ void *speaker_thread(void* ptr){
   snd_pcm_t* speaker_handle = ((spk_pcm_package*)ptr)->pcm_handle; //cast pointer, get device pointer
   free(ptr); //free message memory
     
+  snd_pcm_nonblock(speaker_handle, SND_PCM_NONBLOCK); //set in nonblocking mode
+    
   char started = 0;  //track when to start reading data
   while(!global_kill && !speaker_kill_flag) { //loop until program stops us
-    //wait until adequate buffer is achieved
-    if((!started && BUFFER_SIZE(*buf) < (MIN_BUFFER)) || BUFFER_EMPTY(*buf)){
+    //wait until adequate buffer is achieved and can be written
+    if((!started && BUFFER_SIZE(*buf) < (MIN_BUFFER)) \
+        || BUFFER_EMPTY(*buf) \
+        || !snd_pcm_avail_update(speaker_handle)) {
       //printf("Speaker Waiting\n");
-      usleep(PERIOD_UTIME); //wait to reduce CPU usage
+      usleep(PERIOD_UTIME*2); //wait to reduce CPU usage
       continue;     //don't start yet
     } else {
       if(!started) snd_pcm_prepare(speaker_handle); //reset speaker
@@ -142,18 +150,27 @@ void *speaker_thread(void* ptr){
     }
     
     //write data to speaker buffer, check responses
-    int rc = snd_pcm_writei(speaker_handle, GET_QUEUE_HEAD(*buf), buf->period);
+    int write_count = MIN(BUFFER_SIZE(*buf), snd_pcm_avail_update(speaker_handle)/(buf->period));
+    
 #ifdef DEBUG_MODE
-    printf("Wrote Data to Speaker: %d\n", rc);
-#endif      
-    INC_QUEUE_HEAD(*buf);
-    if (rc == -EPIPE){ //Catch underruns (not enough data)
-      fprintf(stderr, "underrun occurred\n");
-      started = 0;  //stop and wait for buffer to buildup
-    } else if (rc < 0) fprintf(stderr, "error from writei: %s\n", snd_strerror(rc)); //other errors
-    else if (rc != (int)buf->period) fprintf(stderr, "short write, write %d frames\n", rc);
-    //else fprintf(stderr, "audio written correctly\n");
-    snd_pcm_wait(speaker_handle, 1000); //wait for IO to be ready
+    printf("Writing %d packets to speaker\n", write_count);
+#endif
+
+    while(write_count-- > 0 && started){
+      int rc = snd_pcm_writei(speaker_handle, GET_QUEUE_HEAD(*buf), buf->period);      
+      INC_QUEUE_HEAD(*buf);
+      if (rc == -EPIPE){ //Catch underruns (not enough data)
+        fprintf(stderr, "underrun occurred\n");
+        started = 0;  //stop and wait for buffer to buildup
+      } else if (rc < 0) fprintf(stderr, "error from writei: %s\n", snd_strerror(rc)); //other errors
+      else if (rc != (int)buf->period) fprintf(stderr, "short write, write %d frames\n", rc);
+      //else fprintf(stderr, "audio written correctly\n");
+      //snd_pcm_wait(speaker_handle, 1000); //wait for IO to be ready
+    }
+    
+#ifdef DEBUG_MODE
+    printf("%d unwritten\n", write_count);
+#endif    
   }
   
   // notify kernel to empty/close the speakers

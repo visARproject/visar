@@ -72,7 +72,7 @@ void *reciever_thread(void *ptr){
       //printf("buffer: (%d, %d, %d)\n", buf->start, buf->end, BUFFER_SIZE(*buf));
     } else {
       //printf("Reciever Waiting\n");
-      usleep(PERIOD_UTIME/2);
+      usleep(PERIOD_UTIME*2); //let buffer empty somewhat
     }
   }
   
