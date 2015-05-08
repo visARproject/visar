@@ -21,6 +21,7 @@ class PinholeCameraModel(object):
         src.resize((1, 1, 2))
         dst = src.copy()
         res = cv2.undistortPoints(src, self.K, self.D, dst, self.R, self.P)
+        print res
         return [float(res[0,0,0]), float(res[0,0,1])]
     
     def project3dToPixel(self, point):
@@ -30,6 +31,13 @@ class PinholeCameraModel(object):
         y = dst[1,0]
         w = dst[2,0]
         return x / w, y / w
+    
+    def project3dToRawPixel(self, point):
+        src = numpy.zeros((1, 1, 3))
+        src[0,0]=point
+        dst = numpy.zeros((1, 1, 2))
+        cv2.projectPoints(src, numpy.array([[0., 0, 0]]), numpy.array([0., 0, 0]), self.K, self.D, dst)
+        return map(float, [dst[0,0,0], dst[0,0,1]])
 
 with open(sys.argv[2], 'rb') as f:
     calibration = yaml.load(f)
@@ -41,7 +49,7 @@ model.R = mkmat(3, 3, calibration['rectification_matrix']['data'])
 model.P = mkmat(3, 4, calibration['projection_matrix']['data'])
 
 c2 = lambda (x, y): model.project3dToPixel((y, -x, 1))
-c = lambda (x, y): model.rectifyPoint(c2((x, y)))
+c = lambda (x, y): model.project3dToRawPixel((y, -x, 1))
 
 d = {}
 image_array = numpy.zeros((constants.H_DISPLAY_END, constants.V_DISPLAY_END, 3), dtype=numpy.uint8)
