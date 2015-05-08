@@ -5,6 +5,9 @@
 #define MONO_SOUND   0
 #define STEREO_SOUND 1
 
+//create macro to find minimum value
+#define MIN(X, Y) (((X) < (Y)) ? (X) : (Y))
+
 //define the sound thread kill flag events
 extern int speaker_kill_flag;
 extern int mic_kill_flag;
