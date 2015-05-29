@@ -156,7 +156,12 @@ void *speaker_thread(void* ptr){
     printf("Writing %d packets to speaker\n", write_count);
 #endif
 
+    //loop over avaliable buffer entries
     while(write_count-- > 0 && started){
+      /* Note: This call performs a syscall to copy data to kernel space 
+          so it would be better to write multiple entries in one operation, 
+          but using the audiobuffer without the abstraction was something 
+          I didn't want to do at the time of writing. */
       int rc = snd_pcm_writei(speaker_handle, GET_QUEUE_HEAD(*buf), buf->period);      
       INC_QUEUE_HEAD(*buf);
       if (rc == -EPIPE){ //Catch underruns (not enough data)
