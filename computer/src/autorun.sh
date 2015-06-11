@@ -13,7 +13,7 @@ DISPLAY=:0.0 xrandr -o left
 
 # start Voice control and audio programs in background
 (/home/ubuntu/src/python/libVisar/libVisar/visar/audio/vc &)
-(/home/ubuntu/src/python/libVisar/libVisar/visar/audio/audio -v -p &)
+#(/home/ubuntu/src/python/libVisar/libVisar/visar/audio/audio -v -p &)
 
 # start the rosnode
 roslaunch visar_gps run.launch host_id:=visar2 interface:=192.168.1.14 fake_gps:=true --screen

@@ -14,7 +14,7 @@ AUD_FIFO_NAME  = '/tmp/vsr_control_pipe' # pipe for program control
 AUDIO_WAIT_TM  = .05          # wait 50ms between operations
 SERVER_TIMEOUT = 1            # timeout for server socket (in seconds)
 VC_HOLD_TIME   = 1            # wait at least 1 second between vc presses
-AUDIO_INT_MODE = False        # Audio subprogram mode (F=External, T=Internal)
+AUDIO_INT_MODE = True         # Audio subprogram mode (F=External, T=Internal)
 
 # thread locking
 lock = threading.RLock()
